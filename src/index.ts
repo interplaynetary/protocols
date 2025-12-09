@@ -12,10 +12,10 @@
  */
 
 // Core exports (main entry point)
-export { computeAllocations } from './allocation';
-export { calculateCollectiveRecognitionDistribution } from './distribution';
-export { mutualFulfillment } from './tree';
-export type { Commitment, NeedSlot, AvailabilitySlot, Node } from './schemas';
+export { computeAllocations } from './allocation.js';
+export { calculateCollectiveRecognitionDistribution } from './distribution.js';
+export { mutualFulfillment } from './tree.js';
+export type { Commitment, NeedSlot, AvailabilitySlot, Node } from './schemas.js';
 
 // ITC (Interval Tree Clocks) for causality tracking
 export {
@@ -29,4 +29,4 @@ export {
 	type Stamp as ITCStamp,
 	type Id as ITCId,
 	type Event as ITCEvent
-} from './itc';
+} from './itc.js';

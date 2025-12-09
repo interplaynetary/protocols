@@ -18,7 +18,7 @@ import {
 	type RootNode,
 	type AvailabilitySlot,
 	type NeedSlot
-} from '../schemas';
+} from '../schemas.js';
 
 // Re-export commonly used v5 types (but not legacy aliases that we override)
 export type { 
@@ -27,7 +27,7 @@ export type {
 	RootNode,
 	AvailabilitySlot,
 	NeedSlot
-} from '../schemas';
+} from '../schemas.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // COMPLIANCE FILTERS (JsonLogic-based)
@@ -69,7 +69,7 @@ import {
 	type EligibilityFilter,
 	FilterContextSchema,
 	type FilterContext
-} from '../filters/types';
+} from '../filters/types.js';
 
 // Re-export for convenience
 export {

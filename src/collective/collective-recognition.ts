@@ -29,10 +29,10 @@ import type {
 	Node,
 	AvailabilitySlot,
 	NeedSlot
-} from '../schemas';
-import { mutualFulfillment } from '../tree';
-import { slotsCompatible } from '../utils/match';
-import { calculateCollectiveRecognitionDistribution } from '../distribution';
+} from '../schemas.js';
+import { mutualFulfillment } from '../tree.js';
+import { slotsCompatible } from '../utils/match.js';
+import { calculateCollectiveRecognitionDistribution } from '../distribution.js';
 import {
 	shouldUpdateCapacityMembership,
 	updateCapacityMembership,
@@ -41,18 +41,18 @@ import {
 	type Allocation,
 	type AllocationComputationResult,
 	type RecognitionData
-} from './schemas';
+} from './schemas.js';
 
 // Import unified filter system
 import {
 	type ComplianceFilter
-} from '../filters/types';
+} from '../filters/types.js';
 
 import {
 	getFilterValue,
 	createFilter,
 	unionOfFilters
-} from '../filters/compliance';
+} from '../filters/compliance.js';
 
 
 // ═══════════════════════════════════════════════════════════════════
@@ -60,7 +60,7 @@ import {
 // ═══════════════════════════════════════════════════════════════════
 
 // Re-export filter utilities from unified filter system for backward compatibility
-export { getFilterValue, createFilter, unionOfFilters } from '../filters/compliance';
+export { getFilterValue, createFilter, unionOfFilters } from '../filters/compliance.js';
 
 // === NEED UTILITIES ===
 

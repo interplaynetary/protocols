@@ -3,6 +3,6 @@
  * Pure attribute recognition and type system
  */
 
-export * from './attribute-recognition';
-export * from './attribute-types';
+export * from './attribute-recognition.js';
+export * from './attribute-types.js';
 

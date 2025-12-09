@@ -19,9 +19,9 @@
  * ```
  */
 
-import type { GlobalRecognitionWeights, Node } from './schemas';
-import { createMemoCache, createMemoCacheWithKey, hashObject } from './utils/memoize';
-import { mutualFulfillment } from './tree';
+import type { GlobalRecognitionWeights, Node } from './schemas.js';
+import { createMemoCache, createMemoCacheWithKey, hashObject } from './utils/memoize.js';
+import { mutualFulfillment } from './tree.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // DISTRIBUTION RESULT TYPE

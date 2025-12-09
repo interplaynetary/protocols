@@ -54,7 +54,7 @@ import {
 	FilterContextSchema,
 	type FilterResult,
 	FilterResultSchema
-} from './types';
+} from './types.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // CACHING FOR PERFORMANCE

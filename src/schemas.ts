@@ -44,7 +44,7 @@ export type ShareMap = z.infer<typeof ShareMapSchema>;
  * We use the actual ITC types and a passthrough schema for validation.
  * This avoids type mismatches between Zod's inferred types and the real ITC types.
  */
-import type { Id as ITCId, Event as ITCEvent, Stamp as ITCStamp } from './itc';
+import type { Id as ITCId, Event as ITCEvent, Stamp as ITCStamp } from './itc.js';
 
 // Use passthrough schemas that accept the ITC types directly
 export const ITCIdSchema = z.any() as z.ZodType<ITCId>;

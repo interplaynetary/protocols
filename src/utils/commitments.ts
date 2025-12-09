@@ -13,7 +13,7 @@ import type {
 	ITCStamp,
 	TwoTierAllocationState,
 	SlotAllocationRecord
-} from '../schemas';
+} from '../schemas.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // COMMITMENT CREATION

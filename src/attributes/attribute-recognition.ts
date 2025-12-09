@@ -18,8 +18,8 @@ import type {
 	AttributeRecognitionsCollection,
 	AttributeSubscriptions,
 	EntityIdMappings
-} from '../schemas';
-import { seed as itcSeed, event as itcEvent, join as itcJoin, type Stamp as ITCStamp } from '../itc';
+} from '../schemas.js';
+import { seed as itcSeed, event as itcEvent, join as itcJoin, type Stamp as ITCStamp } from '../itc.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // DEEP EQUALITY CHECKER (ported from VersionedStore)

@@ -5,8 +5,8 @@
  * Formatting, display, and calculation helpers separated from tree logic.
  */
 
-import type { AvailabilitySlot, NeedSlot, ResourceMetadata } from '../schemas';
-import { timeRangesOverlap, locationsCompatible } from './match';
+import type { AvailabilitySlot, NeedSlot, ResourceMetadata } from '../schemas.js';
+import { timeRangesOverlap, locationsCompatible } from './match.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // SLOT QUANTITY CALCULATIONS

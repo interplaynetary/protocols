@@ -14,7 +14,7 @@
  * - applies_to field: Determines which slot types this filter applies to
  */
 
-import type { AvailabilitySlot, NeedSlot, SlotFilter } from '../schemas';
+import type { AvailabilitySlot, NeedSlot, SlotFilter } from '../schemas.js';
 
 /**
  * Check if a slot passes a single filter's conditions - UNIFIED!

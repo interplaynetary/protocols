@@ -7,7 +7,7 @@
  * V5: Added organization support - contributors can be org_ids that expand to members
  */
 
-import type { Contributor } from '../schemas';
+import type { Contributor } from '../schemas.js';
 
 /**
  * Resolve contributor ID to public key if resolver provided

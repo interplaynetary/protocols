@@ -9,7 +9,7 @@
  * contributor groups within tree structures.
  */
 
-import type { ShareMap, BaseCapacity } from '../schemas';
+import type { ShareMap, BaseCapacity } from '../schemas.js';
 // @ts-ignore
 import jsonLogic from 'json-logic-js';
 

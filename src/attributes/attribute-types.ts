@@ -25,7 +25,7 @@ import {
 	type MembershipList,
 	type SkillValue,
 	type LocationValue
-} from '../schemas';
+} from '../schemas.js';
 import { z } from 'zod';
 
 // ═══════════════════════════════════════════════════════════════════

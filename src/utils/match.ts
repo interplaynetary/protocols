@@ -13,7 +13,7 @@
  * - Pure multi-dimensional design
  */
 
-import type { AvailabilitySlot, NeedSlot, AvailabilityWindow, TimeRange, DayOfWeek, DaySchedule, WeekSchedule, MonthSchedule } from '../schemas';
+import type { AvailabilitySlot, NeedSlot, AvailabilityWindow, TimeRange, DayOfWeek, DaySchedule, WeekSchedule, MonthSchedule } from '../schemas.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // RECURRENCE TRACK IDENTIFICATION
@@ -1374,12 +1374,12 @@ export function slotsCompatible(needSlot: NeedSlot, availabilitySlot: Availabili
 import type {
 	FilterContext,
 	EligibilityFilter
-} from '../filters/types';
+} from '../filters/types.js';
 
 import { 
 	evaluateEligibilityFilter,
 	EligibilityFilters
-} from '../filters/eligibility';
+} from '../filters/eligibility.js';
 
 // Re-export for consumers
 export type {

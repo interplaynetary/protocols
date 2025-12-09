@@ -13,7 +13,7 @@
  * - See extensive documentation in collective-membership.svelte.ts wrapper
  */
 
-import type { RecognitionData, MembershipOutput, HealthMetrics } from './schemas';
+import type { RecognitionData, MembershipOutput, HealthMetrics } from './schemas.js';
 
 export const EPSILON = 1e-9;
 

@@ -47,7 +47,7 @@ import type {
 	NeedType,
 	AvailabilityWindow,
 	Contributor
-} from './schemas';
+} from './schemas.js';
 
 // Filter utilities (from main lib)
 import {
@@ -56,7 +56,7 @@ import {
 	applyCapacityFilter,
 	Rules,
 	type FilterContext
-} from './filters/filters';
+} from './filters/filters.js';
 
 // Utility functions (extracted from protocol.ts for better modularity)
 import {
@@ -64,7 +64,7 @@ import {
 	getUniqueResolvedIds,
 	totalContributorPoints,
 	findContributor
-} from './utils/contributors';
+} from './utils/contributors.js';
 
 /**
  * Tree Navigation Functions
@@ -242,7 +242,7 @@ export function desire(node: Node, tree: Node): number {
 /**
  * Helper Functions for Recognition Calculation
  * Note: resolveContributorId, getUniqueResolvedIds, totalContributorPoints, 
- * and findContributor are now imported from './utils/contributors'
+ * and findContributor are now imported from './utils/contributors.js'
  */
 
 // Calculate contributor share for a single node (V5: weighted by contributor points)
@@ -1044,7 +1044,7 @@ export {
 	getEffectiveFilterRule,
 	areSlotsTimeCompatible,
 	areSlotsLocationCompatible
-} from './utils/slots';
+} from './utils/slots.js';
 
 // Re-export commitment utilities for convenience (backward compatibility)
 export {
@@ -1055,7 +1055,7 @@ export {
 	getNonMutualTierTotal,
 	getMutualTierRecipients,
 	isRecipientMutual
-} from './utils/commitments';
+} from './utils/commitments.js';
 
 /**
  * Re-export schema types for convenience (v5 - global recognition model)

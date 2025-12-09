@@ -1,6 +1,6 @@
 // V5: Import from v5 commons
-import { type Node } from '../schemas';
-import { getDescendants, findNodeById, getPathToNode } from '../tree';
+import { type Node } from '../schemas.js';
+import { getDescendants, findNodeById, getPathToNode } from '../tree.js';
 
 /**
  * Tree Search Functions

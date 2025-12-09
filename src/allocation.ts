@@ -30,10 +30,10 @@ import type {
 	ConvergenceSummary as ZodConvergenceSummary,
 	AllocationResult,
 	MultiDimensionalDamping
-} from './schemas';
+} from './schemas.js';
 
-import { slotsCompatible, getTimeBucketKey, getLocationBucketKey } from './utils/match';
-import { createMemoCache, createMemoCacheWithKey, hashObject } from './utils/memoize';
+import { slotsCompatible, getTimeBucketKey, getLocationBucketKey } from './utils/match.js';
+import { createMemoCache, createMemoCacheWithKey, hashObject } from './utils/memoize.js';
 
 // Import distribution calculation functions
 import {
@@ -44,17 +44,17 @@ import {
 	calculateEqualSharesDistribution,
 	createCustomDistribution,
 	computeMutualRecognition
-} from './distribution';
+} from './distribution.js';
 
 // Import unified filter system for compliance filters
 import type {
 	ComplianceFilter
-} from './filters/types';
+} from './filters/types.js';
 
 import {
 	evaluateComplianceFilter,
 	getRemainingRoom
-} from './filters/compliance';
+} from './filters/compliance.js';
 
 // Re-export for backward compatibility
 export type { DistributionResult };
@@ -75,7 +75,7 @@ import {
 	join as itcJoin,
 	leq as itcLeq,
 	equals as itcEquals
-} from './itc';
+} from './itc.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // SIMPLIFIED TYPES (Bridge between full schemas and algorithm needs)
