@@ -1,12 +1,16 @@
-# Source files (we ship compiled JS + d.ts)
+# Source files (we ship compiled JS + d.ts only)
 src/
 tsconfig.json
+vitest.config.ts
 
 # Development files
 *.test.ts
 *.spec.ts
 **/__tests__/
 **/__mocks__/
+src/tests/
+dist/__tests__/
+dist/tests/
 
 # Build artifacts
 *.tsbuildinfo
