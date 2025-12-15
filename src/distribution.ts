@@ -42,36 +42,47 @@ export interface DistributionResult {
 	 * Share represents: "What proportion of total capacity should this recipient receive?"
 	 */
 	shares: Record<string, number>;
-	
+
 	/**
 	 * Method used to calculate distribution (for transparency)
 	 */
-	method: 'mutual-recognition' | 'collective-recognition' | 'equal-shares' | 'custom' | 'two-tier';
-	
+	method: 'mutual-recognition' | 'collective-recognition' | 'equal-shares' | 'custom' | 'two-tier' | 'multi-tier';
+
 	/**
-	 * Tier information for two-tier distributions
-	 * Tier 1 = mutual recognition (priority)
-	 * Tier 2 = non-mutual recognition (fallback)
+	 * N-Tier allocation structure (NEW - replaces hardcoded tier1/tier2)
+	 * 
+	 * Array of tiers ordered by priority (lower priority number = allocated first).
+	 * Each tier has its own share distribution that is allocated sequentially.
+	 * 
+	 * Example:
+	 * [
+	 *   { priority: 0, shares: { alice: 0.6, bob: 0.4 }, label: 'mutual-recognition' },
+	 *   { priority: 1, shares: { carol: 1.0 }, label: 'non-mutual-recognition' }
+	 * ]
+	 * 
+	 * Backward compatibility: Two-tier distributions still work by creating
+	 * a 2-element array with priority 0 (mutual) and priority 1 (non-mutual).
 	 */
-	tiers?: {
-		tier1: Record<string, number>;  // Mutual recognition shares
-		tier2: Record<string, number>;  // Non-mutual recognition shares
-	};
-	
+	tiers?: Array<{
+		priority: number;
+		shares: Record<string, number>;
+		label?: string;
+	}>;
+
 	/**
 	 * Metadata about distribution calculation (for transparency/verification)
 	 */
 	metadata?: {
 		/** For mutual recognition: pairwise MR matrix */
 		mutualRecognitionMatrix?: Record<string, Record<string, number>>;
-		
+
 		/** For collective recognition: member recognition sums, pool */
 		memberRecognitionSums?: Record<string, number>;
 		totalPool?: number;
-		
+
 		/** Timestamp of calculation */
 		timestamp: number;
-		
+
 		/** Any other method-specific data */
 		[key: string]: any;
 	};
@@ -105,7 +116,7 @@ function _computeMutualRecognition(
 	myPubKey: string
 ): Record<string, number> {
 	const mutual: Record<string, number> = {};
-	
+
 	// Loop 1: For everyone I recognize (including myself!)
 	for (const [otherPubKey, myRecOfThem] of Object.entries(myRecognition)) {
 		// Special case: Self-recognition
@@ -114,32 +125,32 @@ function _computeMutualRecognition(
 			mutual[otherPubKey] = myRecOfThem;  // MR(me, me) = myRec[me]
 			continue;
 		}
-		
+
 		// Regular case: Mutual recognition with others
 		const theirRecOfMe = othersRecognition[otherPubKey]?.[myPubKey] || 0;
 		mutual[otherPubKey] = Math.min(myRecOfThem, theirRecOfMe);
 	}
-	
+
 	// Loop 2: Also check people who recognize me (but I might not recognize them)
 	// This ensures complete network awareness - we know about everyone
 	for (const [otherPubKey, theirWeights] of Object.entries(othersRecognition)) {
 		if (mutual[otherPubKey] !== undefined) continue; // Already computed in Loop 1
-		
+
 		const theirRecOfMe = theirWeights?.[myPubKey] || 0;
 		const myRecOfThem = myRecognition[otherPubKey] || 0;
-		
+
 		// MR will be 0 if I don't recognize them, but we still include them
 		// This shows "I've seen their recognition of me, but I don't mutually recognize them"
 		mutual[otherPubKey] = Math.min(myRecOfThem, theirRecOfMe);
 	}
-	
+
 	return mutual;
 }
 
 // Memoized version of computeMutualRecognition
 export const computeMutualRecognition = createMemoCacheWithKey(
 	_computeMutualRecognition,
-	(myRecognition, othersRecognition, myPubKey) => 
+	(myRecognition, othersRecognition, myPubKey) =>
 		`${hashObject(myRecognition)}:${hashObject(othersRecognition)}:${myPubKey}`,
 	100 // Cache up to 100 recognition computations
 );
@@ -176,29 +187,29 @@ export function calculateTwoTierMutualRecognitionDistribution(
 		othersRecognition,
 		myPubKey
 	);
-	
+
 	// Build mutual recognition matrix for transparency
 	const mutualRecognitionMatrix: Record<string, Record<string, number>> = {};
 	mutualRecognitionMatrix[myPubKey] = {};
-	
+
 	// Separate into tiers
 	const tier1Shares: Record<string, number> = {}; // Mutual recognition
 	const tier2Shares: Record<string, number> = {}; // Non-mutual recognition
 	const allShares: Record<string, number> = {};
-	
+
 	let totalTier1Recognition = 0;
 	let totalTier2Recognition = 0;
-	
+
 	// Classify recipients into tiers
 	for (const [recipientId, mr] of Object.entries(mutualRecognition)) {
 		// Skip if not in compatible recipients set (if provided)
 		if (compatibleRecipients && !compatibleRecipients.has(recipientId)) {
 			continue;
 		}
-		
+
 		// Add to matrix for transparency
 		mutualRecognitionMatrix[myPubKey][recipientId] = mr;
-		
+
 		if (mr > 0) {
 			// Tier 1: Mutual recognition
 			tier1Shares[recipientId] = mr;
@@ -212,7 +223,7 @@ export function calculateTwoTierMutualRecognitionDistribution(
 			}
 		}
 	}
-	
+
 	// Normalize tier 1 shares
 	if (totalTier1Recognition > 0) {
 		for (const recipientId in tier1Shares) {
@@ -221,7 +232,7 @@ export function calculateTwoTierMutualRecognitionDistribution(
 			allShares[recipientId] = normalized;
 		}
 	}
-	
+
 	// Normalize tier 2 shares
 	if (totalTier2Recognition > 0) {
 		for (const recipientId in tier2Shares) {
@@ -230,14 +241,22 @@ export function calculateTwoTierMutualRecognitionDistribution(
 			allShares[recipientId] = normalized;
 		}
 	}
-	
+
 	return {
 		shares: allShares,
 		method: 'two-tier',
-		tiers: {
-			tier1: tier1Shares,
-			tier2: tier2Shares
-		},
+		tiers: [
+			{
+				priority: 0,
+				shares: tier1Shares,
+				label: 'mutual-recognition'
+			},
+			{
+				priority: 1,
+				shares: tier2Shares,
+				label: 'non-mutual-recognition'
+			}
+		],
 		metadata: {
 			mutualRecognitionMatrix,
 			totalTier1Recognition,
@@ -271,36 +290,36 @@ export function calculateMutualRecognitionDistribution(
 		othersRecognition,
 		myPubKey
 	);
-	
+
 	// Build matrix for transparency
 	const mutualRecognitionMatrix: Record<string, Record<string, number>> = {};
 	mutualRecognitionMatrix[myPubKey] = {};
-	
+
 	const shares: Record<string, number> = {};
 	let totalRecognition = 0;
-	
+
 	// Only include recipients with mutual recognition > 0
 	for (const [recipientId, mr] of Object.entries(mutualRecognition)) {
 		// Skip if not in compatible recipients set (if provided)
 		if (compatibleRecipients && !compatibleRecipients.has(recipientId)) {
 			continue;
 		}
-		
+
 		mutualRecognitionMatrix[myPubKey][recipientId] = mr;
-		
+
 		if (mr > 0) {
 			shares[recipientId] = mr;
 			totalRecognition += mr;
 		}
 	}
-	
+
 	// Normalize shares
 	if (totalRecognition > 0) {
 		for (const recipientId in shares) {
 			shares[recipientId] = shares[recipientId] / totalRecognition;
 		}
 	}
-	
+
 	return {
 		shares,
 		method: 'mutual-recognition',
@@ -325,11 +344,11 @@ export function calculateEqualSharesDistribution(
 ): DistributionResult {
 	const shares: Record<string, number> = {};
 	const equalShare = recipientIds.length > 0 ? 1.0 / recipientIds.length : 0;
-	
+
 	for (const id of recipientIds) {
 		shares[id] = equalShare;
 	}
-	
+
 	return {
 		shares,
 		method: 'equal-shares',
@@ -364,6 +383,71 @@ export function createCustomDistribution(
 }
 
 /**
+ * Create Multi-Tier Distribution
+ * 
+ * Allows you to specify N tiers with custom priority ordering.
+ * Each tier is allocated sequentially based on priority (lower = first).
+ * 
+ * Use cases:
+ * - Custom allocation strategies with 3+ tiers
+ * - Priority-based allocation (VIP members, regular members, guests)
+ * - Graduated fallback strategies
+ * 
+ * Example:
+ * ```typescript
+ * createMultiTierDistribution([
+ *   { priority: 0, shares: { alice: 0.6, bob: 0.4 }, label: 'core-team' },
+ *   { priority: 1, shares: { carol: 0.5, dave: 0.5 }, label: 'contributors' },
+ *   { priority: 2, shares: { eve: 1.0 }, label: 'community' }
+ * ])
+ * ```
+ * 
+ * @param tiers - Array of tier definitions with priority, shares, and optional label
+ * @returns Distribution result with N tiers
+ * @throws Error if priorities are not unique or are negative
+ */
+export function createMultiTierDistribution(
+	tiers: Array<{ priority: number; shares: Record<string, number>; label?: string }>
+): DistributionResult {
+	// Validate priorities are unique and non-negative
+	const priorities = new Set<number>();
+	for (const tier of tiers) {
+		if (tier.priority < 0) {
+			throw new Error(`Invalid tier priority: ${tier.priority}. Priorities must be non-negative.`);
+		}
+		if (priorities.has(tier.priority)) {
+			throw new Error(`Duplicate tier priority: ${tier.priority}. Each tier must have a unique priority.`);
+		}
+		priorities.add(tier.priority);
+	}
+
+	// Sort tiers by priority (ascending) to ensure correct allocation order
+	const sortedTiers = [...tiers].sort((a, b) => a.priority - b.priority);
+
+	// Combine all shares for the top-level shares field
+	const allShares: Record<string, number> = {};
+	for (const tier of sortedTiers) {
+		for (const [recipientId, share] of Object.entries(tier.shares)) {
+			// If a recipient appears in multiple tiers, use the highest priority tier's share
+			if (!(recipientId in allShares)) {
+				allShares[recipientId] = share;
+			}
+		}
+	}
+
+	return {
+		shares: allShares,
+		method: 'multi-tier',
+		tiers: sortedTiers,
+		metadata: {
+			timestamp: Date.now(),
+			tierCount: tiers.length
+		}
+	};
+}
+
+
+/**
  * Calculate Collective Recognition Distribution
  * 
  * Calculates shares based on collective recognition within a member set.
@@ -384,43 +468,43 @@ export function calculateCollectiveRecognitionDistribution(
 	const shares: Record<string, number> = {};
 	const mutualRecognitionMatrix: Record<string, Record<string, number>> = {};
 	const memberRecognitionSums: Record<string, number> = {};
-	
+
 	// Convert map to object for mutualFulfillment function
 	const nodesMap = Object.fromEntries(memberTrees);
-	
+
 	// Calculate total mutual recognition pool and build pairwise matrix
 	let totalPool = 0;
-	
+
 	// Calculate sum of mutual recognitions for each member
 	for (const memberId of memberSet) {
 		const memberTree = memberTrees.get(memberId);
 		mutualRecognitionMatrix[memberId] = {};
-		
+
 		if (!memberTree) {
 			shares[memberId] = 0;
 			memberRecognitionSums[memberId] = 0;
 			continue;
 		}
-		
+
 		let memberSum = 0;
 		for (const otherId of memberSet) {
 			if (otherId === memberId) continue;
-			
+
 			const otherTree = memberTrees.get(otherId);
 			if (!otherTree) continue;
-			
+
 			const mutualRec = mutualFulfillment(memberTree, otherTree, nodesMap);
-			
+
 			// Store in pairwise matrix for verification
 			mutualRecognitionMatrix[memberId][otherId] = mutualRec;
-			
+
 			memberSum += mutualRec;
 		}
-		
+
 		memberRecognitionSums[memberId] = memberSum;
 		totalPool += memberSum;
 	}
-	
+
 	// Normalize to shares
 	if (totalPool === 0) {
 		// Equal shares only among members WITH trees
@@ -436,7 +520,7 @@ export function calculateCollectiveRecognitionDistribution(
 			shares[memberId] = memberSum / totalPool;
 		}
 	}
-	
+
 	return {
 		shares,
 		method: 'collective-recognition',

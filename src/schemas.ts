@@ -542,6 +542,36 @@ export const MultiDimensionalDampingSchema = z.object({
 export type MultiDimensionalDamping = z.infer<typeof MultiDimensionalDampingSchema>;
 
 // ═══════════════════════════════════════════════════════════════════
+// N-TIER DISTRIBUTION SUPPORT
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Tier Definition for N-Tier Distributions
+ * 
+ * Enables arbitrary number of allocation tiers with configurable priority ordering.
+ * Lower priority numbers are allocated first (priority 0 = highest priority).
+ * 
+ * Example:
+ * [
+ *   { priority: 0, shares: { alice: 0.6, bob: 0.4 }, label: 'mutual-recognition' },
+ *   { priority: 1, shares: { carol: 0.7, dave: 0.3 }, label: 'non-mutual-recognition' },
+ *   { priority: 2, shares: { eve: 1.0 }, label: 'fallback' }
+ * ]
+ */
+export const TierDefinitionSchema = z.object({
+	/** Priority determines allocation order (lower = higher priority, allocated first) */
+	priority: z.number().int().nonnegative(),
+	
+	/** Recipient shares within this tier (normalized to sum ≤ 1.0) */
+	shares: z.record(z.string(), z.number().nonnegative()),
+	
+	/** Optional label for this tier (e.g., 'mutual-recognition', 'community-members') */
+	label: z.string().optional()
+});
+
+export type TierDefinition = z.infer<typeof TierDefinitionSchema>;
+
+// ═══════════════════════════════════════════════════════════════════
 // SLOT ALLOCATION RECORD (Must be defined before Commitment)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -563,7 +593,9 @@ export const SlotAllocationRecordSchema = z.object({
 	// Compatibility
 	time_compatible: z.boolean(),
 	location_compatible: z.boolean(),
-	tier: z.enum(['mutual', 'non-mutual'])
+	// Tier identification: numeric priority (new) or string label (legacy)
+	// Prefer numeric priority for new code, supports string labels for backward compatibility
+	tier: z.union([z.number().int().nonnegative(), z.string()])
 });
 
 export type SlotAllocationRecord = z.infer<typeof SlotAllocationRecordSchema>;

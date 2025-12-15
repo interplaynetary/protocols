@@ -90,19 +90,19 @@ import {
 export interface SpaceTimeIndex {
 	/** Type-based index: need_type_id -> Set<pubKey> */
 	byType: Map<string, Set<string>>;
-	
+
 	/** Location-based index: location_bucket -> Set<pubKey> */
 	byLocation: Map<string, Set<string>>;
-	
+
 	/** Time-based index: time_bucket -> Set<pubKey> */
 	byTime: Map<string, Set<string>>;
-	
+
 	/** Composite index: "type|location" -> Set<pubKey> */
 	byTypeAndLocation: Map<string, Set<string>>;
-	
+
 	/** Composite index: "type|time" -> Set<pubKey> */
 	byTypeAndTime: Map<string, Set<string>>;
-	
+
 	/** Full composite: "type|location|time" -> Set<pubKey> */
 	byAll: Map<string, Set<string>>;
 }
@@ -117,16 +117,16 @@ export interface SpaceTimeIndex {
 export interface SystemStateSnapshot {
 	/** Everyone's needs by type: { alice: { food: 40 }, bob: { tutoring: 10 } } */
 	needsByPersonAndType: Record<string, Record<string, number>>;
-	
+
 	/** Everyone's capacity by type: { kitchen: { food: 100 }, teacher: { tutoring: 20 } } */
 	capacityByPersonAndType: Record<string, Record<string, number>>;
-	
+
 	/** When this snapshot was taken */
 	timestamp: number;
-	
+
 	/** Which iteration (how many times have we allocated?) */
 	iteration: number;
-	
+
 	/** ITC stamp for causal consistency */
 	itcStamp: ITCStampType;
 }
@@ -148,7 +148,7 @@ export type ConvergenceSummary = ZodConvergenceSummary;
 export interface DampingState {
 	/** Over-allocation history per type: { food: [0.2, 0.15, 0.1] } */
 	overAllocationHistory: Record<string, number[]>;
-	
+
 	/** Current damping factors per type: { food: 0.8, tutoring: 1.0 } */
 	dampingFactors: Record<string, number>;
 }
@@ -186,7 +186,7 @@ function _buildSystemState(
 ): SystemStateSnapshot {
 	const needsByPersonAndType: Record<string, Record<string, number>> = {};
 	const capacityByPersonAndType: Record<string, Record<string, number>> = {};
-	
+
 	// Aggregate needs by person and type
 	for (const [pubKey, commitment] of Object.entries(commitments)) {
 		if (commitment.need_slots && commitment.need_slots.length > 0) {
@@ -197,7 +197,7 @@ function _buildSystemState(
 			}
 			needsByPersonAndType[pubKey] = needsByType;
 		}
-		
+
 		// Aggregate capacity by person and type
 		if (commitment.capacity_slots && commitment.capacity_slots.length > 0) {
 			const capacityByType: Record<string, number> = {};
@@ -208,7 +208,7 @@ function _buildSystemState(
 			capacityByPersonAndType[pubKey] = capacityByType;
 		}
 	}
-	
+
 	return {
 		needsByPersonAndType,
 		capacityByPersonAndType,
@@ -230,7 +230,7 @@ export const buildSystemState = createMemoCacheWithKey(
 			iteration: previousState ? previousState.iteration + 1 : 0
 		};
 	},
-	(commitments, previousState) => 
+	(commitments, previousState) =>
 		`${hashObject(commitments)}:${previousState ? `${previousState.iteration}:${hashObject(previousState.needsByPersonAndType)}:${hashObject(previousState.capacityByPersonAndType)}` : 'null'}`,
 	20 // Cache up to 20 system state builds
 );
@@ -245,13 +245,13 @@ export const buildSystemState = createMemoCacheWithKey(
  */
 export function computeTotalNeedMagnitude(state: SystemStateSnapshot): number {
 	let sumSquares = 0;
-	
+
 	for (const needsByType of Object.values(state.needsByPersonAndType)) {
 		for (const need of Object.values(needsByType)) {
 			sumSquares += need ** 2;
 		}
 	}
-	
+
 	return Math.sqrt(sumSquares);
 }
 
@@ -281,17 +281,17 @@ export function computeContractionRate(
 export function computePercentNeedsMet(state: SystemStateSnapshot): number {
 	let totalPeople = 0;
 	let satisfiedPeople = 0;
-	
+
 	for (const needsByType of Object.values(state.needsByPersonAndType)) {
 		totalPeople++;
-		
+
 		// Check if all their needs are near zero
 		const allNeedsMet = Object.values(needsByType).every(need => need < 0.001);
 		if (allNeedsMet) {
 			satisfiedPeople++;
 		}
 	}
-	
+
 	if (totalPeople === 0) return 100;
 	return (satisfiedPeople / totalPeople) * 100;
 }
@@ -336,10 +336,10 @@ export function estimateIterationsToConvergence(
 	if (contractionRate >= 1) return null; // Not converging
 	if (contractionRate <= 0) return 0; // Already there
 	if (currentMagnitude < 0.001) return 0; // Already there
-	
+
 	const targetMagnitude = 0.001;
 	const iterations = Math.log(targetMagnitude / currentMagnitude) / Math.log(contractionRate);
-	
+
 	return Math.max(0, Math.ceil(iterations));
 }
 
@@ -348,7 +348,7 @@ export function estimateIterationsToConvergence(
  */
 export function computeMaxPersonNeed(state: SystemStateSnapshot): number {
 	let maxNeed = 0;
-	
+
 	for (const needsByType of Object.values(state.needsByPersonAndType)) {
 		let personNeedSquared = 0;
 		for (const need of Object.values(needsByType)) {
@@ -357,7 +357,7 @@ export function computeMaxPersonNeed(state: SystemStateSnapshot): number {
 		const personNeed = Math.sqrt(personNeedSquared);
 		maxNeed = Math.max(maxNeed, personNeed);
 	}
-	
+
 	return maxNeed;
 }
 
@@ -367,7 +367,7 @@ export function computeMaxPersonNeed(state: SystemStateSnapshot): number {
  */
 export function computeNeedVariance(state: SystemStateSnapshot): number {
 	const personNeeds: number[] = [];
-	
+
 	for (const needsByType of Object.values(state.needsByPersonAndType)) {
 		let personNeedSquared = 0;
 		for (const need of Object.values(needsByType)) {
@@ -375,12 +375,12 @@ export function computeNeedVariance(state: SystemStateSnapshot): number {
 		}
 		personNeeds.push(Math.sqrt(personNeedSquared));
 	}
-	
+
 	if (personNeeds.length === 0) return 0;
-	
+
 	const mean = personNeeds.reduce((sum, need) => sum + need, 0) / personNeeds.length;
 	const variance = personNeeds.reduce((sum, need) => sum + (need - mean) ** 2, 0) / personNeeds.length;
-	
+
 	return variance;
 }
 
@@ -392,30 +392,30 @@ export function computePeopleStuck(
 	previousState: SystemStateSnapshot | null
 ): number {
 	if (!previousState) return 0;
-	
+
 	let stuckCount = 0;
 	const epsilon = 0.001;
-	
+
 	for (const [person, currentNeeds] of Object.entries(currentState.needsByPersonAndType)) {
 		const previousNeeds = previousState.needsByPersonAndType[person];
 		if (!previousNeeds) continue;
-		
+
 		let currentTotal = 0;
 		let previousTotal = 0;
-		
+
 		for (const [type, need] of Object.entries(currentNeeds)) {
 			currentTotal += need ** 2;
 			previousTotal += (previousNeeds[type] || 0) ** 2;
 		}
-		
+
 		currentTotal = Math.sqrt(currentTotal);
 		previousTotal = Math.sqrt(previousTotal);
-		
+
 		if (Math.abs(currentTotal - previousTotal) < epsilon && currentTotal > epsilon) {
 			stuckCount++;
 		}
 	}
-	
+
 	return stuckCount;
 }
 
@@ -428,24 +428,24 @@ export function computeConvergenceSummary(
 	iterationStartTime: number
 ): ConvergenceSummary {
 	const currentMagnitude = computeTotalNeedMagnitude(currentState);
-	const previousMagnitude = previousState 
+	const previousMagnitude = previousState
 		? computeTotalNeedMagnitude(previousState)
 		: currentMagnitude * 2;
-	
+
 	const contractionRate = computeContractionRate(currentMagnitude, previousMagnitude);
 	const isConverged = currentMagnitude < 0.001;
 	const percentNeedsMet = computePercentNeedsMet(currentState);
 	const percentNeedReduction = computePercentNeedReduction(currentMagnitude, previousMagnitude);
 	const universalSatisfaction = checkUniversalSatisfaction(currentState);
 	const iterationsToConvergence = estimateIterationsToConvergence(currentMagnitude, contractionRate);
-	
+
 	const maxPersonNeed = computeMaxPersonNeed(currentState);
 	const needVariance = computeNeedVariance(currentState);
 	const peopleStuck = computePeopleStuck(currentState, previousState);
-	
+
 	const now = Date.now();
 	const responseLatency = now - iterationStartTime;
-	
+
 	return {
 		totalNeedMagnitude: currentMagnitude,
 		previousNeedMagnitude: previousMagnitude,
@@ -480,18 +480,18 @@ function _computeDampingFactors(
 	history: Record<string, Array<{ need_type_id: string; overAllocation: number; timestamp: number }>>
 ): Record<string, number> {
 	const factors: Record<string, number> = {};
-	
+
 	for (const [typeId, hist] of Object.entries(history)) {
 		if (hist.length < 3) {
 			factors[typeId] = 0.8; // Medium speed by default
 			continue;
 		}
-		
+
 		// Check last 3 entries for oscillation (extract overAllocation values)
 		const recent = hist.slice(-3).map(entry => entry.overAllocation);
 		const upDownUp = recent[0] < recent[1] && recent[1] > recent[2];
 		const downUpDown = recent[0] > recent[1] && recent[1] < recent[2];
-		
+
 		if (upDownUp || downUpDown) {
 			factors[typeId] = 0.5; // Slow down (oscillation detected)
 		} else {
@@ -499,7 +499,7 @@ function _computeDampingFactors(
 			factors[typeId] = isSmooth ? 1.0 : 0.8;
 		}
 	}
-	
+
 	return factors;
 }
 
@@ -527,25 +527,25 @@ export function updateOverAllocationHistory(
 ): Record<string, Array<{ need_type_id: string; overAllocation: number; timestamp: number }>> {
 	const newHistory = { ...history };
 	const timestamp = Date.now();
-	
+
 	for (const [typeId, receivedAmount] of Object.entries(received)) {
 		const need = needs[typeId] || 0;
 		const overAllocation = Math.max(0, receivedAmount - need);
-		
+
 		if (!newHistory[typeId]) {
 			newHistory[typeId] = [];
 		}
-		
+
 		// ✅ Create structured entry per PerTypeDampingHistoryEntrySchema
 		const entry = {
 			need_type_id: typeId,
 			overAllocation,
 			timestamp
 		};
-		
+
 		newHistory[typeId] = [...newHistory[typeId], entry].slice(-10); // Keep last 10
 	}
-	
+
 	return newHistory;
 }
 
@@ -569,17 +569,17 @@ export function applyDivisibilityConstraints(
 	const PERCENTAGE_EPSILON = 0.0001; // Tolerance for floating-point percentage comparisons
 	const maxNatural = capacitySlot.max_natural_div || 1;
 	const minPercent = capacitySlot.min_allocation_percentage || 0.0;
-	
+
 	// 1. Apply percentage constraint (prevent over-fragmentation)
 	// If this recipient's share is below the minimum threshold, reject it
 	if (minPercent > PERCENTAGE_EPSILON && sharePercentage < minPercent - PERCENTAGE_EPSILON) {
 		return 0;
 	}
-	
+
 	// 2. Apply natural divisibility constraint (round to whole units)
 	// e.g., if max_natural_div=1 (whole rooms), 2.7 becomes 2
 	const naturalConstrained = Math.floor(rawQuantity / maxNatural) * maxNatural;
-	
+
 	return naturalConstrained;
 }
 
@@ -597,20 +597,20 @@ export function meetsMinimumAllocation(
 	const PERCENTAGE_EPSILON = 0.0001; // Tolerance for floating-point percentage comparisons
 	const maxNatural = capacitySlot.max_natural_div || 1;
 	const minPercent = capacitySlot.min_allocation_percentage || 0.0;
-	
+
 	// Must be at least one natural unit
 	if (allocation < maxNatural) return false;
-	
+
 	// Must meet minimum percentage threshold
 	// This ensures we don't fragment capacity beyond the provider's preference
 	const sharePercentage = allocation / capacitySlot.quantity;
-	
+
 	// If min_allocation_percentage is set, enforce it as the threshold
 	// Otherwise, accept any allocation ≥ 1 natural unit
 	if (minPercent > PERCENTAGE_EPSILON) {
 		return sharePercentage >= minPercent - PERCENTAGE_EPSILON;
 	}
-	
+
 	return allocation >= maxNatural;
 }
 
@@ -657,27 +657,27 @@ export function redistributeRemainders(
 	// Calculate leftover capacity (must be at least one natural unit)
 	const leftoverCapacity = totalCapacity - capacityUsed;
 	const unitsToDistribute = Math.floor(leftoverCapacity / maxNatural);
-	
+
 	if (unitsToDistribute < 1) {
 		return capacityUsed; // No whole units to redistribute
 	}
-	
+
 	// Sort recipients by remainder size (descending)
 	const recipientsByRemainder = Array.from(remainders.entries())
 		.filter(([_, remainder]) => remainder > 0)
 		.sort((a, b) => b[1] - a[1]); // Largest remainder first
-	
+
 	let unitsDistributed = 0;
-	
+
 	// Give units to recipients with largest remainders
 	for (const [recipientPub, remainder] of recipientsByRemainder) {
 		if (unitsDistributed >= unitsToDistribute) break;
-		
+
 		// Find this recipient's allocation records
 		const recipientAllocations = allocations.filter(a => a.recipient_pubkey === recipientPub);
-		
+
 		if (recipientAllocations.length === 0) continue;
-		
+
 		// Count how many units this recipient should get
 		// (They get at least 1, but might get more if we have many leftover units)
 		const recipientUnits = Math.min(
@@ -685,7 +685,7 @@ export function redistributeRemainders(
 			unitsToDistribute - unitsDistributed
 		);
 		const actualUnits = Math.max(1, recipientUnits);
-		
+
 		// Distribute units proportionally across recipient's slots
 		if (recipientAllocations.length === 1) {
 			// Simple case: only one slot
@@ -693,79 +693,79 @@ export function redistributeRemainders(
 		} else {
 			// Multiple slots: distribute proportionally using Largest Remainder Method again!
 			const totalAllocated = recipientAllocations.reduce((sum, a) => sum + a.quantity, 0);
-			
+
 			// Calculate ideal fractional allocation per slot
 			const slotRemainders: Array<{ alloc: SlotAllocationRecord; remainder: number; ideal: number }> = [];
 			let integerUnitsDistributed = 0;
-			
+
 			for (const alloc of recipientAllocations) {
 				const proportion = alloc.quantity / totalAllocated;
 				const idealUnits = actualUnits * proportion;
 				const integerUnits = Math.floor(idealUnits);
 				const remainderFraction = idealUnits - integerUnits;
-				
+
 				// Give integer part immediately
 				alloc.quantity += integerUnits * maxNatural;
 				integerUnitsDistributed += integerUnits;
-				
+
 				slotRemainders.push({ alloc, remainder: remainderFraction, ideal: idealUnits });
 			}
-			
+
 			// Distribute remaining units by largest remainder
 			const leftoverUnits = actualUnits - integerUnitsDistributed;
 			if (leftoverUnits > 0) {
 				slotRemainders.sort((a, b) => b.remainder - a.remainder);
-				
+
 				for (let i = 0; i < leftoverUnits && i < slotRemainders.length; i++) {
 					slotRemainders[i].alloc.quantity += maxNatural;
 				}
 			}
 		}
-		
+
 		unitsDistributed += actualUnits;
-		
+
 		console.log(
 			`[REMAINDER-REDISTRIBUTION] Gave ${actualUnits * maxNatural} unit(s) to ${recipientPub} ` +
 			`across ${recipientAllocations.length} slot(s) (remainder: ${remainder.toFixed(3)})`
 		);
 	}
-	
+
 	// If we still have leftover capacity but ran out of recipients with remainders,
 	// distribute remaining capacity proportionally by recognition shares
 	if (unitsDistributed < unitsToDistribute && allocations.length > 0) {
 		const remainingUnits = unitsToDistribute - unitsDistributed;
-		
+
 		console.log(
 			`[REMAINDER-REDISTRIBUTION] Still have ${remainingUnits * maxNatural} units left ` +
 			`after exhausting remainders. Distributing by allocation proportion...`
 		);
-		
+
 		// Calculate total allocated (as proxy for recognition share)
 		const recipientTotals = new Map<string, number>();
 		for (const alloc of allocations) {
 			const current = recipientTotals.get(alloc.recipient_pubkey) || 0;
 			recipientTotals.set(alloc.recipient_pubkey, current + alloc.quantity);
 		}
-		
+
 		const totalAllocated = Array.from(recipientTotals.values()).reduce((sum, val) => sum + val, 0);
-		
+
 		// Sort recipients by their allocation size (proportional to recognition)
 		const recipientsByAllocation = Array.from(recipientTotals.entries())
 			.sort((a, b) => b[1] - a[1]); // Largest allocation first
-		
+
 		// Distribute remaining units proportionally using Largest Remainder Method
 		const recipientShares: Array<{ pubKey: string; ideal: number; integer: number; remainder: number }> = [];
 		let extraUnitsDistributed = 0;
-		
+
 		for (const [recipientPub, allocated] of recipientsByAllocation) {
 			const proportion = allocated / totalAllocated;
 			const idealUnits = remainingUnits * proportion;
 			const integerUnits = Math.floor(idealUnits);
 			const remainderFraction = idealUnits - integerUnits;
-			
+
 			// Find this recipient's allocations
 			const recipientAllocations = allocations.filter(a => a.recipient_pubkey === recipientPub);
-			
+
 			if (recipientAllocations.length > 0 && integerUnits > 0) {
 				// Distribute integer part proportionally across slots
 				if (recipientAllocations.length === 1) {
@@ -781,17 +781,17 @@ export function redistributeRemainders(
 				}
 				extraUnitsDistributed += integerUnits;
 			}
-			
+
 			if (remainderFraction > 0) {
 				recipientShares.push({ pubKey: recipientPub, ideal: idealUnits, integer: integerUnits, remainder: remainderFraction });
 			}
 		}
-		
+
 		// Distribute final fractional units by largest remainder
 		const leftoverExtraUnits = remainingUnits - extraUnitsDistributed;
 		if (leftoverExtraUnits > 0 && recipientShares.length > 0) {
 			recipientShares.sort((a, b) => b.remainder - a.remainder);
-			
+
 			for (let i = 0; i < leftoverExtraUnits && i < recipientShares.length; i++) {
 				const recipientAllocations = allocations.filter(a => a.recipient_pubkey === recipientShares[i].pubKey);
 				if (recipientAllocations.length > 0) {
@@ -802,21 +802,21 @@ export function redistributeRemainders(
 				}
 			}
 		}
-		
+
 		unitsDistributed += extraUnitsDistributed;
-		
+
 		console.log(
 			`[REMAINDER-REDISTRIBUTION] Distributed ${extraUnitsDistributed * maxNatural} additional units ` +
 			`based on recognition-proportional allocation`
 		);
 	}
-	
+
 	const redistributedCapacity = unitsDistributed * maxNatural;
 	console.log(
 		`[REMAINDER-REDISTRIBUTION] Total distributed: ${redistributedCapacity} leftover capacity ` +
 		`across ${Math.ceil(unitsDistributed / maxNatural)} recipient grants`
 	);
-	
+
 	return capacityUsed + redistributedCapacity;
 }
 
@@ -835,36 +835,36 @@ function getCandidateRecipients(
 		// No index provided - will do full scan
 		return new Set();
 	}
-	
+
 	const typeId = capacitySlot.need_type_id;
 	const locationKey = getLocationBucketKey(capacitySlot);
 	const timeKey = getTimeBucketKey(capacitySlot);
-	
+
 	// Strategy: Use most specific index available
-	
+
 	// 1. Try full composite (most specific)
 	const fullKey = `${typeId}|${locationKey}|${timeKey}`;
 	if (needsIndex.byAll.has(fullKey)) {
 		return needsIndex.byAll.get(fullKey)!;
 	}
-	
+
 	// 2. Try type + location
 	const typeLocKey = `${typeId}|${locationKey}`;
 	if (needsIndex.byTypeAndLocation.has(typeLocKey)) {
 		return needsIndex.byTypeAndLocation.get(typeLocKey)!;
 	}
-	
+
 	// 3. Try type + time
 	const typeTimeKey = `${typeId}|${timeKey}`;
 	if (needsIndex.byTypeAndTime.has(typeTimeKey)) {
 		return needsIndex.byTypeAndTime.get(typeTimeKey)!;
 	}
-	
+
 	// 4. Fall back to type only
 	if (needsIndex.byType.has(typeId)) {
 		return needsIndex.byType.get(typeId)!;
 	}
-	
+
 	// 5. No candidates found
 	return new Set();
 }
@@ -886,63 +886,63 @@ function _findCompatibleRecipients(
 ): Map<string, NeedSlot[]> {
 	const compatible = new Map<string, NeedSlot[]>();
 	const typeId = capacitySlot.need_type_id;
-	
-	console.log(`[FIND-COMPATIBLE] Searching for recipients for capacity slot ${capacitySlot.id.slice(0,20)}... (type: ${typeId})`);
-	
+
+	console.log(`[FIND-COMPATIBLE] Searching for recipients for capacity slot ${capacitySlot.id.slice(0, 20)}... (type: ${typeId})`);
+
 	// Get candidate recipients from index (O(k)) or full scan (O(N))
 	const candidates = getCandidateRecipients(capacitySlot, needsIndex);
-	
+
 	// If no index provided, fall back to full scan
-	const recipientsToCheck = candidates.size > 0 
+	const recipientsToCheck = candidates.size > 0
 		? Array.from(candidates)
 		: Object.keys(allCommitments);
-	
+
 	console.log(`[FIND-COMPATIBLE] Checking ${recipientsToCheck.length} potential recipients`);
-	
+
 	for (const recipientPub of recipientsToCheck) {
 		// NOTE: Self-allocation is ALLOWED! Self-care is valid care.
 		// Mutual recognition with yourself is valid recognition.
-		
+
 		const commitment = allCommitments[recipientPub];
 		if (!commitment?.need_slots) {
-			console.log(`[FIND-COMPATIBLE]   ${recipientPub.slice(0,20)}... - SKIP: no need slots`);
+			console.log(`[FIND-COMPATIBLE]   ${recipientPub.slice(0, 20)}... - SKIP: no need slots`);
 			continue;
 		}
-		
-		console.log(`[FIND-COMPATIBLE]   ${recipientPub.slice(0,20)}... - checking ${commitment.need_slots.length} need slots`);
-		
+
+		console.log(`[FIND-COMPATIBLE]   ${recipientPub.slice(0, 20)}... - checking ${commitment.need_slots.length} need slots`);
+
 		const compatibleSlots: NeedSlot[] = [];
 		for (const needSlot of commitment.need_slots) {
 			if (needSlot.need_type_id !== typeId) {
-				console.log(`[FIND-COMPATIBLE]     ${needSlot.id.slice(0,20)}... - SKIP: type mismatch (${needSlot.need_type_id} !== ${typeId})`);
+				console.log(`[FIND-COMPATIBLE]     ${needSlot.id.slice(0, 20)}... - SKIP: type mismatch (${needSlot.need_type_id} !== ${typeId})`);
 				continue;
 			}
-			
+
 			// Check slot compatibility (time, location, etc.)
 			const isCompatible = slotsCompatible(capacitySlot, needSlot);
-			console.log(`[FIND-COMPATIBLE]     ${needSlot.id.slice(0,20)}... - slotsCompatible: ${isCompatible}`);
+			console.log(`[FIND-COMPATIBLE]     ${needSlot.id.slice(0, 20)}... - slotsCompatible: ${isCompatible}`);
 			if (isCompatible) {
 				compatibleSlots.push(needSlot);
 			}
 		}
-		
+
 		if (compatibleSlots.length > 0) {
-			console.log(`[FIND-COMPATIBLE]   ✅ ${recipientPub.slice(0,20)}... - FOUND ${compatibleSlots.length} compatible slots`);
+			console.log(`[FIND-COMPATIBLE]   ✅ ${recipientPub.slice(0, 20)}... - FOUND ${compatibleSlots.length} compatible slots`);
 			compatible.set(recipientPub, compatibleSlots);
 		} else {
-			console.log(`[FIND-COMPATIBLE]   ❌ ${recipientPub.slice(0,20)}... - NO compatible slots`);
+			console.log(`[FIND-COMPATIBLE]   ❌ ${recipientPub.slice(0, 20)}... - NO compatible slots`);
 		}
 	}
-	
+
 	console.log(`[FIND-COMPATIBLE] Result: ${compatible.size} recipients with compatible needs`);
-	
+
 	return compatible;
 }
 
 // Memoized version of findCompatibleRecipients
 const findCompatibleRecipients = createMemoCacheWithKey(
 	_findCompatibleRecipients,
-	(capacitySlot, allCommitments, myPubKey, needsIndex) => 
+	(capacitySlot, allCommitments, myPubKey, needsIndex) =>
 		`${capacitySlot.id}:${hashObject(allCommitments)}:${myPubKey}:${needsIndex ? 'indexed' : 'full'}`,
 	50 // Cache up to 50 capacity slot lookups
 );
@@ -1021,33 +1021,33 @@ export function allocateWithDistribution(
 	const allocations: SlotAllocationRecord[] = [];
 	const slotDenominators: Record<string, { mutual: number; nonMutual: number; need_type_id: string }> = {};
 	const totalsByTypeAndRecipient: Record<string, Record<string, number>> = {};
-	
+
 	console.log(`[ALLOCATE-WITH-DISTRIBUTION] Starting allocation with ${distribution.method} distribution`);
 	console.log(`[ALLOCATE-WITH-DISTRIBUTION] Recipients:`, Object.keys(distribution.shares).length);
-	
+
 	// Process each capacity slot
 	for (const capacitySlot of myCapacitySlots) {
 		const typeId = capacitySlot.need_type_id;
 		const providersAvailableCapacity = capacitySlot.quantity;
-		
+
 		if (!totalsByTypeAndRecipient[typeId]) {
 			totalsByTypeAndRecipient[typeId] = {};
 		}
-		
+
 		// Find compatible recipients (using spatial/temporal index if provided)
 		const compatibleRecipients = findCompatibleRecipients(capacitySlot, allCommitments, myPubKey, needsIndex);
-		
+
 		if (compatibleRecipients.size === 0) continue;
-		
-		console.log(`[ALLOCATE-WITH-DISTRIBUTION] Slot ${capacitySlot.id.slice(0,20)}: ${compatibleRecipients.size} compatible recipients`);
-		
+
+		console.log(`[ALLOCATE-WITH-DISTRIBUTION] Slot ${capacitySlot.id.slice(0, 20)}: ${compatibleRecipients.size} compatible recipients`);
+
 		// ────────────────────────────────────────────────────────────
 		// SINGLE-PASS PROPORTIONAL ALLOCATION (DISTRIBUTION-BASED)
 		// ────────────────────────────────────────────────────────────
-		
+
 		const CAPACITY_EPSILON = 0.0001;
 		let capacityUsed = 0;
-		
+
 		// Build list of eligible recipients with distribution shares
 		const eligibleRecipients: Array<{
 			pubKey: string;
@@ -1055,30 +1055,48 @@ export function allocateWithDistribution(
 			remainingNeed: number;
 			distributionShare: number;
 			needSlots: NeedSlot[];
-			tier: 'mutual' | 'non-mutual';
+			tier: number | string; // Numeric priority or string label for backward compat
 		}> = [];
-		
-		// Determine tiers from distribution metadata
-		const tier1Recipients = new Map<string, number>(); // recipientId -> share
-		const tier2Recipients = new Map<string, number>();
-		
-		if (distribution.tiers) {
-			// Two-tier distribution - use tier-specific shares
-			for (const recipientId in distribution.tiers.tier1) {
-				if (distribution.tiers.tier1[recipientId] > 0) {
-					tier1Recipients.set(recipientId, distribution.tiers.tier1[recipientId]);
+
+		// ────────────────────────────────────────────────────────────
+		// N-TIER DISTRIBUTION PROCESSING
+		// ────────────────────────────────────────────────────────────
+
+		// Extract tiers from distribution (supports N tiers with priority ordering)
+		// Map: recipientId -> { share, tierPriority, tierLabel }
+		const recipientTierInfo = new Map<string, { share: number; tierPriority: number; tierLabel?: string }>();
+
+		if (distribution.tiers && distribution.tiers.length > 0) {
+			// N-tier distribution - extract from tier array
+			for (const tier of distribution.tiers) {
+				for (const [recipientId, share] of Object.entries(tier.shares)) {
+					if (share > 0) {
+						// If recipient appears in multiple tiers, use highest priority (lowest number)
+						const existing = recipientTierInfo.get(recipientId);
+						if (!existing || tier.priority < existing.tierPriority) {
+							recipientTierInfo.set(recipientId, {
+								share,
+								tierPriority: tier.priority,
+								tierLabel: tier.label
+							});
+						}
+					}
 				}
 			}
-			for (const recipientId in distribution.tiers.tier2) {
-				if (distribution.tiers.tier2[recipientId] > 0) {
-					tier2Recipients.set(recipientId, distribution.tiers.tier2[recipientId]);
+		} else {
+			// No tier info - use combined shares (single-tier)
+			for (const [recipientId, share] of Object.entries(distribution.shares)) {
+				if (share > 0) {
+					recipientTierInfo.set(recipientId, {
+						share,
+						tierPriority: 0,
+						tierLabel: 'default'
+					});
 				}
 			}
-			
 		}
-		
+
 		// Build eligible recipients with tier-aware shares
-		// For two-tier: allocate Tier 1 first, then Tier 2 gets remainder
 		for (const [recipientPub, needSlots] of compatibleRecipients.entries()) {
 			// ✅ Use active (damped) needs if provided, otherwise use declared needs
 			let totalNeed = 0;
@@ -1092,28 +1110,20 @@ export function allocateWithDistribution(
 					totalNeed += slot.quantity;
 				}
 			}
-			
-			// Check if in tier1 first (priority)
-			if (tier1Recipients.has(recipientPub)) {
+
+			// Check if recipient has a tier assignment
+			const tierInfo = recipientTierInfo.get(recipientPub);
+			if (tierInfo) {
 				eligibleRecipients.push({
 					pubKey: recipientPub,
 					totalNeed,
 					remainingNeed: totalNeed,
-					distributionShare: tier1Recipients.get(recipientPub)!,
+					distributionShare: tierInfo.share,
 					needSlots,
-					tier: 'mutual'
-				});
-			} else if (tier2Recipients.has(recipientPub)) {
-				eligibleRecipients.push({
-					pubKey: recipientPub,
-					totalNeed,
-					remainingNeed: totalNeed,
-					distributionShare: tier2Recipients.get(recipientPub)!,
-					needSlots,
-					tier: 'non-mutual'
+					tier: tierInfo.tierPriority // Use numeric priority
 				});
 			} else {
-				// No tier info - use combined share
+				// Recipient not in any tier - use combined share if available
 				const share = distribution.shares[recipientPub] || 0;
 				if (share > 0) {
 					eligibleRecipients.push({
@@ -1122,69 +1132,71 @@ export function allocateWithDistribution(
 						remainingNeed: totalNeed,
 						distributionShare: share,
 						needSlots,
-						tier: 'mutual'
+						tier: 0 // Default to highest priority
 					});
 				}
 			}
 		}
-		
-		// Sort by tier (mutual first) to ensure Tier 1 gets priority
+
+		// Sort by tier priority (ascending: lower number = higher priority, allocated first)
 		eligibleRecipients.sort((a, b) => {
-			if (a.tier === 'mutual' && b.tier === 'non-mutual') return -1;
-			if (a.tier === 'non-mutual' && b.tier === 'mutual') return 1;
-			return 0;
+			// Handle both numeric and string tier values for backward compatibility
+			const aPriority = typeof a.tier === 'number' ? a.tier : (a.tier === 'mutual' ? 0 : 1);
+			const bPriority = typeof b.tier === 'number' ? b.tier : (b.tier === 'mutual' ? 0 : 1);
+			return aPriority - bPriority;
 		});
-		
+
 		if (eligibleRecipients.length === 0) continue;
-		
+
 		// ═══════════════════════════════════════════════════════════════
 		// MULTI-PASS PROPORTIONAL ALLOCATION
 		// ═══════════════════════════════════════════════════════════════
-		
+
 		let unsatisfiedRecipients = [...eligibleRecipients];
 		let remainingCapacity = providersAvailableCapacity;
 		let passCount = 0;
 		const maxPasses = 10;
-		
+
 		console.log(`[ALLOCATE-WITH-DISTRIBUTION] Starting multi-pass: capacity=${remainingCapacity}, recipients=${unsatisfiedRecipients.length}`);
-		
+
 		while (remainingCapacity > CAPACITY_EPSILON && unsatisfiedRecipients.length > 0 && passCount < maxPasses) {
 			passCount++;
 			console.log(`[ALLOCATE-WITH-DISTRIBUTION] Pass ${passCount}: capacity=${remainingCapacity.toFixed(2)}, unsatisfied=${unsatisfiedRecipients.length}`);
-			
+
 			// TWO-TIER LOGIC: Only allocate to current tier until exhausted
-			const currentTier = unsatisfiedRecipients[0]?.tier || 'mutual';
+			// Use nullish coalescing (??) instead of || to handle tier 0 correctly
+			const currentTier = unsatisfiedRecipients[0]?.tier ?? 0;
 			const currentTierRecipients = unsatisfiedRecipients.filter(r => r.tier === currentTier);
-			
+
 			console.log(`[ALLOCATE-WITH-DISTRIBUTION]   Current tier: ${currentTier}, recipients: ${currentTierRecipients.length}`);
-			
+
 			// PHASE 1: Calculate denominator with only current tier unsatisfied recipients
 			let denominator = currentTierRecipients.reduce(
 				(sum, r) => sum + r.distributionShare,
 				0
 			);
-			
+
 			if (denominator < CAPACITY_EPSILON) break;
-			
+
 			// Safety check for tiny denominators
 			const MIN_RELATIVE_DENOMINATOR = 0.001;
 			const minSafeDenominator = remainingCapacity * MIN_RELATIVE_DENOMINATOR;
 			if (denominator < minSafeDenominator) {
 				denominator = minSafeDenominator;
 			}
-			
+
 			// PHASE 2: Calculate ALL proportional allocations BEFORE capping (only current tier)
 			const proportionalAllocations = currentTierRecipients.map(recipient => {
-				const rawAllocation = remainingCapacity * 
+				const rawAllocation = remainingCapacity *
 					recipient.distributionShare / denominator;
-				
+
 				// Apply compliance filter if present
 				let filterLimit = Infinity;
 				if (recipientFilters && recipientFilters.has(recipient.pubKey)) {
 					const filter = recipientFilters.get(recipient.pubKey)!;
 					const currentTotal = totalsByTypeAndRecipient[typeId]?.[recipient.pubKey] || 0;
 					const recipientCommitment = allCommitments[recipient.pubKey];
-					
+
 					filterLimit = evaluateComplianceFilter(filter, {
 						pubKey: recipient.pubKey,
 						currentTotal,
@@ -1193,54 +1205,54 @@ export function allocateWithDistribution(
 						mutualRecognition: 0, // Not used in distribution-based allocation
 						attributes: (recipientCommitment as any)?.attributes || {}
 					});
-					
+
 					filterLimit = Math.max(0, filterLimit - currentTotal);
 				}
-				
+
 				return {
 					recipient,
 					rawAllocation,
 					cappedAllocation: Math.min(rawAllocation, recipient.remainingNeed, filterLimit)
 				};
 			});
-			
+
 			// PHASE 3: Apply allocations and track satisfaction
 			let capacityUsedThisPass = 0;
 			const nowSatisfied: typeof unsatisfiedRecipients = [];
-			
+
 			for (const { recipient, rawAllocation, cappedAllocation } of proportionalAllocations) {
 				if (cappedAllocation <= CAPACITY_EPSILON) continue;
-				
+
 				// Calculate share percentage for divisibility checks
 				const recipientSharePercentage = cappedAllocation / providersAvailableCapacity;
-				
+
 				// Apply divisibility constraints
 				const constrainedAllocation = applyDivisibilityConstraints(
 					cappedAllocation,
 					recipientSharePercentage,
 					capacitySlot
 				);
-				
+
 				// Check if allocation meets minimum threshold
 				if (!meetsMinimumAllocation(constrainedAllocation, capacitySlot)) {
 					continue;
 				}
-				
+
 				// Proportional distribution across need slots
 				const totalCompatibleNeed = recipient.needSlots.reduce((sum, slot) => sum + slot.quantity, 0);
 				let actuallyAllocated = 0;
-				
+
 				for (const needSlot of recipient.needSlots) {
 					const proportion = needSlot.quantity / totalCompatibleNeed;
 					let slotAllocation = Math.min(
 						needSlot.quantity,
 						constrainedAllocation * proportion
 					);
-					
+
 					// Apply natural unit rounding
 					const maxNaturalDiv = capacitySlot.max_natural_div || 1;
 					slotAllocation = Math.floor(slotAllocation / maxNaturalDiv) * maxNaturalDiv;
-					
+
 					if (slotAllocation > 0) {
 						allocations.push({
 							quantity: slotAllocation,
@@ -1252,33 +1264,33 @@ export function allocateWithDistribution(
 							tier: recipient.tier,
 							recipient_need_slot_id: needSlot.id
 						});
-						
+
 						actuallyAllocated += slotAllocation;
 					}
 				}
-				
+
 				// Update tracking
 				capacityUsedThisPass += actuallyAllocated;
 				capacityUsed += actuallyAllocated;
-				
+
 				if (!totalsByTypeAndRecipient[typeId][recipient.pubKey]) {
 					totalsByTypeAndRecipient[typeId][recipient.pubKey] = 0;
 				}
 				totalsByTypeAndRecipient[typeId][recipient.pubKey] += actuallyAllocated;
-				
+
 				// Update remaining need
 				recipient.remainingNeed -= actuallyAllocated;
-				
+
 				// Check if satisfied
 				if (recipient.remainingNeed <= CAPACITY_EPSILON) {
 					nowSatisfied.push(recipient);
 				}
 			}
-			
+
 			// Update capacity and recipients for next pass
 			remainingCapacity -= capacityUsedThisPass;
 			unsatisfiedRecipients = unsatisfiedRecipients.filter(r => !nowSatisfied.includes(r));
-			
+
 			// Exit if no progress made in current tier
 			if (nowSatisfied.length === 0 && capacityUsedThisPass < CAPACITY_EPSILON) {
 				// If we're stuck in current tier, move to next tier (if any)
@@ -1289,19 +1301,25 @@ export function allocateWithDistribution(
 				// Continue to next tier in next pass
 			}
 		}
-		
-		// Store denominator for tracking
+
+		// Store denominator for tracking (count recipients by tier)
+		const tierCounts = new Map<number, number>();
+		for (const recipient of eligibleRecipients) {
+			const tierPriority = typeof recipient.tier === 'number' ? recipient.tier : (recipient.tier === 'mutual' ? 0 : 1);
+			tierCounts.set(tierPriority, (tierCounts.get(tierPriority) || 0) + 1);
+		}
+
 		slotDenominators[capacitySlot.id] = {
-			mutual: tier1Recipients.size,
-			nonMutual: tier2Recipients.size,
+			mutual: tierCounts.get(0) || 0, // Tier 0 (highest priority)
+			nonMutual: tierCounts.get(1) || 0, // Tier 1 (second priority)
 			need_type_id: typeId
 		};
 	}
-	
+
 	const executionTime = Date.now() - iterationStartTime;
-	
+
 	console.log(`[ALLOCATE-WITH-DISTRIBUTION] Complete: ${allocations.length} allocations in ${executionTime}ms`);
-	
+
 	// Compute empty convergence (allocateWithDistribution doesn't track state)
 	const emptyConvergence = {
 		totalNeedMagnitude: 0,
@@ -1318,7 +1336,7 @@ export function allocateWithDistribution(
 		currentIteration: 0,
 		responseLatency: executionTime
 	};
-	
+
 	return {
 		allocations,
 		slotDenominators,
@@ -1356,71 +1374,71 @@ export function computeAllocations(
 	recipientFilters?: Map<string, ComplianceFilter>
 ): AllocationResult {
 	const iterationStartTime = Date.now();
-	
+
 	// ✅ PHASE 1: Extract dampening factors and compute active needs (README.md line 291)
 	// Formula: activeNeed = declaredNeed × dampingFactor
 	const activeNeedsByRecipient: Record<string, Record<string, number>> = {};
-	
+
 	console.log('[DAMPENING] Extracting dampening factors from commitments...');
-	
+
 	for (const [recipientPub, commitment] of Object.entries(allCommitments)) {
 		if (!commitment.need_slots || commitment.need_slots.length === 0) continue;
-		
+
 		const activeNeeds: Record<string, number> = {};
-		
+
 		// Get global damping factor (fallback)
 		const globalDamping = commitment.multi_dimensional_damping?.global_damping_factor || 1.0;
-		
+
 		// Get type-specific damping factors
 		const typeDampingFactors = commitment.multi_dimensional_damping?.damping_factors || {};
-		
+
 		// Apply dampening to each need slot
 		for (const needSlot of commitment.need_slots) {
 			const typeId = needSlot.need_type_id;
 			const declaredNeed = needSlot.quantity;
-			
+
 			// Type-specific takes precedence, fallback to global
 			const dampingFactor = typeDampingFactors[typeId] || globalDamping;
-			
+
 			// Apply dampening formula
 			const activeNeed = declaredNeed * dampingFactor;
-			
+
 			// Aggregate by type (in case of multiple slots of same type)
 			activeNeeds[typeId] = (activeNeeds[typeId] || 0) + activeNeed;
-			
+
 			// Log dampening when it's actually applied (factor < 1.0)
 			if (dampingFactor < 1.0) {
 				console.log(
-					`[DAMPENING] ${recipientPub.slice(0,20)}...[${typeId}]: ` +
+					`[DAMPENING] ${recipientPub.slice(0, 20)}...[${typeId}]: ` +
 					`declared=${declaredNeed.toFixed(2)}, damping=${dampingFactor.toFixed(2)}, ` +
 					`active=${activeNeed.toFixed(2)}`
 				);
 			}
 		}
-		
+
 		activeNeedsByRecipient[recipientPub] = activeNeeds;
 	}
-	
+
 	const recipientsWithDampening = Object.values(activeNeedsByRecipient)
 		.filter(needs => Object.values(needs).some((_, idx, arr) => {
 			const commitment = allCommitments[Object.keys(activeNeedsByRecipient)[idx]];
 			return (commitment?.multi_dimensional_damping?.global_damping_factor || 1.0) < 1.0;
 		})).length;
-	
+
 	console.log(
 		`[DAMPENING] Processed ${Object.keys(activeNeedsByRecipient).length} recipients, ` +
 		`${recipientsWithDampening} with dampening applied`
 	);
-	
+
 	// Calculate two-tier mutual recognition distribution manually
 	// We already have mutualRecognition computed, so build distribution directly
 	const tier1Shares: Record<string, number> = {};
 	const tier2Shares: Record<string, number> = {};
 	const allShares: Record<string, number> = {};
-	
+
 	let totalTier1Recognition = 0;
 	let totalTier2Recognition = 0;
-	
+
 	// Classify recipients into tiers based on mutual recognition
 	// Include self for self-allocation (time-shifting)
 	for (const [recipientId, mr] of Object.entries(mutualRecognition)) {
@@ -1437,7 +1455,7 @@ export function computeAllocations(
 			}
 		}
 	}
-	
+
 	// Normalize tier 1 shares
 	if (totalTier1Recognition > 0) {
 		for (const recipientId in tier1Shares) {
@@ -1446,7 +1464,7 @@ export function computeAllocations(
 			allShares[recipientId] = normalized;
 		}
 	}
-	
+
 	// Normalize tier 2 shares
 	if (totalTier2Recognition > 0) {
 		for (const recipientId in tier2Shares) {
@@ -1458,19 +1476,27 @@ export function computeAllocations(
 			}
 		}
 	}
-	
+
 	const distribution: DistributionResult = {
 		shares: allShares,
 		method: 'two-tier',
-		tiers: {
-			tier1: tier1Shares,
-			tier2: tier2Shares
-		},
+		tiers: [
+			{
+				priority: 0,
+				shares: tier1Shares,
+				label: 'mutual-recognition'
+			},
+			{
+				priority: 1,
+				shares: tier2Shares,
+				label: 'non-mutual-recognition'
+			}
+		],
 		metadata: {
 			timestamp: Date.now()
 		}
 	};
-	
+
 	// Delegate to generic allocation engine with active (damped) needs
 	const result = allocateWithDistribution(
 		myPubKey,
@@ -1481,14 +1507,14 @@ export function computeAllocations(
 		recipientFilters,
 		activeNeedsByRecipient  // ✅ Pass damped needs to allocation engine
 	);
-	
+
 	// Compute convergence metrics
 	const convergence = computeConvergenceSummary(
 		currentState,
 		previousState,
 		iterationStartTime
 	);
-	
+
 	return {
 		allocations: result.allocations,
 		slotDenominators: result.slotDenominators,
@@ -2111,12 +2137,12 @@ export function applyNeedUpdateLaw(
 	received: Record<string, number>
 ): Record<string, number> {
 	const nextNeeds: Record<string, number> = {};
-	
+
 	// Update existing needs
 	for (const [typeId, need] of Object.entries(currentNeeds)) {
 		const receivedAmount = received[typeId] || 0;
 		nextNeeds[typeId] = Math.max(0, need - receivedAmount);
 	}
-	
+
 	return nextNeeds;
 }
