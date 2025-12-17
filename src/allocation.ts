@@ -78,6 +78,13 @@ import {
 } from './itc.js';
 
 // ═══════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════
+
+/** Epsilon for capacity comparisons (prevents floating-point precision issues) */
+const CAPACITY_EPSILON = 0.0001;
+
+// ═══════════════════════════════════════════════════════════════════
 // SIMPLIFIED TYPES (Bridge between full schemas and algorithm needs)
 // ═══════════════════════════════════════════════════════════════════
 
