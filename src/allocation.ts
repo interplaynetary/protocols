@@ -617,6 +617,9 @@ export function meetsMinimumAllocation(
 /**
  * Redistribute remainder capacity using Largest Remainder Method
  * 
+ * ADAPTER PATTERN: This function adapts SlotAllocationRecord[] to work with
+ * the simpler redistributeRemainder() from allocation-targets.ts.
+ * 
  * When divisibility constraints cause rounding, we lose fractional capacity.
  * This function redistributes leftover units to recipients with largest remainders,
  * and distributes proportionally across each recipient's slots.
@@ -627,16 +630,6 @@ export function meetsMinimumAllocation(
  * If recipient has multiple slots, distribute proportionally:
  * - Slot A: 6 units (60%), Slot B: 4 units (40%)
  * - Gets 5 extra units → Slot A gets 3 (60% of 5), Slot B gets 2 (40% of 5)
- * 
- * **Complexity Analysis**:
- * - Time: O(r log r + r×s) where r = recipients with remainders, s = avg slots per recipient
- *   - Phase 1 (remainder-based): O(r log r) for sorting + O(r×s) for distribution
- *   - Phase 2 (recognition-based fallback): O(r log r) for sorting + O(r×s) for distribution
- *   - Overall: O(r log r + r×s) which is efficient for typical client-side values
- * - Space: O(r + s) for temporary arrays and maps
- * - **Client-Side Performance**: Acceptable with typical values (r < 100, s < 10)
- * 
- * **Future Optimization**: If allocation runs multiple times with same inputs, consider memoization.
  * 
  * @param allocations - Array of allocation records to potentially increase
  * @param remainders - Map of recipient -> remainder (fractional part lost to rounding)
@@ -654,170 +647,81 @@ export function redistributeRemainders(
 	maxNatural: number,
 	capacitySlot: AvailabilitySlot
 ): number {
-	// Calculate leftover capacity (must be at least one natural unit)
-	const leftoverCapacity = totalCapacity - capacityUsed;
-	const unitsToDistribute = Math.floor(leftoverCapacity / maxNatural);
-
-	if (unitsToDistribute < 1) {
-		return capacityUsed; // No whole units to redistribute
+	if (allocations.length === 0) {
+		return capacityUsed;
 	}
 
-	// Sort recipients by remainder size (descending)
-	const recipientsByRemainder = Array.from(remainders.entries())
-		.filter(([_, remainder]) => remainder > 0)
-		.sort((a, b) => b[1] - a[1]); // Largest remainder first
-
-	let unitsDistributed = 0;
-
-	// Give units to recipients with largest remainders
-	for (const [recipientPub, remainder] of recipientsByRemainder) {
-		if (unitsDistributed >= unitsToDistribute) break;
-
-		// Find this recipient's allocation records
-		const recipientAllocations = allocations.filter(a => a.recipient_pubkey === recipientPub);
-
-		if (recipientAllocations.length === 0) continue;
-
-		// Count how many units this recipient should get
-		// (They get at least 1, but might get more if we have many leftover units)
-		const recipientUnits = Math.min(
-			Math.floor(unitsToDistribute / recipientsByRemainder.length),
-			unitsToDistribute - unitsDistributed
-		);
-		const actualUnits = Math.max(1, recipientUnits);
-
-		// Distribute units proportionally across recipient's slots
-		if (recipientAllocations.length === 1) {
-			// Simple case: only one slot
-			recipientAllocations[0].quantity += actualUnits * maxNatural;
-		} else {
-			// Multiple slots: distribute proportionally using Largest Remainder Method again!
-			const totalAllocated = recipientAllocations.reduce((sum, a) => sum + a.quantity, 0);
-
-			// Calculate ideal fractional allocation per slot
-			const slotRemainders: Array<{ alloc: SlotAllocationRecord; remainder: number; ideal: number }> = [];
-			let integerUnitsDistributed = 0;
-
-			for (const alloc of recipientAllocations) {
-				const proportion = alloc.quantity / totalAllocated;
-				const idealUnits = actualUnits * proportion;
-				const integerUnits = Math.floor(idealUnits);
-				const remainderFraction = idealUnits - integerUnits;
-
-				// Give integer part immediately
-				alloc.quantity += integerUnits * maxNatural;
-				integerUnitsDistributed += integerUnits;
-
-				slotRemainders.push({ alloc, remainder: remainderFraction, ideal: idealUnits });
-			}
-
-			// Distribute remaining units by largest remainder
-			const leftoverUnits = actualUnits - integerUnitsDistributed;
-			if (leftoverUnits > 0) {
-				slotRemainders.sort((a, b) => b.remainder - a.remainder);
-
-				for (let i = 0; i < leftoverUnits && i < slotRemainders.length; i++) {
-					slotRemainders[i].alloc.quantity += maxNatural;
-				}
-			}
-		}
-
-		unitsDistributed += actualUnits;
-
-		console.log(
-			`[REMAINDER-REDISTRIBUTION] Gave ${actualUnits * maxNatural} unit(s) to ${recipientPub} ` +
-			`across ${recipientAllocations.length} slot(s) (remainder: ${remainder.toFixed(3)})`
-		);
+	// Step 1: Aggregate slot allocations by recipient
+	const recipientTotals = new Map<string, number>();
+	for (const alloc of allocations) {
+		const current = recipientTotals.get(alloc.recipient_pubkey) || 0;
+		recipientTotals.set(alloc.recipient_pubkey, current + alloc.quantity);
 	}
 
-	// If we still have leftover capacity but ran out of recipients with remainders,
-	// distribute remaining capacity proportionally by recognition shares
-	if (unitsDistributed < unitsToDistribute && allocations.length > 0) {
-		const remainingUnits = unitsToDistribute - unitsDistributed;
-
-		console.log(
-			`[REMAINDER-REDISTRIBUTION] Still have ${remainingUnits * maxNatural} units left ` +
-			`after exhausting remainders. Distributing by allocation proportion...`
-		);
-
-		// Calculate total allocated (as proxy for recognition share)
-		const recipientTotals = new Map<string, number>();
-		for (const alloc of allocations) {
-			const current = recipientTotals.get(alloc.recipient_pubkey) || 0;
-			recipientTotals.set(alloc.recipient_pubkey, current + alloc.quantity);
-		}
-
-		const totalAllocated = Array.from(recipientTotals.values()).reduce((sum, val) => sum + val, 0);
-
-		// Sort recipients by their allocation size (proportional to recognition)
-		const recipientsByAllocation = Array.from(recipientTotals.entries())
-			.sort((a, b) => b[1] - a[1]); // Largest allocation first
-
-		// Distribute remaining units proportionally using Largest Remainder Method
-		const recipientShares: Array<{ pubKey: string; ideal: number; integer: number; remainder: number }> = [];
-		let extraUnitsDistributed = 0;
-
-		for (const [recipientPub, allocated] of recipientsByAllocation) {
-			const proportion = allocated / totalAllocated;
-			const idealUnits = remainingUnits * proportion;
-			const integerUnits = Math.floor(idealUnits);
-			const remainderFraction = idealUnits - integerUnits;
-
-			// Find this recipient's allocations
-			const recipientAllocations = allocations.filter(a => a.recipient_pubkey === recipientPub);
-
-			if (recipientAllocations.length > 0 && integerUnits > 0) {
-				// Distribute integer part proportionally across slots
-				if (recipientAllocations.length === 1) {
-					recipientAllocations[0].quantity += integerUnits * maxNatural;
-				} else {
-					// Distribute across multiple slots proportionally
-					const recipientTotal = recipientAllocations.reduce((sum, a) => sum + a.quantity, 0);
-					for (const alloc of recipientAllocations) {
-						const slotProportion = alloc.quantity / recipientTotal;
-						const slotUnits = Math.floor(integerUnits * slotProportion);
-						alloc.quantity += slotUnits * maxNatural;
-					}
-				}
-				extraUnitsDistributed += integerUnits;
-			}
-
-			if (remainderFraction > 0) {
-				recipientShares.push({ pubKey: recipientPub, ideal: idealUnits, integer: integerUnits, remainder: remainderFraction });
-			}
-		}
-
-		// Distribute final fractional units by largest remainder
-		const leftoverExtraUnits = remainingUnits - extraUnitsDistributed;
-		if (leftoverExtraUnits > 0 && recipientShares.length > 0) {
-			recipientShares.sort((a, b) => b.remainder - a.remainder);
-
-			for (let i = 0; i < leftoverExtraUnits && i < recipientShares.length; i++) {
-				const recipientAllocations = allocations.filter(a => a.recipient_pubkey === recipientShares[i].pubKey);
-				if (recipientAllocations.length > 0) {
-					// Give to the recipient's largest slot
-					recipientAllocations.sort((a, b) => b.quantity - a.quantity);
-					recipientAllocations[0].quantity += maxNatural;
-					extraUnitsDistributed++;
-				}
-			}
-		}
-
-		unitsDistributed += extraUnitsDistributed;
-
-		console.log(
-			`[REMAINDER-REDISTRIBUTION] Distributed ${extraUnitsDistributed * maxNatural} additional units ` +
-			`based on recognition-proportional allocation`
-		);
+	// Step 2: Calculate shares from current allocations
+	const totalAllocated = Array.from(recipientTotals.values()).reduce((sum, v) => sum + v, 0);
+	const shares = new Map<string, number>();
+	for (const [recipient, allocated] of recipientTotals.entries()) {
+		shares.set(recipient, totalAllocated > 0 ? allocated / totalAllocated : 0);
 	}
 
-	const redistributedCapacity = unitsDistributed * maxNatural;
-	console.log(
-		`[REMAINDER-REDISTRIBUTION] Total distributed: ${redistributedCapacity} leftover capacity ` +
-		`across ${Math.ceil(unitsDistributed / maxNatural)} recipient grants`
+	// Step 3: Delegate to redistributeRemainder from allocation-targets.ts
+	const redistributed = redistributeRemainderSimple(
+		recipientTotals, // targets (modified in place)
+		totalCapacity - capacityUsed, // remaining capacity
+		totalCapacity,
+		shares,
+		maxNatural,
+		false // debug
 	);
 
-	return capacityUsed + redistributedCapacity;
+	// Step 4: Distribute increases back to slots proportionally
+	for (const [recipientPub, newTotal] of recipientTotals.entries()) {
+		const recipientAllocs = allocations.filter(a => a.recipient_pubkey === recipientPub);
+		if (recipientAllocs.length === 0) continue;
+
+		const oldTotal = recipientAllocs.reduce((sum, a) => sum + a.quantity, 0);
+		const increase = newTotal - oldTotal;
+
+		if (increase > CAPACITY_EPSILON) {
+			if (recipientAllocs.length === 1) {
+				// Simple case: one slot gets all the increase
+				recipientAllocs[0].quantity += increase;
+			} else {
+				// Multiple slots: distribute proportionally using Largest Remainder Method
+				const slotRemainders: Array<{ alloc: SlotAllocationRecord; remainder: number }> = [];
+				let integerDistributed = 0;
+
+				for (const alloc of recipientAllocs) {
+					const proportion = alloc.quantity / oldTotal;
+					const idealIncrease = increase * proportion;
+					const integerIncrease = Math.floor(idealIncrease / maxNatural) * maxNatural;
+					const remainder = idealIncrease - integerIncrease;
+
+					// Give integer part immediately
+					alloc.quantity += integerIncrease;
+					integerDistributed += integerIncrease;
+
+					if (remainder > CAPACITY_EPSILON) {
+						slotRemainders.push({ alloc, remainder });
+					}
+				}
+
+				// Distribute remaining units by largest remainder
+				const leftover = increase - integerDistributed;
+				const leftoverUnits = Math.floor(leftover / maxNatural);
+				if (leftoverUnits > 0 && slotRemainders.length > 0) {
+					slotRemainders.sort((a, b) => b.remainder - a.remainder);
+
+					for (let i = 0; i < leftoverUnits && i < slotRemainders.length; i++) {
+						slotRemainders[i].alloc.quantity += maxNatural;
+					}
+				}
+			}
+		}
+	}
+
+	return capacityUsed + redistributed;
 }
 
 /**
@@ -2146,3 +2050,21 @@ export function applyNeedUpdateLaw(
 
 	return nextNeeds;
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// DISTRIBUTION-AGNOSTIC TARGET CALCULATION (Re-export)
+// ═══════════════════════════════════════════════════════════════════
+
+// Import for internal use (adapter pattern)
+import {
+	redistributeRemainder as redistributeRemainderSimple
+} from './allocation-targets.js';
+
+// Re-export for external consumers
+export {
+	calculateTargets,
+	calculateSingleTierTargets,
+	calculateMultiTierTargets,
+	adjustAllocationBasedOnDistance
+} from './allocation-targets.js';
+

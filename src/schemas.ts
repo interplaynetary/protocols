@@ -561,10 +561,10 @@ export type MultiDimensionalDamping = z.infer<typeof MultiDimensionalDampingSche
 export const TierDefinitionSchema = z.object({
 	/** Priority determines allocation order (lower = higher priority, allocated first) */
 	priority: z.number().int().nonnegative(),
-	
+
 	/** Recipient shares within this tier (normalized to sum ≤ 1.0) */
 	shares: z.record(z.string(), z.number().nonnegative()),
-	
+
 	/** Optional label for this tier (e.g., 'mutual-recognition', 'community-members') */
 	label: z.string().optional()
 });
@@ -635,6 +635,17 @@ export const CommitmentSchema = z.object({
 		z.string(), // theirPubKey
 		GlobalRecognitionWeightsSchema // Their full recognition weights (normalized)
 	).nullable().optional(),
+
+	// Distance-based allocation tracking
+	// Total allocations received (sum of all commitments from providers)
+	// Format: { need_type_id: total_allocated }
+	total_allocated: z.record(z.string(), z.number().nonnegative()).optional(),
+
+	// Distance from need (can be negative for over-allocation)
+	// Formula: distance = declared_need - total_allocated
+	// Positive = under-allocated, Negative = over-allocated, Zero = perfect
+	// Format: { need_type_id: distance }
+	distance_from_need: z.record(z.string(), z.number()).optional(),
 
 	// Causality tracking (ITC)
 	itcStamp: z.any(), // ITCStampSchema

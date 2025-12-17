@@ -40,10 +40,10 @@ export function getRecurrenceTrack(
 	slot: { recurrence?: string | null }
 ): 'recurring' | 'onetime' {
 	// Check if recurrence field is present and meaningful
-	if (slot.recurrence && 
-	    slot.recurrence !== '' && 
-	    slot.recurrence !== 'none' &&
-	    slot.recurrence !== null) {
+	if (slot.recurrence &&
+		slot.recurrence !== '' &&
+		slot.recurrence !== 'none' &&
+		slot.recurrence !== null) {
 		return 'recurring';
 	}
 	return 'onetime';
@@ -146,20 +146,20 @@ export function getRecurrenceTrack(
  * Strategy: Create a UTC date, format it in the target timezone to get the offset,
  * then apply the reverse offset to convert our local time to UTC.
  */
-function convertTimeToUTC(timeStr: string, dateStr: string, timezone?: string): string {
+export function convertTimeToUTC(timeStr: string, dateStr: string, timezone?: string): string {
 	if (!timezone || timezone === 'UTC' || timezone === 'Etc/UTC') {
 		return timeStr; // Already UTC
 	}
-	
+
 	try {
 		// Parse input
 		const [hours, minutes] = timeStr.split(':').map(Number);
 		const [year, month, day] = dateStr.split('-').map(Number);
-		
+
 		// Create a reference UTC date at noon on the target date
 		const refUTC = Date.UTC(year, month - 1, day, 12, 0, 0);
 		const refDate = new Date(refUTC);
-		
+
 		// Format this UTC date in the target timezone
 		const formatter = new Intl.DateTimeFormat('en-US', {
 			timeZone: timezone,
@@ -171,24 +171,24 @@ function convertTimeToUTC(timeStr: string, dateStr: string, timezone?: string): 
 			second: '2-digit',
 			hour12: false
 		});
-		
+
 		const parts = formatter.formatToParts(refDate);
 		const tzYear = parseInt(parts.find(p => p.type === 'year')!.value);
 		const tzMonth = parseInt(parts.find(p => p.type === 'month')!.value);
 		const tzDay = parseInt(parts.find(p => p.type === 'day')!.value);
 		const tzHour = parseInt(parts.find(p => p.type === 'hour')!.value);
 		const tzMinute = parseInt(parts.find(p => p.type === 'minute')!.value);
-		
+
 		// Calculate offset: what is the difference between UTC noon and local noon?
 		// If UTC is 12:00 and timezone shows 07:00, offset is -5 hours (UTC is 5 hours ahead)
 		const offsetHours = 12 - tzHour;
 		const offsetMinutes = 0 - tzMinute;
 		const dayShift = tzDay - day;
-		
+
 		// Apply offset to convert our local time to UTC
 		let utcHours = hours + offsetHours - (dayShift * 24);
 		let utcMinutes = minutes + offsetMinutes;
-		
+
 		// Normalize minutes
 		if (utcMinutes < 0) {
 			utcMinutes += 60;
@@ -197,10 +197,10 @@ function convertTimeToUTC(timeStr: string, dateStr: string, timezone?: string): 
 			utcMinutes -= 60;
 			utcHours += 1;
 		}
-		
+
 		// Normalize hours
 		utcHours = ((utcHours % 24) + 24) % 24;
-		
+
 		return `${utcHours.toString().padStart(2, '0')}:${utcMinutes.toString().padStart(2, '0')}`;
 	} catch (e) {
 		console.warn(`[TIMEZONE] Failed to convert ${timeStr} from ${timezone} to UTC:`, e);
@@ -219,7 +219,7 @@ function convertTimeRangesToUTC(
 	if (!timezone || timezone === 'UTC') {
 		return ranges; // Already UTC
 	}
-	
+
 	return ranges.map(range => ({
 		start_time: convertTimeToUTC(range.start_time, dateStr, timezone),
 		end_time: convertTimeToUTC(range.end_time, dateStr, timezone)
@@ -245,30 +245,30 @@ function convertDayScheduleToUTC(
 			timeRanges: daySchedule.time_ranges
 		}));
 	}
-	
+
 	const result: Array<{ day: DayOfWeek; timeRanges: TimeRange[] }> = [];
 	const dayNames: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-	
+
 	// For each day in the schedule, convert each time range to UTC
 	// and track which UTC day it falls on
 	for (const day of daySchedule.days) {
 		// Find a sample date that falls on this day of week
 		const sampleDateForDay = getDateStringForDayOfWeek(day, sampleDate);
-		
+
 		for (const range of daySchedule.time_ranges) {
 			// Convert start time to UTC and determine which day it's on
 			const startTimeUTC = convertTimeToUTC(range.start_time, sampleDateForDay, timezone);
 			const endTimeUTC = convertTimeToUTC(range.end_time, sampleDateForDay, timezone);
-			
+
 			// To get the UTC day, we need to know what UTC datetime corresponds to 
 			// "sampleDateForDay at range.start_time in timezone"
 			const [year, month, dayNum] = sampleDateForDay.split('-').map(Number);
 			const [startHour, startMin] = range.start_time.split(':').map(Number);
-			
+
 			// Create a UTC date at noon on the sample date
 			const refUTC = Date.UTC(year, month - 1, dayNum, 12, 0, 0);
 			const refDate = new Date(refUTC);
-			
+
 			// Format this UTC date in the target timezone
 			const formatter = new Intl.DateTimeFormat('en-US', {
 				timeZone: timezone,
@@ -279,29 +279,29 @@ function convertDayScheduleToUTC(
 				minute: '2-digit',
 				hour12: false
 			});
-			
+
 			const parts = formatter.formatToParts(refDate);
 			const tzHour = parseInt(parts.find(p => p.type === 'hour')!.value);
 			const tzDay = parseInt(parts.find(p => p.type === 'day')!.value);
-			
+
 			// Calculate the offset
 			const offsetHours = 12 - tzHour;
 			const dayShift = tzDay - dayNum;
-			
+
 			// Apply offset to get UTC day
 			// If startHour + offsetHours crosses midnight, adjust the day
 			let utcHour = startHour + offsetHours - (dayShift * 24);
 			let utcDayIndex = refDate.getUTCDay();
-			
+
 			// Adjust for day boundary crossings
 			if (utcHour < 0) {
 				utcDayIndex = (utcDayIndex - 1 + 7) % 7;
 			} else if (utcHour >= 24) {
 				utcDayIndex = (utcDayIndex + 1) % 7;
 			}
-			
+
 			const utcDay = dayNames[utcDayIndex];
-			
+
 			// Add this converted range
 			const existing = result.find(r => r.day === utcDay);
 			if (existing) {
@@ -314,7 +314,7 @@ function convertDayScheduleToUTC(
 			}
 		}
 	}
-	
+
 	return result;
 }
 
@@ -325,25 +325,25 @@ function convertDayScheduleToUTC(
 function getDateStringForDayOfWeek(targetDay: DayOfWeek, referenceDate: string): string {
 	const dayNames: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 	const targetDayIndex = dayNames.indexOf(targetDay);
-	
+
 	// Parse reference date
 	const [year, month, day] = referenceDate.split('-').map(Number);
 	const refDate = new Date(year, month - 1, day);
 	const refDayIndex = refDate.getDay();
-	
+
 	// Calculate days to add (0-6)
 	let daysToAdd = targetDayIndex - refDayIndex;
 	if (daysToAdd < 0) daysToAdd += 7;
-	
+
 	// Create target date
 	const targetDate = new Date(refDate);
 	targetDate.setDate(targetDate.getDate() + daysToAdd);
-	
+
 	// Format as YYYY-MM-DD
 	const y = targetDate.getFullYear();
 	const m = String(targetDate.getMonth() + 1).padStart(2, '0');
 	const d = String(targetDate.getDate()).padStart(2, '0');
-	
+
 	return `${y}-${m}-${d}`;
 }
 
@@ -358,12 +358,12 @@ function getDateStringForDayOfWeek(targetDay: DayOfWeek, referenceDate: string):
  * IMPORTANT: Times should already be in the same timezone (ideally UTC) before calling this.
  * Use convertTimeRangesToUTC() before comparing if slots have different timezones.
  */
-function timeRangesOverlapSimple(range1: TimeRange, range2: TimeRange): boolean {
+export function timeRangesOverlapSimple(range1: TimeRange, range2: TimeRange): boolean {
 	const start1 = range1.start_time;
 	const end1 = range1.end_time;
 	const start2 = range2.start_time;
 	const end2 = range2.end_time;
-	
+
 	// Simple string comparison works for HH:MM format in the same timezone
 	// Ranges overlap if: start1 < end2 AND start2 < end1
 	return start1 < end2 && start2 < end1;
@@ -372,12 +372,12 @@ function timeRangesOverlapSimple(range1: TimeRange, range2: TimeRange): boolean 
 /**
  * Check if any time ranges from two arrays overlap
  */
-function anyTimeRangesOverlap(ranges1?: TimeRange[], ranges2?: TimeRange[]): boolean {
+export function anyTimeRangesOverlap(ranges1?: TimeRange[], ranges2?: TimeRange[]): boolean {
 	// If either has no time ranges specified, be optimistic (assume all day)
 	if (!ranges1 || ranges1.length === 0 || !ranges2 || ranges2.length === 0) {
 		return true;
 	}
-	
+
 	// Check if any pair overlaps
 	for (const r1 of ranges1) {
 		for (const r2 of ranges2) {
@@ -386,7 +386,7 @@ function anyTimeRangesOverlap(ranges1?: TimeRange[], ranges2?: TimeRange[]): boo
 			}
 		}
 	}
-	
+
 	return false;
 }
 
@@ -421,27 +421,27 @@ function getTimeRangesForDay(schedules: DaySchedule[], targetDay: DayOfWeek): Ti
  * Check if two day_schedules arrays have any overlap
  * Returns true if they share any day AND have overlapping times on that day
  */
-function daySchedulesOverlap(schedules1: DaySchedule[], schedules2: DaySchedule[]): boolean {
+export function daySchedulesOverlap(schedules1: DaySchedule[], schedules2: DaySchedule[]): boolean {
 	const days1 = getDaysFromSchedules(schedules1);
 	const days2 = getDaysFromSchedules(schedules2);
-	
+
 	// Find common days
 	const commonDays = days1.filter(day => days2.includes(day));
-	
+
 	if (commonDays.length === 0) {
 		return false; // No common days
 	}
-	
+
 	// For each common day, check if times overlap
 	for (const day of commonDays) {
 		const ranges1 = getTimeRangesForDay(schedules1, day);
 		const ranges2 = getTimeRangesForDay(schedules2, day);
-		
+
 		if (anyTimeRangesOverlap(ranges1, ranges2)) {
 			return true; // Found a day with overlapping times
 		}
 	}
-	
+
 	return false; // No day had overlapping times
 }
 
@@ -450,7 +450,7 @@ function daySchedulesOverlap(schedules1: DaySchedule[], schedules2: DaySchedule[
  */
 function getDaySchedulesFromWeeks(weekSchedules: WeekSchedule[], targetWeeks?: number[]): DaySchedule[] {
 	const daySchedules: DaySchedule[] = [];
-	
+
 	for (const weekSched of weekSchedules) {
 		// If target weeks specified, only include matching weeks
 		if (targetWeeks && targetWeeks.length > 0) {
@@ -459,11 +459,11 @@ function getDaySchedulesFromWeeks(weekSchedules: WeekSchedule[], targetWeeks?: n
 				continue;
 			}
 		}
-		
+
 		// Add all day schedules from this week
 		daySchedules.push(...weekSched.day_schedules);
 	}
-	
+
 	return daySchedules;
 }
 
@@ -473,7 +473,7 @@ function getDaySchedulesFromWeeks(weekSchedules: WeekSchedule[], targetWeeks?: n
  */
 function getDaySchedulesFromMonths(monthSchedules: MonthSchedule[], targetMonths?: number[]): DaySchedule[] {
 	const daySchedules: DaySchedule[] = [];
-	
+
 	for (const monthSched of monthSchedules) {
 		// If target months specified, only include matching months
 		if (targetMonths && targetMonths.length > 0) {
@@ -481,7 +481,7 @@ function getDaySchedulesFromMonths(monthSchedules: MonthSchedule[], targetMonths
 				continue;
 			}
 		}
-		
+
 		// Extract day schedules from this month
 		if (monthSched.week_schedules && monthSched.week_schedules.length > 0) {
 			// Month has week-specific patterns
@@ -492,7 +492,7 @@ function getDaySchedulesFromMonths(monthSchedules: MonthSchedule[], targetMonths
 		}
 		// Note: time_ranges are handled separately
 	}
-	
+
 	return daySchedules;
 }
 
@@ -503,24 +503,24 @@ function getDaySchedulesFromMonths(monthSchedules: MonthSchedule[], targetMonths
 function getMonthScheduleForDate(monthSched: MonthSchedule, dateString: string): DaySchedule[] | null {
 	const date = new Date(dateString);
 	const month = date.getMonth() + 1; // 1-12
-	
+
 	if (month !== monthSched.month) {
 		return null; // Wrong month
 	}
-	
+
 	const dayOfWeek = getDayOfWeekFromDate(dateString);
 	const weekOfMonth = getWeekOfMonth(dateString);
-	
+
 	// Check week_schedules (most specific)
 	if (monthSched.week_schedules && monthSched.week_schedules.length > 0) {
-		const relevantWeekSchedules = monthSched.week_schedules.filter(ws => 
+		const relevantWeekSchedules = monthSched.week_schedules.filter(ws =>
 			ws.weeks.includes(weekOfMonth)
 		);
-		
+
 		if (relevantWeekSchedules.length === 0) {
 			return null; // This week isn't available
 		}
-		
+
 		// Collect day schedules from matching weeks
 		const daySchedules: DaySchedule[] = [];
 		for (const ws of relevantWeekSchedules) {
@@ -528,12 +528,12 @@ function getMonthScheduleForDate(monthSched: MonthSchedule, dateString: string):
 		}
 		return daySchedules;
 	}
-	
+
 	// Fall back to day_schedules (applies to all weeks in this month)
 	if (monthSched.day_schedules && monthSched.day_schedules.length > 0) {
 		return monthSched.day_schedules;
 	}
-	
+
 	// No specific day/week schedules - would use time_ranges (handled by caller)
 	return [];
 }
@@ -546,7 +546,7 @@ function weeksOfMonthOverlap(weeks1?: number[], weeks2?: number[]): boolean {
 	if (!weeks1 || weeks1.length === 0 || !weeks2 || weeks2.length === 0) {
 		return true;
 	}
-	
+
 	// Check for any common week
 	return weeks1.some(week => weeks2.includes(week));
 }
@@ -559,7 +559,7 @@ function monthsOverlap(months1?: number[], months2?: number[]): boolean {
 	if (!months1 || months1.length === 0 || !months2 || months2.length === 0) {
 		return true;
 	}
-	
+
 	// Check for any common month
 	return months1.some(month => months2.includes(month));
 }
@@ -586,17 +586,17 @@ function availabilityWindowsOverlapWithTimezone(
 	if (!window1 || !window2) {
 		return true; // Be optimistic
 	}
-	
+
 	// If both are UTC or no timezone specified, use the standard comparison
 	if ((!timezone1 || timezone1 === 'UTC') && (!timezone2 || timezone2 === 'UTC')) {
 		return availabilityWindowsOverlap(window1, window2);
 	}
-	
+
 	// Convert both windows' day_schedules to UTC
 	// For simplicity, we'll focus on day_schedules (most common use case)
 	let dayScheds1UTC: Array<{ day: DayOfWeek; timeRanges: TimeRange[] }> = [];
 	let dayScheds2UTC: Array<{ day: DayOfWeek; timeRanges: TimeRange[] }> = [];
-	
+
 	// Extract day schedules from window1
 	if (window1.day_schedules && window1.day_schedules.length > 0) {
 		for (const sched of window1.day_schedules) {
@@ -604,7 +604,7 @@ function availabilityWindowsOverlapWithTimezone(
 			dayScheds1UTC.push(...convertedScheds);
 		}
 	}
-	
+
 	// Extract day schedules from window2
 	if (window2.day_schedules && window2.day_schedules.length > 0) {
 		for (const sched of window2.day_schedules) {
@@ -612,28 +612,28 @@ function availabilityWindowsOverlapWithTimezone(
 			dayScheds2UTC.push(...convertedScheds);
 		}
 	}
-	
+
 	// If we have converted day schedules, check for overlaps
 	if (dayScheds1UTC.length > 0 && dayScheds2UTC.length > 0) {
 		// Find common days in UTC
 		const days1 = new Set(dayScheds1UTC.map(d => d.day));
 		const days2 = new Set(dayScheds2UTC.map(d => d.day));
-		
+
 		for (const day of days1) {
 			if (days2.has(day)) {
 				// This day appears in both - check if times overlap
 				const ranges1 = dayScheds1UTC.filter(d => d.day === day).flatMap(d => d.timeRanges);
 				const ranges2 = dayScheds2UTC.filter(d => d.day === day).flatMap(d => d.timeRanges);
-				
+
 				if (anyTimeRangesOverlap(ranges1, ranges2)) {
 					return true; // Found overlapping day and time in UTC
 				}
 			}
 		}
-		
+
 		return false; // No overlapping days or times
 	}
-	
+
 	// Fallback to standard comparison if no day_schedules
 	return availabilityWindowsOverlap(window1, window2);
 }
@@ -659,67 +659,67 @@ function availabilityWindowsOverlap(window1?: AvailabilityWindow, window2?: Avai
 	if (!window1 || !window2) {
 		return true;
 	}
-	
+
 	// LEVEL 1: Both use month_schedules (most specific)
 	if (window1.month_schedules && window1.month_schedules.length > 0 &&
-	    window2.month_schedules && window2.month_schedules.length > 0) {
+		window2.month_schedules && window2.month_schedules.length > 0) {
 		// Find common months
 		const months1 = window1.month_schedules.map(m => m.month);
 		const months2 = window2.month_schedules.map(m => m.month);
 		const commonMonths = months1.filter(m => months2.includes(m));
-		
+
 		if (commonMonths.length === 0) {
 			return false; // No common months
 		}
-		
+
 		// For each common month, check if patterns overlap
 		for (const month of commonMonths) {
 			const sched1 = window1.month_schedules.find(m => m.month === month)!;
 			const sched2 = window2.month_schedules.find(m => m.month === month)!;
-			
+
 			// Extract day schedules from each month schedule
 			const dayScheds1 = extractDaySchedulesFromMonth(sched1);
 			const dayScheds2 = extractDaySchedulesFromMonth(sched2);
-			
+
 			if (dayScheds1.length > 0 && dayScheds2.length > 0) {
 				if (daySchedulesOverlap(dayScheds1, dayScheds2)) {
 					return true; // Found overlapping pattern in this month
 				}
 			}
 		}
-		
+
 		return false; // No overlapping patterns in any common month
 	}
-	
+
 	// LEVEL 2: At least one uses month_schedules, other uses simpler level
 	if (window1.month_schedules && window1.month_schedules.length > 0) {
 		// Extract patterns from window1's months and compare with window2's simpler patterns
 		const allDayScheds1 = getDaySchedulesFromMonths(window1.month_schedules);
 		return compareWithSimplerLevels(allDayScheds1, window2);
 	}
-	
+
 	if (window2.month_schedules && window2.month_schedules.length > 0) {
 		const allDayScheds2 = getDaySchedulesFromMonths(window2.month_schedules);
 		return compareSimplerLevels(window1, allDayScheds2);
 	}
-	
+
 	// LEVEL 3: At least one uses week_schedules
 	if (window1.week_schedules && window1.week_schedules.length > 0) {
 		const dayScheds1 = getDaySchedulesFromWeeks(window1.week_schedules);
 		return compareSimplerLevels(window2, dayScheds1);
 	}
-	
+
 	if (window2.week_schedules && window2.week_schedules.length > 0) {
 		const dayScheds2 = getDaySchedulesFromWeeks(window2.week_schedules);
 		return compareWithSimplerLevels(dayScheds2, window1);
 	}
-	
+
 	// LEVEL 4: Both use day_schedules or time_ranges (original logic)
 	if (window1.day_schedules && window1.day_schedules.length > 0 &&
-	    window2.day_schedules && window2.day_schedules.length > 0) {
+		window2.day_schedules && window2.day_schedules.length > 0) {
 		return daySchedulesOverlap(window1.day_schedules, window2.day_schedules);
 	}
-	
+
 	if (window1.day_schedules && window1.day_schedules.length > 0 && window2.time_ranges) {
 		const allRanges1: TimeRange[] = [];
 		for (const schedule of window1.day_schedules) {
@@ -727,7 +727,7 @@ function availabilityWindowsOverlap(window1?: AvailabilityWindow, window2?: Avai
 		}
 		return anyTimeRangesOverlap(allRanges1, window2.time_ranges);
 	}
-	
+
 	if (window2.day_schedules && window2.day_schedules.length > 0 && window1.time_ranges) {
 		const allRanges2: TimeRange[] = [];
 		for (const schedule of window2.day_schedules) {
@@ -735,11 +735,11 @@ function availabilityWindowsOverlap(window1?: AvailabilityWindow, window2?: Avai
 		}
 		return anyTimeRangesOverlap(window1.time_ranges, allRanges2);
 	}
-	
+
 	if (window1.time_ranges && window2.time_ranges) {
 		return anyTimeRangesOverlap(window1.time_ranges, window2.time_ranges);
 	}
-	
+
 	return true;
 }
 
@@ -799,7 +799,7 @@ function getDayOfWeekFromDate(dateString: string): DayOfWeek {
 	const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
 	const day = parseInt(parts[2], 10);
 	const date = new Date(year, month, day);
-	
+
 	const dayNames: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 	return dayNames[date.getDay()];
 }
@@ -815,7 +815,7 @@ function getWeekOfMonth(dateString: string): number {
 	const month = parseInt(parts[1], 10) - 1;
 	const day = parseInt(parts[2], 10);
 	const date = new Date(year, month, day);
-	
+
 	const dayOfMonth = date.getDate();
 	return Math.ceil(dayOfMonth / 7);
 }
@@ -840,9 +840,9 @@ function getMonthFromDate(dateString: string): number {
  * TIMEZONE AWARE: Converts both slot times to UTC before comparing.
  */
 function onetimeSlotMatchesRecurringWindow(
-	onetimeSlot: { 
-		start_date?: string | null; 
-		start_time?: string | null; 
+	onetimeSlot: {
+		start_date?: string | null;
+		start_time?: string | null;
 		end_time?: string | null;
 		availability_window?: AvailabilityWindow;
 		time_zone?: string;
@@ -853,38 +853,38 @@ function onetimeSlotMatchesRecurringWindow(
 	if (!onetimeSlot.start_date) {
 		return true; // No date specified, be optimistic
 	}
-	
+
 	// Extract time info - prioritize availability_window if present
 	let startTime = onetimeSlot.start_time;
 	let endTime = onetimeSlot.end_time;
-	
+
 	// If availability_window.time_ranges exists, use those times (they're more specific)
 	if (onetimeSlot.availability_window?.time_ranges && onetimeSlot.availability_window.time_ranges.length > 0) {
 		startTime = onetimeSlot.availability_window.time_ranges[0].start_time;
 		endTime = onetimeSlot.availability_window.time_ranges[0].end_time;
 	}
-	
+
 	// Extract date components from one-time slot
 	const dayOfWeek = getDayOfWeekFromDate(onetimeSlot.start_date);
 	const weekOfMonth = getWeekOfMonth(onetimeSlot.start_date);
 	const month = getMonthFromDate(onetimeSlot.start_date);
-	
+
 	// LEVEL 1: Check month_schedules (most specific)
 	if (recurringWindow.month_schedules && recurringWindow.month_schedules.length > 0) {
 		// Find the matching month schedule
 		const monthSchedule = recurringWindow.month_schedules.find(m => m.month === month);
-		
+
 		if (!monthSchedule) {
 			return false; // This month is not available
 		}
-		
+
 		// Check if the date matches within this month's patterns
 		const daySchedules = getMonthScheduleForDate(monthSchedule, onetimeSlot.start_date);
-		
+
 		if (daySchedules === null) {
 			return false; // Week doesn't match
 		}
-		
+
 		if (daySchedules.length === 0) {
 			// Month schedule only has time_ranges (no specific days/weeks)
 			if (monthSchedule.time_ranges && monthSchedule.time_ranges.length > 0) {
@@ -899,36 +899,8 @@ function onetimeSlotMatchesRecurringWindow(
 			}
 			return true; // No constraints
 		}
-		
+
 		// Check if day matches and time overlaps
-		return checkDayAndTimeMatch(
-			dayOfWeek, 
-			startTime, 
-			endTime, 
-			daySchedules,
-			onetimeSlot.start_date,
-			onetimeSlot.time_zone,
-			recurringTimezone
-		);
-	}
-	
-	// LEVEL 2: Check week_schedules
-	if (recurringWindow.week_schedules && recurringWindow.week_schedules.length > 0) {
-		// Find week schedules that include this week of month
-		const relevantWeekSchedules = recurringWindow.week_schedules.filter(ws => 
-			ws.weeks.includes(weekOfMonth)
-		);
-		
-		if (relevantWeekSchedules.length === 0) {
-			return false; // This week is not available
-		}
-		
-		// Collect day schedules from all matching weeks
-		const daySchedules: DaySchedule[] = [];
-		for (const ws of relevantWeekSchedules) {
-			daySchedules.push(...ws.day_schedules);
-		}
-		
 		return checkDayAndTimeMatch(
 			dayOfWeek,
 			startTime,
@@ -939,7 +911,35 @@ function onetimeSlotMatchesRecurringWindow(
 			recurringTimezone
 		);
 	}
-	
+
+	// LEVEL 2: Check week_schedules
+	if (recurringWindow.week_schedules && recurringWindow.week_schedules.length > 0) {
+		// Find week schedules that include this week of month
+		const relevantWeekSchedules = recurringWindow.week_schedules.filter(ws =>
+			ws.weeks.includes(weekOfMonth)
+		);
+
+		if (relevantWeekSchedules.length === 0) {
+			return false; // This week is not available
+		}
+
+		// Collect day schedules from all matching weeks
+		const daySchedules: DaySchedule[] = [];
+		for (const ws of relevantWeekSchedules) {
+			daySchedules.push(...ws.day_schedules);
+		}
+
+		return checkDayAndTimeMatch(
+			dayOfWeek,
+			startTime,
+			endTime,
+			daySchedules,
+			onetimeSlot.start_date,
+			onetimeSlot.time_zone,
+			recurringTimezone
+		);
+	}
+
 	// LEVEL 3: Check day_schedules
 	if (recurringWindow.day_schedules && recurringWindow.day_schedules.length > 0) {
 		// If either slot has a timezone, we need to convert to UTC for proper comparison
@@ -951,40 +951,40 @@ function onetimeSlotMatchesRecurringWindow(
 				onetimeUTCDate,
 				onetimeSlot.time_zone
 			) : [];
-			
+
 			// Get UTC day of week for the one-time slot
 			// We need to check if the time conversion causes a day shift
 			const [year, month, day] = onetimeUTCDate.split('-').map(Number);
 			const [hours, minutes] = (startTime || '12:00').split(':').map(Number);
 			const utcTimeStr = onetimeRangesUTC.length > 0 ? onetimeRangesUTC[0].start_time : startTime || '12:00';
 			const [utcHours] = utcTimeStr.split(':').map(Number);
-			
+
 			// Calculate if there's a day shift
 			const hourDiff = utcHours - hours;
 			let dayShift = 0;
 			if (hourDiff > 12) dayShift = -1; // Went back a day
 			else if (hourDiff < -12) dayShift = 1; // Went forward a day
-			
+
 			// Get the UTC day
 			const localDate = new Date(year, month - 1, day);
 			const utcDate = new Date(localDate.getTime() + (dayShift * 24 * 60 * 60 * 1000));
 			const utcDayIndex = utcDate.getDay();
 			const dayNames: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 			const utcDayOfWeek = dayNames[utcDayIndex];
-			
+
 			// Convert recurring window's day schedules to UTC
 			const recurringDaySchedulesUTC: Array<{ day: DayOfWeek; timeRanges: TimeRange[] }> = [];
 			for (const sched of recurringWindow.day_schedules) {
 				const converted = convertDayScheduleToUTC(sched, onetimeUTCDate, recurringTimezone);
 				recurringDaySchedulesUTC.push(...converted);
 			}
-			
+
 			// Now check if UTC days match
 			const matchingSchedules = recurringDaySchedulesUTC.filter(s => s.day === utcDayOfWeek);
 			if (matchingSchedules.length === 0) {
 				return false;
 			}
-			
+
 			// Check if times overlap in UTC
 			if (onetimeRangesUTC.length > 0) {
 				const onetimeRange = onetimeRangesUTC[0];
@@ -995,10 +995,10 @@ function onetimeSlotMatchesRecurringWindow(
 				}
 				return false;
 			}
-			
+
 			return true; // Days match, no specific time to check
 		}
-		
+
 		// No timezone conversion needed
 		return checkDayAndTimeMatch(
 			dayOfWeek,
@@ -1010,7 +1010,7 @@ function onetimeSlotMatchesRecurringWindow(
 			recurringTimezone
 		);
 	}
-	
+
 	// LEVEL 4: Check time_ranges (all days available)
 	if (recurringWindow.time_ranges && recurringWindow.time_ranges.length > 0) {
 		if (startTime && endTime && onetimeSlot.start_date) {
@@ -1020,18 +1020,18 @@ function onetimeSlotMatchesRecurringWindow(
 				onetimeSlot.start_date,
 				onetimeSlot.time_zone
 			);
-			
+
 			const recurringRangesUTC = convertTimeRangesToUTC(
 				recurringWindow.time_ranges,
 				onetimeSlot.start_date,
 				recurringTimezone
 			);
-			
+
 			return recurringRangesUTC.some(r => timeRangesOverlapSimple(r, onetimeRangesUTC[0]));
 		}
 		return true;
 	}
-	
+
 	// No constraints specified - be optimistic
 	return true;
 }
@@ -1058,11 +1058,11 @@ function checkDayAndTimeMatch(
 ): boolean {
 	// Check if this day is in any schedule
 	const relevantSchedules = daySchedules.filter(s => s.days.includes(dayOfWeek));
-	
+
 	if (relevantSchedules.length === 0) {
 		return false; // This day of week is not available
 	}
-	
+
 	// Check if one-time slot's time overlaps with any of the relevant schedules' time ranges
 	if (startTime && endTime && onetimeDateStr) {
 		// Convert one-time slot times to UTC
@@ -1071,9 +1071,9 @@ function checkDayAndTimeMatch(
 			onetimeDateStr,
 			onetimeTimezone
 		);
-		
+
 		const onetimeRangeUTC = onetimeRangesUTC[0];
-		
+
 		for (const schedule of relevantSchedules) {
 			// Convert recurring window times to UTC (use the same date for consistency)
 			const recurringRangesUTC = convertTimeRangesToUTC(
@@ -1081,15 +1081,15 @@ function checkDayAndTimeMatch(
 				onetimeDateStr,
 				recurringTimezone
 			);
-			
+
 			if (recurringRangesUTC.some(r => timeRangesOverlapSimple(r, onetimeRangeUTC))) {
 				return true; // Found matching time on this day (in UTC)
 			}
 		}
-		
+
 		return false; // No matching time on this day
 	}
-	
+
 	return true; // Day matches and no specific time to check
 }
 
@@ -1107,9 +1107,9 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
 	const a =
 		Math.sin(dLat / 2) * Math.sin(dLat / 2) +
 		Math.cos((lat1 * Math.PI) / 180) *
-			Math.cos((lat2 * Math.PI) / 180) *
-			Math.sin(dLon / 2) *
-			Math.sin(dLon / 2);
+		Math.cos((lat2 * Math.PI) / 180) *
+		Math.sin(dLon / 2) *
+		Math.sin(dLon / 2);
 	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 	return R * c;
 }
@@ -1123,19 +1123,19 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
  * Returns true if there's any overlap, or if time info is missing (optimistic)
  */
 export function timeRangesOverlap(
-	slot1: { 
-		start_date?: string | null; 
-		end_date?: string | null; 
-		start_time?: string | null; 
+	slot1: {
+		start_date?: string | null;
+		end_date?: string | null;
+		start_time?: string | null;
 		end_time?: string | null;
 		recurrence?: string | null;
 		availability_window?: AvailabilityWindow;
 		time_zone?: string;
 	},
-	slot2: { 
-		start_date?: string | null; 
-		end_date?: string | null; 
-		start_time?: string | null; 
+	slot2: {
+		start_date?: string | null;
+		end_date?: string | null;
+		start_time?: string | null;
 		end_time?: string | null;
 		recurrence?: string | null;
 		availability_window?: AvailabilityWindow;
@@ -1146,7 +1146,7 @@ export function timeRangesOverlap(
 	if (slot1.availability_window && slot2.availability_window) {
 		const track1 = getRecurrenceTrack(slot1);
 		const track2 = getRecurrenceTrack(slot2);
-		
+
 		// CASE 1: Both recurring - check if windows overlap
 		if (track1 === 'recurring' && track2 === 'recurring') {
 			// Use timezone-aware matching if either slot has a timezone specified
@@ -1161,7 +1161,7 @@ export function timeRangesOverlap(
 			// Otherwise use standard comparison (assumes same timezone)
 			return availabilityWindowsOverlap(slot1.availability_window, slot2.availability_window);
 		}
-		
+
 		// CASE 2: One recurring, one one-time - check if one-time falls within recurring window
 		if (track1 === 'recurring' && track2 === 'onetime') {
 			return onetimeSlotMatchesRecurringWindow(
@@ -1170,7 +1170,7 @@ export function timeRangesOverlap(
 				slot1.time_zone
 			);
 		}
-		
+
 		if (track1 === 'onetime' && track2 === 'recurring') {
 			return onetimeSlotMatchesRecurringWindow(
 				{ ...slot1, time_zone: slot1.time_zone },
@@ -1178,7 +1178,7 @@ export function timeRangesOverlap(
 				slot2.time_zone
 			);
 		}
-		
+
 		// CASE 3: Both one-time - check time_ranges overlap
 		if (track1 === 'onetime' && track2 === 'onetime') {
 			// Both one-time slots with availability_window
@@ -1189,7 +1189,7 @@ export function timeRangesOverlap(
 			// Time ranges overlap, now check dates using legacy logic below
 		}
 	}
-	
+
 	// **LEGACY APPROACH: Use start_date/end_date if no availability_window**
 	// If either slot has no time info, be optimistic - assume they match
 	if (!slot1.start_date && !slot1.end_date && !slot2.start_date && !slot2.end_date) {
@@ -1206,11 +1206,11 @@ export function timeRangesOverlap(
 		const start1 = slot1.start_date ? new Date(slot1.start_date) : new Date('1900-01-01');
 		// FIX: For one-time slots without end_date, use start_date as end (same day)
 		// This prevents Tuesday (2024-03-05) from "overlapping" with Wednesday (2024-03-06)
-		const end1 = slot1.end_date ? new Date(slot1.end_date) : 
-		             (slot1.start_date ? new Date(slot1.start_date) : new Date('2100-12-31'));
+		const end1 = slot1.end_date ? new Date(slot1.end_date) :
+			(slot1.start_date ? new Date(slot1.start_date) : new Date('2100-12-31'));
 		const start2 = slot2.start_date ? new Date(slot2.start_date) : new Date('1900-01-01');
-		const end2 = slot2.end_date ? new Date(slot2.end_date) : 
-		             (slot2.start_date ? new Date(slot2.start_date) : new Date('2100-12-31'));
+		const end2 = slot2.end_date ? new Date(slot2.end_date) :
+			(slot2.start_date ? new Date(slot2.start_date) : new Date('2100-12-31'));
 
 		// Check if date ranges overlap
 		// Range1: [start1, end1], Range2: [start2, end2]
@@ -1376,7 +1376,7 @@ import type {
 	EligibilityFilter
 } from '../filters/types.js';
 
-import { 
+import {
 	evaluateEligibilityFilter,
 	EligibilityFilters
 } from '../filters/eligibility.js';
@@ -1387,7 +1387,7 @@ export type {
 	EligibilityFilter
 };
 
-export { 
+export {
 	evaluateEligibilityFilter,
 	EligibilityFilters
 };
@@ -1434,110 +1434,110 @@ function convertLegacyFilter(filter: FilterRule): EligibilityFilter {
 		// Assume it's already a JsonLogic rule
 		return filter as EligibilityFilter;
 	}
-	
+
 	// Convert discriminated union to JsonLogic
 	switch (filter.type) {
 		case 'allow_all':
 			return true;
-		
+
 		case 'deny_all':
 			return false;
-		
+
 		case 'trust': {
 			const conditions: EligibilityFilter[] = [];
-			
+
 			if (filter.only_mutual) {
-				conditions.push({">": [{"var": "mutualRecognition"}, 0]});
+				conditions.push({ ">": [{ "var": "mutualRecognition" }, 0] });
 			}
-			
+
 			if (filter.min_mutual_recognition !== undefined) {
-				conditions.push({">=": [{"var": "mutualRecognition"}, filter.min_mutual_recognition]});
+				conditions.push({ ">=": [{ "var": "mutualRecognition" }, filter.min_mutual_recognition] });
 			}
-			
+
 			return conditions.length === 0 ? true :
-			       conditions.length === 1 ? conditions[0] :
-			       {"and": conditions};
+				conditions.length === 1 ? conditions[0] :
+					{ "and": conditions };
 		}
-		
+
 		case 'location': {
 			const conditions: EligibilityFilter[] = [];
-			
+
 			if (filter.allowed_cities && filter.allowed_cities.length > 0) {
-				conditions.push({"in": [{"var": "commitment.city"}, filter.allowed_cities]});
+				conditions.push({ "in": [{ "var": "commitment.city" }, filter.allowed_cities] });
 			}
-			
+
 			if (filter.allowed_countries && filter.allowed_countries.length > 0) {
-				conditions.push({"in": [{"var": "commitment.country"}, filter.allowed_countries]});
+				conditions.push({ "in": [{ "var": "commitment.country" }, filter.allowed_countries] });
 			}
-			
+
 			// max_distance_km not yet implemented in JsonLogic
 			if (filter.max_distance_km) {
 				console.log('[FILTER-WARN] max_distance_km not yet implemented in JsonLogic');
 			}
-			
+
 			return conditions.length === 0 ? true :
-			       conditions.length === 1 ? conditions[0] :
-			       {"and": conditions};
+				conditions.length === 1 ? conditions[0] :
+					{ "and": conditions };
 		}
-		
+
 		case 'attribute': {
 			const conditions: EligibilityFilter[] = [];
-			
+
 			if (filter.required && filter.required.length > 0) {
 				for (const attr of filter.required) {
-					conditions.push({"!!": {"var": `attributes.${attr}`}});
+					conditions.push({ "!!": { "var": `attributes.${attr}` } });
 				}
 			}
-			
+
 			if (filter.forbidden && filter.forbidden.length > 0) {
 				for (const attr of filter.forbidden) {
-					conditions.push({"!": {"!!": {"var": `attributes.${attr}`}}});
+					conditions.push({ "!": { "!!": { "var": `attributes.${attr}` } } });
 				}
 			}
-			
+
 			return conditions.length === 0 ? true :
-			       conditions.length === 1 ? conditions[0] :
-			       {"and": conditions};
+				conditions.length === 1 ? conditions[0] :
+					{ "and": conditions };
 		}
-		
+
 		case 'certification': {
 			const conditions: EligibilityFilter[] = [];
-			
+
 			if (filter.required && filter.required.length > 0) {
 				for (const cert of filter.required) {
-					conditions.push({"in": [cert, {"var": "attributes.certifications"}]});
+					conditions.push({ "in": [cert, { "var": "attributes.certifications" }] });
 				}
 			}
-			
+
 			if (filter.min_level !== undefined) {
-				conditions.push({">=": [{"var": "attributes.certification_level"}, filter.min_level]});
+				conditions.push({ ">=": [{ "var": "attributes.certification_level" }, filter.min_level] });
 			}
-			
+
 			return conditions.length === 0 ? true :
-			       conditions.length === 1 ? conditions[0] :
-			       {"and": conditions};
+				conditions.length === 1 ? conditions[0] :
+					{ "and": conditions };
 		}
-		
+
 		case 'resource_type': {
 			const conditions: EligibilityFilter[] = [];
-			
+
 			if (filter.allowed_types && filter.allowed_types.length > 0) {
-				conditions.push({"in": [{"var": "commitment.resource_type"}, filter.allowed_types]});
+				conditions.push({ "in": [{ "var": "commitment.resource_type" }, filter.allowed_types] });
 			}
-			
+
 			if (filter.forbidden_types && filter.forbidden_types.length > 0) {
-				conditions.push({"!": {"in": [{"var": "commitment.resource_type"}, filter.forbidden_types]}});
+				conditions.push({ "!": { "in": [{ "var": "commitment.resource_type" }, filter.forbidden_types] } });
 			}
-			
+
 			return conditions.length === 0 ? true :
-			       conditions.length === 1 ? conditions[0] :
-			       {"and": conditions};
+				conditions.length === 1 ? conditions[0] :
+					{ "and": conditions };
 		}
-		
+
 		case 'custom':
 			console.log('[FILTER-WARN] Custom filter functions not yet implemented for security');
 			return true;
-		
+
 		default:
 			console.log('[FILTER-WARN] Unknown filter type:', filter);
 			return true;
@@ -1558,10 +1558,10 @@ function convertLegacyFilter(filter: FilterRule): EligibilityFilter {
 export function evaluateFilter(filter: FilterRule | EligibilityFilter | null | undefined, context: FilterContext): boolean {
 	// No filter = pass by default (optimistic)
 	if (!filter) return true;
-	
+
 	// Convert legacy format to JsonLogic if needed
 	const eligibilityFilter = convertLegacyFilter(filter as FilterRule);
-	
+
 	// Delegate to unified filter system
 	return evaluateEligibilityFilter(eligibilityFilter, context);
 }
@@ -1590,20 +1590,20 @@ export function passesSlotFilters(
 	// Provider is checking if recipient passes their filter
 	if (availabilitySlot.filter_rule) {
 		if (!evaluateFilter(availabilitySlot.filter_rule, recipientContext)) {
-			console.log(`[FILTER-BILATERAL-REJECT] Recipient ${recipientContext.pubKey.slice(0,8)} failed provider's capacity filter`);
+			console.log(`[FILTER-BILATERAL-REJECT] Recipient ${recipientContext.pubKey.slice(0, 8)} failed provider's capacity filter`);
 			return false;
 		}
 	}
-	
+
 	// Check need slot filter (who can provide to recipient)
 	// Recipient is checking if provider passes their filter
 	if (needSlot.filter_rule) {
 		if (!evaluateFilter(needSlot.filter_rule, providerContext)) {
-			console.log(`[FILTER-BILATERAL-REJECT] Provider ${providerContext.pubKey.slice(0,8)} failed recipient's need filter`);
+			console.log(`[FILTER-BILATERAL-REJECT] Provider ${providerContext.pubKey.slice(0, 8)} failed recipient's need filter`);
 			return false;
 		}
 	}
-	
+
 	// Both filters passed (or no filters present)
 	return true;
 }
@@ -1655,22 +1655,22 @@ export function getTimeBucketKey(slot: AvailabilitySlot | NeedSlot): string {
  */
 export function getLocationBucketKey(slot: AvailabilitySlot | NeedSlot): string {
 	// Remote slots are universally compatible
-	if (slot.location_type?.toLowerCase().includes('remote') || 
-	    slot.location_type?.toLowerCase().includes('online') ||
-	    slot.online_link) {
+	if (slot.location_type?.toLowerCase().includes('remote') ||
+		slot.location_type?.toLowerCase().includes('online') ||
+		slot.online_link) {
 		return 'remote';
 	}
-	
+
 	// Use city if available (most specific)
 	if (slot.city) {
 		return slot.city.toLowerCase();
 	}
-	
+
 	// Fall back to country
 	if (slot.country) {
 		return slot.country.toLowerCase();
 	}
-	
+
 	// No location specified
 	return 'unknown';
 }
@@ -1689,18 +1689,18 @@ export function getSpaceTimeSignature(
 ): string {
 	// Time component
 	let timeKey: string;
-	
+
 	if (slot.availability_window) {
 		// Build signature from hierarchical availability_window
 		const window = slot.availability_window;
-		
+
 		// Extract months from month_schedules
 		let monthsKey = 'all-months';
 		if (window.month_schedules && window.month_schedules.length > 0) {
 			const months = window.month_schedules.map(m => m.month).sort();
 			monthsKey = months.join(',');
 		}
-		
+
 		// Extract weeks from week_schedules or month_schedules
 		let weeksKey = 'all-weeks';
 		if (window.week_schedules && window.week_schedules.length > 0) {
@@ -1722,11 +1722,11 @@ export function getSpaceTimeSignature(
 				weeksKey = Array.from(allWeeks).sort().join(',');
 			}
 		}
-		
+
 		// Extract days from day_schedules (at any level)
 		let daysKey = 'all-days';
 		const allDayScheds: DaySchedule[] = [];
-		
+
 		if (window.month_schedules && window.month_schedules.length > 0) {
 			allDayScheds.push(...getDaySchedulesFromMonths(window.month_schedules));
 		} else if (window.week_schedules && window.week_schedules.length > 0) {
@@ -1734,25 +1734,25 @@ export function getSpaceTimeSignature(
 		} else if (window.day_schedules && window.day_schedules.length > 0) {
 			allDayScheds.push(...window.day_schedules);
 		}
-		
+
 		if (allDayScheds.length > 0) {
 			const allDays = getDaysFromSchedules(allDayScheds);
 			daysKey = allDays.sort().join(',');
 		}
-		
+
 		// Recurrence
 		const recKey = slot.recurrence || 'onetime';
-		
+
 		timeKey = `${recKey}|${monthsKey}|${weeksKey}|${daysKey}`;
 	} else {
 		// Fallback: use basic date/recurrence info
 		timeKey = [
-		slot.start_date || 'any-date',
-		slot.end_date || 'any-date',
+			slot.start_date || 'any-date',
+			slot.end_date || 'any-date',
 			slot.recurrence || 'onetime'
-	].join('|');
+		].join('|');
 	}
-	
+
 	// Location component (precise)
 	const locKey = slot.location_type?.toLowerCase().includes('remote') || slot.online_link
 		? 'remote'
@@ -1762,7 +1762,7 @@ export function getSpaceTimeSignature(
 			slot.latitude?.toFixed(2) || 'any-lat',
 			slot.longitude?.toFixed(2) || 'any-lon'
 		].join('|');
-	
+
 	return `${timeKey}::${locKey}`;
 }
 
@@ -1777,11 +1777,11 @@ export function groupSlotsBySpaceTime<T extends AvailabilitySlot | NeedSlot>(
 	slots: T[]
 ): Map<string, { quantity: number; slots: T[] }> {
 	const groups = new Map<string, { quantity: number; slots: T[] }>();
-	
+
 	for (const slot of slots) {
 		const signature = getSpaceTimeSignature(slot);
 		const existing = groups.get(signature);
-		
+
 		if (existing) {
 			existing.quantity += slot.quantity;
 			existing.slots.push(slot);
@@ -1792,7 +1792,7 @@ export function groupSlotsBySpaceTime<T extends AvailabilitySlot | NeedSlot>(
 			});
 		}
 	}
-	
+
 	return groups;
 }
 
@@ -1842,14 +1842,14 @@ export function getSpaceTimeProfile<T extends NeedSlot | AvailabilitySlot>(
 
 /**
  * EXAMPLE 1: Same Space-Time (Should Aggregate)
- * 
+ *
  * Provider has:
  *   - Slot A: Monday 9-10am @ SF, quantity 5
  *   - Slot B: Monday 9-10am @ SF, quantity 3
- * 
+ *
  * These have the SAME space-time signature, so they aggregate to 8 units
  * available on Monday 9-10am in SF.
- * 
+ *
  * In allocation, both slots allocate independently (slot-native), but they're
  * providing to the same space-time, so a recipient with a need at that exact
  * time/place can receive from both.
@@ -1857,11 +1857,11 @@ export function getSpaceTimeProfile<T extends NeedSlot | AvailabilitySlot>(
 
 /**
  * EXAMPLE 2: Same Time, Different Space (Cannot Aggregate)
- * 
+ *
  * Provider has:
  *   - Slot A: Monday 9-10am @ SF, quantity 5
  *   - Slot B: Monday 9-10am @ NYC, quantity 3
- * 
+ *
  * These have DIFFERENT space-time signatures (different cities).
  * A recipient in SF can only receive from Slot A.
  * A recipient in NYC can only receive from Slot B.
@@ -1870,11 +1870,11 @@ export function getSpaceTimeProfile<T extends NeedSlot | AvailabilitySlot>(
 
 /**
  * EXAMPLE 3: Same Space, Different Time (Cannot Aggregate)
- * 
+ *
  * Provider has:
  *   - Slot A: Monday 9-10am @ SF, quantity 5
  *   - Slot B: Tuesday 9-10am @ SF, quantity 3
- * 
+ *
  * These have DIFFERENT space-time signatures (different days).
  * A recipient needing Monday service can only receive from Slot A (5 units).
  * A recipient needing Tuesday service can only receive from Slot B (3 units).
@@ -1883,53 +1883,53 @@ export function getSpaceTimeProfile<T extends NeedSlot | AvailabilitySlot>(
 
 /**
  * EXAMPLE 4: Overlapping Time Ranges
- * 
+ *
  * Provider has:
  *   - Slot A: Monday 9-11am @ SF, quantity 5
  *   - Slot B: Monday 10am-12pm @ SF, quantity 3
- * 
+ *
  * These overlap but have DIFFERENT signatures (different time ranges).
- * 
+ *
  * Recipient with need Monday 10-11am @ SF:
  *   - Compatible with Slot A (within 9-11am range) ✓
  *   - Compatible with Slot B (within 10am-12pm range) ✓
  *   - Can receive from BOTH slots (up to 8 units total)
- * 
+ *
  * This is correct! The provider is available during both time windows,
  * and the overlap period has both capacities available.
  */
 
 /**
  * EXAMPLE 5: Remote vs In-Person
- * 
+ *
  * Provider has:
  *   - Slot A: Monday 9-10am @ Remote, quantity 5
  *   - Slot B: Monday 9-10am @ SF, quantity 3
- * 
+ *
  * These have DIFFERENT signatures (remote vs in-person).
- * 
+ *
  * Remote slots are compatible with ANY location (optimistic matching).
  * So a recipient in SF can potentially receive from both Slot A (remote)
  * and Slot B (in-person SF), getting up to 8 units.
- * 
+ *
  * This is correct! Remote capacity can serve anyone, anywhere.
  */
 
 /**
  * ALLOCATION ALGORITHM BEHAVIOR:
- * 
+ *
  * The slot-native algorithm processes each availability slot independently:
- * 
+ *
  * 1. For each availability slot, find all compatible recipients
  * 2. Run two-tier allocation on that slot's quantity
  * 3. Record allocations with slot-to-slot pairing
- * 
+ *
  * This means:
  * - Slots at the same space-time allocate independently
  * - A recipient can receive from multiple slots (if compatible)
  * - Space-time compatibility is checked via slotsCompatible()
  * - Filters are checked bilaterally for each pairing
- * 
+ *
  * The space-time grouping functions (getSpaceTimeSignature, etc.) are
  * useful for ANALYSIS and VISUALIZATION, but the actual allocation
  * respects slot-level compatibility automatically through the

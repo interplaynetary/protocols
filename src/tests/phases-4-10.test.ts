@@ -59,7 +59,7 @@ describe('phases-4-10.ts - Remaining Test Phases', () => {
                 history = updateOverAllocationHistory(history, { 'food': 100 + i }, needs);
             }
 
-            expect(history['food'].length).toBe(10);
+            expect(history['food']?.length).toBe(10);
         });
     });
 
