@@ -1,6 +1,6 @@
 {
   "name": "@playnet/free-association",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Free Association Protocol - Pure allocation algorithm and recognition system",
   "type": "module",
   "main": "./dist/index.js",
