@@ -41,6 +41,7 @@
     "**/*.spec.ts",
     "src/itc.ts",
     "src/__tests__",
-    "src/tests"
+    "src/experimental/tests",
+    "src/experimental"
   ]
 }

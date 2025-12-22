@@ -1,5 +1,4 @@
-# Source files (we ship compiled JS + d.ts only)
-src/
+# TypeScript configuration (consumers don't need this)
 tsconfig.json
 vitest.config.ts
 
@@ -9,8 +8,10 @@ vitest.config.ts
 **/__tests__/
 **/__mocks__/
 src/tests/
+src/experimental/
 dist/__tests__/
 dist/tests/
+dist/experimental/
 
 # Build artifacts
 *.tsbuildinfo

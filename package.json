@@ -8,47 +8,58 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "source": "./src/index.ts"
     },
     "./schemas": {
       "types": "./dist/schemas.d.ts",
-      "import": "./dist/schemas.js"
+      "import": "./dist/schemas.js",
+      "source": "./src/schemas.ts"
     },
     "./allocation": {
       "types": "./dist/allocation.d.ts",
-      "import": "./dist/allocation.js"
+      "import": "./dist/allocation.js",
+      "source": "./src/allocation.ts"
     },
     "./distribution": {
       "types": "./dist/distribution.d.ts",
-      "import": "./dist/distribution.js"
+      "import": "./dist/distribution.js",
+      "source": "./src/distribution.ts"
     },
     "./tree": {
       "types": "./dist/tree.d.ts",
-      "import": "./dist/tree.js"
+      "import": "./dist/tree.js",
+      "source": "./src/tree.ts"
     },
     "./itc": {
       "types": "./dist/itc.d.ts",
-      "import": "./dist/itc.js"
+      "import": "./dist/itc.js",
+      "source": "./src/itc.ts"
     },
     "./utils/*": {
       "types": "./dist/utils/*.d.ts",
-      "import": "./dist/utils/*.js"
+      "import": "./dist/utils/*.js",
+      "source": "./src/utils/*.ts"
     },
     "./filters/*": {
       "types": "./dist/filters/*.d.ts",
-      "import": "./dist/filters/*.js"
+      "import": "./dist/filters/*.js",
+      "source": "./src/filters/*.ts"
     },
     "./attributes/*": {
       "types": "./dist/attributes/*.d.ts",
-      "import": "./dist/attributes/*.js"
+      "import": "./dist/attributes/*.js",
+      "source": "./src/attributes/*.ts"
     },
     "./collective/*": {
       "types": "./dist/collective/*.d.ts",
-      "import": "./dist/collective/*.js"
+      "import": "./dist/collective/*.js",
+      "source": "./src/collective/*.ts"
     },
     "./config": {
       "types": "./dist/config.d.ts",
-      "import": "./dist/config.js"
+      "import": "./dist/config.js",
+      "source": "./src/config.ts"
     }
   },
   "files": [
@@ -86,6 +97,7 @@
   "homepage": "https://github.com/playnet/free-association#readme",
   "dependencies": {
     "json-logic-js": "^2.0.2",
+    "ws": "^8.18.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {

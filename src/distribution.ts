@@ -46,7 +46,7 @@ export interface DistributionResult {
 	/**
 	 * Method used to calculate distribution (for transparency)
 	 */
-	method: 'mutual-recognition' | 'collective-recognition' | 'equal-shares' | 'custom' | 'two-tier' | 'multi-tier';
+	method: 'mutual-recognition' | 'collective-recognition' | 'equal-shares' | 'custom' | 'two-tier' | 'multi-tier' | 'mutual_recognition_bidirectional';
 
 	/**
 	 * N-Tier allocation structure (NEW - replaces hardcoded tier1/tier2)

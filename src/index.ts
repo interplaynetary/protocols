@@ -12,7 +12,7 @@
  */
 
 // Core exports (main entry point)
-export { computeAllocations } from './allocation.js';
+export { calculateSlotBasedPriorityAllocation } from './allocation.js';
 export { calculateCollectiveRecognitionDistribution } from './distribution.js';
 export { mutualFulfillment } from './tree.js';
 export type { Commitment, NeedSlot, AvailabilitySlot, Node } from './schemas.js';

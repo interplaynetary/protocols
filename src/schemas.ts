@@ -408,7 +408,14 @@ export const AvailabilitySlotSchema = z.object({
 	// Collective capacity: Who can provide this (pubkeys or org_ids)
 	// Empty/undefined = just me, populated = collective effort
 	// Supports org_ids (e.g., "org_abc123") which resolve to member lists recursively
-	members: z.array(z.string()).optional()
+	members: z.array(z.string()).optional(),
+
+	// Priority distribution for slot-based alloc (Specific to this slot)
+	// Describes how I want to prioritize specific received requests for THIS slot
+	priority_distribution: z.array(z.object({
+		target_slot_id: z.string(), // The ID of the specific NeedSlot
+		priority_percentage: z.number().min(0).max(1)
+	})).optional()
 });
 
 export type AvailabilitySlot = z.infer<typeof AvailabilitySlotSchema>;
@@ -474,7 +481,14 @@ export const NeedSlotSchema = z.object({
 	// Collective need: Who needs this (pubkeys or org_ids)
 	// Empty/undefined = just me, populated = collective need
 	// Supports org_ids (e.g., "org_abc123") which resolve to member lists recursively
-	members: z.array(z.string()).optional()
+	members: z.array(z.string()).optional(),
+
+	// Priority distribution for slot-based alloc (Specific to this slot)
+	// Describes how I want to prioritize specific providers/offers for THIS slot
+	priority_distribution: z.array(z.object({
+		target_slot_id: z.string(), // The ID of the specific AvailabilitySlot
+		priority_percentage: z.number().min(0).max(1)
+	})).optional()
 });
 
 export type NeedSlot = z.infer<typeof NeedSlotSchema>;
@@ -637,12 +651,17 @@ export const CommitmentSchema = z.object({
 	).nullable().optional(),
 
 	// Distance-based allocation tracking
-	// Total allocations received (sum of all commitments from providers)
-	// Format: { need_type_id: total_allocated }
-	total_allocated: z.record(z.string(), z.number().nonnegative()).optional(),
+	// Total allocations received FROM EACH PROVIDER
+	// Format: { need_type_id: { provider_pubkey: quantity } }
+	// This allows providers to see what the recipient is receiving from OTHER providers
+	// without needing to subscribe to those providers' commitments
+	total_allocated: z.record(
+		z.string(), // need_type_id
+		z.record(z.string(), z.number().nonnegative()) // provider_pubkey → quantity
+	).optional(),
 
 	// Distance from need (can be negative for over-allocation)
-	// Formula: distance = declared_need - total_allocated
+	// Formula: distance = declared_need - sum(total_allocated[type_id].values())
 	// Positive = under-allocated, Negative = over-allocated, Zero = perfect
 	// Format: { need_type_id: distance }
 	distance_from_need: z.record(z.string(), z.number()).optional(),
@@ -1386,4 +1405,141 @@ export type ProviderCapacity = Commitment & { id?: string };  // Some legacy cod
 export type RecipientCapacity = Commitment;
 export type CapacitiesCollection = Record<string, Commitment>;
 
+// ═══════════════════════════════════════════════════════════════════
+// PRIORITY-BASED ALLOCATION SCHEMAS
+// ═══════════════════════════════════════════════════════════════════
 
+/**
+ * Priority Assignment - Provider's or Recipient's priority for a specific entity
+ * 
+ * Priority percentage means "I'm willing to dedicate UP TO this % of my capacity/need"
+ * NOT "I'm targeting to give/receive exactly this %"
+ */
+export const PriorityAssignmentSchema = z.object({
+	/** Entity ID (recipient for provider, provider for recipient) */
+	entity_id: z.string(),
+
+	/** Priority percentage (0-1): maximum willing to allocate/receive */
+	priority_percentage: PercentageSchema,
+
+	/** Optional slot-specific priority */
+	slot_id: z.string().optional()
+});
+
+export type PriorityAssignment = z.infer<typeof PriorityAssignmentSchema>;
+
+/**
+ * Priority Provider Input - Provider's capacity and priority assignments
+ */
+export const PriorityProviderInputSchema = z.object({
+	provider_id: z.string(),
+	capacity: z.number().nonnegative(),
+	need_type_id: z.string(),
+	slot_id: z.string().optional(),
+
+	/** Priority assignments to recipients (should sum to ≤ 100%) */
+	priorities: z.array(PriorityAssignmentSchema),
+
+	/** Optional divisibility constraints */
+	divisibility_constraints: z.object({
+		max_natural_div: z.number().optional(),
+		min_allocation_percentage: PercentageSchema.optional()
+	}).optional()
+});
+
+export type PriorityProviderInput = z.infer<typeof PriorityProviderInputSchema>;
+
+/**
+ * Priority Recipient Input - Recipient's need and priority assignments
+ */
+export const PriorityRecipientInputSchema = z.object({
+	recipient_id: z.string(),
+	need: z.number().nonnegative(),
+	need_type_id: z.string(),
+	slot_id: z.string().optional(),
+
+	/** Priority assignments to providers (should sum to ≤ 100%) */
+	priorities: z.array(PriorityAssignmentSchema),
+
+	/** Optional compliance filter */
+	compliance_filter: z.any().optional()
+});
+
+export type PriorityRecipientInput = z.infer<typeof PriorityRecipientInputSchema>;
+
+/**
+ * Priority Allocation Record - Single allocation with priority metadata
+ */
+export const PriorityAllocationRecordSchema = z.object({
+	provider_id: z.string(),
+	recipient_id: z.string(),
+	amount: z.number().nonnegative(),
+
+	/** Was this allocation within the initial priority limit? */
+	within_priority_limit: z.boolean(),
+
+	/** Was this allocation from surplus redistribution? */
+	from_surplus: z.boolean()
+});
+
+export type PriorityAllocationRecord = z.infer<typeof PriorityAllocationRecordSchema>;
+
+/**
+ * Provider Metrics - Per-provider allocation metrics
+ */
+export const ProviderMetricsSchema = z.object({
+	utilization: PercentageSchema,
+	surplus_remaining: z.number().nonnegative(),
+	priority_limits_respected: z.boolean()
+});
+
+export type ProviderMetrics = z.infer<typeof ProviderMetricsSchema>;
+
+/**
+ * Recipient Metrics - Per-recipient fulfillment metrics
+ */
+export const RecipientMetricsSchema = z.object({
+	fulfillment: PercentageSchema,
+	unmet_need: z.number().nonnegative(),
+	sources: z.array(z.string())
+});
+
+export type RecipientMetrics = z.infer<typeof RecipientMetricsSchema>;
+
+/**
+ * System Metrics - Overall allocation system metrics
+ */
+export const SystemMetricsSchema = z.object({
+	total_allocated: z.number().nonnegative(),
+	total_capacity: z.number().nonnegative(),
+	total_need: z.number().nonnegative(),
+	utilization_rate: PercentageSchema,
+	fulfillment_rate: PercentageSchema
+});
+
+export type SystemMetrics = z.infer<typeof SystemMetricsSchema>;
+
+/**
+ * Priority Allocation Result - Complete allocation result with priority metadata
+ */
+export const PriorityAllocationResultSchema = z.object({
+	/** All allocations with priority metadata */
+	allocations: z.array(PriorityAllocationRecordSchema),
+
+	/** Per-provider metrics */
+	provider_metrics: z.record(z.string(), ProviderMetricsSchema),
+
+	/** Per-recipient metrics */
+	recipient_metrics: z.record(z.string(), RecipientMetricsSchema),
+
+	/** System-wide metrics */
+	system_metrics: SystemMetricsSchema,
+
+	/** Did Phase 2 refinement converge? */
+	converged: z.boolean().optional(),
+
+	/** Number of Phase 2 iterations */
+	iterations: z.number().optional()
+});
+
+export type PriorityAllocationResult = z.infer<typeof PriorityAllocationResultSchema>;
