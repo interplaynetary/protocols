@@ -411,11 +411,10 @@ export const AvailabilitySlotSchema = z.object({
 	members: z.array(z.string()).optional(),
 
 	// Priority distribution for slot-based alloc (Specific to this slot)
-	// Describes how I want to prioritize specific received requests for THIS slot
-	priority_distribution: z.array(z.object({
-		target_slot_id: z.string(), // The ID of the specific NeedSlot
-		priority_percentage: z.number().min(0).max(1)
-	})).optional()
+	// Person-to-person recognition weights specific to THIS slot
+	// Overrides global_recognition_weights for this slot if specified
+	// Same structure as global_recognition_weights: Record<pubkey, priority>
+	priority_distribution: z.record(z.string(), z.number().min(0).max(1)).optional()
 });
 
 export type AvailabilitySlot = z.infer<typeof AvailabilitySlotSchema>;
@@ -484,11 +483,10 @@ export const NeedSlotSchema = z.object({
 	members: z.array(z.string()).optional(),
 
 	// Priority distribution for slot-based alloc (Specific to this slot)
-	// Describes how I want to prioritize specific providers/offers for THIS slot
-	priority_distribution: z.array(z.object({
-		target_slot_id: z.string(), // The ID of the specific AvailabilitySlot
-		priority_percentage: z.number().min(0).max(1)
-	})).optional()
+	// Person-to-person recognition weights specific to THIS slot
+	// Overrides global_recognition_weights for this slot if specified
+	// Same structure as global_recognition_weights: Record<pubkey, priority>
+	priority_distribution: z.record(z.string(), z.number().min(0).max(1)).optional()
 });
 
 export type NeedSlot = z.infer<typeof NeedSlotSchema>;
@@ -598,6 +596,7 @@ export type TierDefinition = z.infer<typeof TierDefinitionSchema>;
 export const SlotAllocationRecordSchema = z.object({
 	availability_slot_id: z.string().min(1),
 	recipient_pubkey: z.string(),
+	provider_pubkey: z.string().optional(),
 	recipient_need_slot_id: z.string().optional(),
 	quantity: z.number().nonnegative(),
 
@@ -607,9 +606,12 @@ export const SlotAllocationRecordSchema = z.object({
 	// Compatibility
 	time_compatible: z.boolean(),
 	location_compatible: z.boolean(),
-	// Tier identification: numeric priority (new) or string label (legacy)
-	// Prefer numeric priority for new code, supports string labels for backward compatibility
-	tier: z.union([z.number().int().nonnegative(), z.string()])
+	// Distributed IPF Metadata
+	withinPriorityLimit: z.boolean(),
+	fromSurplus: z.boolean(),
+
+	// Deprecated (Keep for backward compatibility if needed, but making optional/nullable)
+	tier: z.union([z.number().int().nonnegative(), z.string()]).optional(),
 });
 
 export type SlotAllocationRecord = z.infer<typeof SlotAllocationRecordSchema>;
@@ -671,7 +673,14 @@ export const CommitmentSchema = z.object({
 	timestamp: z.number().int().positive(),
 
 	// Per-type adaptive damping (α_k)
-	multi_dimensional_damping: MultiDimensionalDampingSchema.nullable().optional()
+	multi_dimensional_damping: MultiDimensionalDampingSchema.nullable().optional(),
+
+	// DISTRIBUTED IPF: Constraint Factors (y_r)
+	// Published by recipients to signal saturation level to providers.
+	// Map: need_slot_id -> scaling_factor (0.0 to 1.0)
+	// y_r = 1.0 (Under-saturated, send full proposal)
+	// y_r < 1.0 (Over-saturated, scale down proposal)
+	constraint_scaling_factors: z.record(z.string(), z.number().min(0).max(1)).optional()
 });
 
 export type Commitment = z.infer<typeof CommitmentSchema>;

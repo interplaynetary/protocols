@@ -1,0 +1,84 @@
+cabal-version:      3.0
+name:               commons-monadic
+version:            0.1.0.0
+synopsis:           Monadic implementation of the Commons paradigm
+description:        
+  A monadic Haskell implementation of the Commons formalism using:
+  - StateT for automatic state threading
+  - WriterT for automatic history accumulation
+  - Pure functions for core allocation logic
+  
+  Commons = ⟨N, Π, {Δ_t}⟩ (property-based model)
+
+license:            MIT
+author:             Commons Team
+maintainer:         commons@example.com
+category:           Data
+build-type:         Simple
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:  
+        Commons.Types
+        Commons.Graph
+        Commons.Potential
+        Commons.Constraint
+        Commons.Allocate
+        Commons.Allocation
+        Commons.Filter
+        Commons.Weight
+        Commons.Monad
+        Commons.Property
+        Commons.Commons
+        Commons.PropertyConstraint
+        Commons.PropertyAllocate
+    build-depends:    
+        base >=4.17.0.0,
+        containers >=0.6.7,
+        text >=2.0.1,
+        time >=1.12.2,
+        mtl >=2.2.2
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    default-extensions: ImportQualifiedPost
+
+executable commons-monadic
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:
+        base >=4.17.0.0,
+        commons-monadic,
+        containers,
+        text,
+        time,
+        mtl
+    hs-source-dirs:   app
+    default-language: Haskell2010
+    default-extensions: ImportQualifiedPost
+
+executable types-as-nodes-example
+    import:           warnings
+    main-is:          TypesAsNodesExample.hs
+    build-depends:
+        base >=4.17.0.0,
+        commons-monadic,
+        containers,
+        text
+    hs-source-dirs:   app
+    default-language: Haskell2010
+    default-extensions: ImportQualifiedPost
+
+executable property-model-example
+    import:           warnings
+    main-is:          PropertyModelExample.hs
+    build-depends:
+        base >=4.17.0.0,
+        commons-monadic,
+        containers,
+        text
+    hs-source-dirs:   app
+    default-language: Haskell2010
+    default-extensions: ImportQualifiedPost, LambdaCase

@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commons Monadic - Visual Guide</title>
+    <meta name="description"
+        content="Interactive visual guide to understanding the Commons paradigm and its Haskell monadic implementation">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0e27;
+            --bg-card: #1a1f3a;
+            --bg-hover: #252b4a;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #ff6b9d;
+            --accent-tertiary: #ffd93d;
+            --accent-green: #6bffb8;
+            --text-primary: #e8eaf6;
+            --text-secondary: #9fa8da;
+            --border: #3949ab;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1147 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(255, 107, 157, 0.1) 100%);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+
+            50% {
+                transform: scale(1.1) rotate(180deg);
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .formula {
+            font-size: 1.8rem;
+            font-family: 'Courier New', monospace;
+            color: var(--accent-tertiary);
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 1rem 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .tab-btn:hover::before {
+            left: 100%;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover::after {
+            transform: scaleX(1);
+        }
+
+        .card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: var(--accent-tertiary);
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1.5rem;
+            border-radius: 10px;
+            overflow-x: auto;
+            border-left: 4px solid var(--accent-primary);
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .flow-diagram {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 12px;
+            border-left: 4px solid var(--accent-primary);
+            transition: all 0.3s ease;
+        }
+
+        .flow-step:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateX(10px);
+        }
+
+        .flow-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .flow-content h4 {
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .architecture-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .layer {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .layer-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+        }
+
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .module {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--accent-primary);
+            transition: all 0.3s ease;
+        }
+
+        .module:hover {
+            background: rgba(0, 212, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .example-box {
+            background: rgba(255, 107, 157, 0.1);
+            border: 2px solid var(--accent-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .example-title {
+            color: var(--accent-secondary);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .highlight {
+            color: var(--accent-tertiary);
+            font-weight: 600;
+        }
+
+        .visual-graph {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .node {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: absolute;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .node:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+        }
+
+        .edge {
+            position: absolute;
+            height: 2px;
+            background: var(--accent-green);
+            transform-origin: left center;
+        }
+
+        .potential-indicator {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0.2rem;
+        }
+
+        .source {
+            background: rgba(107, 255, 184, 0.2);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .sink {
+            background: rgba(255, 107, 157, 0.2);
+            border: 1px solid var(--accent-secondary);
+            color: var(--accent-secondary);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Commons Monadic</h1>
+            <p class="subtitle">A Pure Formalism for Potentials, Not Containers</p>
+            <div class="formula">Commons = ⟨G, P, Φ, w, {Δ_t}⟩</div>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+            <button class="tab-btn" onclick="showTab('architecture')">Architecture</button>
+            <button class="tab-btn" onclick="showTab('flow')">Flow Dynamics</button>
+            <button class="tab-btn" onclick="showTab('types')">Types & Aggregation</button>
+            <button class="tab-btn" onclick="showTab('monad')">Monadic API</button>
+            <button class="tab-btn" onclick="showTab('examples')">Examples</button>
+            <button class="tab-btn" onclick="showTab('commons')">Global Commons</button>
+        </div>
+
+        <!-- OVERVIEW TAB -->
+        <div id="overview" class="tab-content active">
+            <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--accent-primary);">The Core Paradigm</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <span class="card-icon">🌊</span>
+                    <h3>Flow Potentials</h3>
+                    <p>Resources aren't <em>owned</em> — they're <strong>directional gradients</strong> seeking
+                        equilibrium.</p>
+                    <br>
+                    <p><span class="potential-indicator source">+100 meals</span> = Source potential (flows outward)</p>
+                    <p><span class="potential-indicator sink">-20 meals</span> = Sink potential (flows inward)</p>
+                </div>
+
+                <div class="card">
+                    <span class="card-icon">🕸️</span>
+                    <h3>Relational Graph</h3>
+                    <p>Entities exist through <strong>relationships</strong>, not isolation.</p>
+                    <br>
+                    <p>Alice → Person → Worker</p>
+                    <p>Types and instances are the <em>same structure</em>.</p>
+                </div>
+
+                <div class="card">
+                    <span class="card-icon">⚖️</span>
+                    <h3>Automatic Fairness</h3>
+                    <p>Allocation is <strong>proportional</strong> and <strong>fair</strong> by mathematical necessity.
+                    </p>
+                    <br>
+                    <p>No accumulation beyond need. No gaming the system.</p>
+                </div>
+            </div>
+
+            <div class="flow-diagram">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">The Five Primitives</h3>
+
+                <div class="flow-step">
+                    <div class="flow-number">G</div>
+                    <div class="flow-content">
+                        <h4>Graph</h4>
+                        <p>Vertices and edges defining relational context. Who's connected to whom?</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">P</div>
+                    <div class="flow-content">
+                        <h4>Potentials</h4>
+                        <p>Signed magnitudes representing flow gradients. What wants to flow where?</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">Φ</div>
+                    <div class="flow-content">
+                        <h4>Filter (Constraints)</h4>
+                        <p>Predicates determining eligibility. What <em>can</em> flow?</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">w</div>
+                    <div class="flow-content">
+                        <h4>Weight (Preferences)</h4>
+                        <p>Functions assigning priority. What <em>should</em> flow?</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">Δ</div>
+                    <div class="flow-content">
+                        <h4>Records (History)</h4>
+                        <p>Immutable log of actual flows. What <em>did</em> flow?</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">🍽️ Simple Example: Kitchen Allocation</div>
+                <pre><code>-- Kitchen has source potential
+kitchen: <span class="highlight">+100 meals</span>
+
+-- People have sink potentials
+alice: <span class="highlight">-20 meals</span>
+bob:   <span class="highlight">-30 meals</span>
+
+-- Automatic proportional allocation
+alice gets: 40 meals (20:30 ratio)
+bob gets:   60 meals (20:30 ratio)</code></pre>
+            </div>
+        </div>
+
+        <!-- ARCHITECTURE TAB -->
+        <div id="architecture" class="tab-content">
+            <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--accent-primary);">Module Architecture</h2>
+
+            <div class="architecture-diagram">
+                <div class="layer">
+                    <div class="layer-title">📦 Core Types (Types.hs)</div>
+                    <div class="modules">
+                        <div class="module">
+                            <strong>Graph</strong>
+                            <p>Vertices & Edges</p>
+                        </div>
+                        <div class="module">
+                            <strong>Potential</strong>
+                            <p>Flow gradients</p>
+                        </div>
+                        <div class="module">
+                            <strong>Filter</strong>
+                            <p>Constraint predicates</p>
+                        </div>
+                        <div class="module">
+                            <strong>Weight</strong>
+                            <p>Preference functions</p>
+                        </div>
+                        <div class="module">
+                            <strong>History</strong>
+                            <p>Allocation records</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layer">
+                    <div class="layer-title">🔧 Pure Functions</div>
+                    <div class="modules">
+                        <div class="module">
+                            <strong>Graph.hs</strong>
+                            <p>Graph algebra</p>
+                        </div>
+                        <div class="module">
+                            <strong>Potential.hs</strong>
+                            <p>Potential operations</p>
+                        </div>
+                        <div class="module">
+                            <strong>Filter.hs</strong>
+                            <p>Filter combinators</p>
+                        </div>
+                        <div class="module">
+                            <strong>Weight.hs</strong>
+                            <p>Weight combinators</p>
+                        </div>
+                        <div class="module">
+                            <strong>Allocate.hs</strong>
+                            <p>Allocation engine</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layer">
+                    <div class="layer-title">🎯 Monadic Interface (Monad.hs)</div>
+                    <div class="modules">
+                        <div class="module">
+                            <strong>StateT</strong>
+                            <p>Commons state threading</p>
+                        </div>
+                        <div class="module">
+                            <strong>WriterT</strong>
+                            <p>History accumulation</p>
+                        </div>
+                        <div class="module">
+                            <strong>IO</strong>
+                            <p>Timestamps & effects</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Why Monadic?</h3>
+                <p>The monadic interface provides:</p>
+                <ul style="margin-left: 2rem; margin-top: 1rem;">
+                    <li><strong>Automatic state threading</strong> — No manual passing of Commons state</li>
+                    <li><strong>Automatic history recording</strong> — Writer monad accumulates all allocations</li>
+                    <li><strong>Composable operations</strong> — Chain operations with do-notation</li>
+                    <li><strong>Pure core, effectful shell</strong> — IO only at the boundaries</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- FLOW DYNAMICS TAB -->
+        <div id="flow" class="tab-content">
+            <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--accent-primary);">Flow Dynamics</h2>
+
+            <div class="flow-diagram">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">The Unified Allocation Equation</h3>
+
+                <div
+                    style="background: rgba(0, 0, 0, 0.4); padding: 2rem; border-radius: 12px; text-align: center; margin: 2rem 0;">
+                    <div
+                        style="font-size: 1.5rem; font-family: 'Courier New', monospace; color: var(--accent-tertiary);">
+                        Alloc(p, s, r) = min(q<sub>s</sub> · w(r)/Σw(e), |q<sub>r</sub>|)
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>Variables</h3>
+                        <p><code>p</code> = Provider entity</p>
+                        <p><code>s</code> = Capacity slot (positive)</p>
+                        <p><code>r</code> = Recipient entity</p>
+                        <p><code>q<sub>s</sub></code> = Capacity quantity</p>
+                        <p><code>q<sub>r</sub></code> = Need quantity (negative)</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Functions</h3>
+                        <p><code>w(r)</code> = Weight function</p>
+                        <p><code>Σw(e)</code> = Sum of all weights</p>
+                        <p><code>min()</code> = Prevents over-allocation</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">📊 Allocation Process</div>
+
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <div class="flow-content">
+                        <h4>Find Eligible Recipients</h4>
+                        <p>Apply filter Φ to find entities with matching sink potentials</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <div class="flow-content">
+                        <h4>Calculate Weights</h4>
+                        <p>Apply weight function w to each recipient (e.g., recognition × reputation)</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <div class="flow-content">
+                        <h4>Proportional Distribution</h4>
+                        <p>Distribute capacity proportional to weights: share = (weight / total_weights) × capacity</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">4</div>
+                    <div class="flow-content">
+                        <h4>Apply Min Constraint</h4>
+                        <p>Cap allocation at recipient's need magnitude (prevents accumulation)</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">5</div>
+                    <div class="flow-content">
+                        <h4>Record Immutably</h4>
+                        <p>Create AllocationRecord with timestamp, participants, and quantities</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Key Properties</h3>
+                <ul style="margin-left: 2rem; margin-top: 1rem;">
+                    <li><strong>Proportional fairness</strong> — Allocation ratios equal weight ratios</li>
+                    <li><strong>No accumulation</strong> — Can't receive beyond need (min function)</li>
+                    <li><strong>Conservation</strong> — Total allocated ≤ source capacity</li>
+                    <li><strong>Auditability</strong> — Every flow recorded immutably</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TYPES & AGGREGATION TAB -->
+        <div id="types" class="tab-content">
+            <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--accent-primary);">Types & Aggregation</h2>
+
+            <div class="flow-diagram"
+                style="background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(0, 212, 255, 0.1)); border: 2px solid var(--accent-secondary);">
+                <h3 style="color: var(--accent-secondary); margin-bottom: 1.5rem;">⚡ Critical Distinction: Graph vs
+                    Potentials</h3>
+
+                <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
+                    <strong>Graph edges and potentials are SEPARATE data structures!</strong> They serve different
+                    purposes and are stored independently.
+                </p>
+
+                <div class="grid">
+                    <div class="card" style="border-color: var(--accent-primary);">
+                        <h3>📊 Graph (G) - Structure</h3>
+                        <p><strong>Purpose:</strong> Define <em>relational context</em> and <em>type hierarchy</em></p>
+                        <br>
+                        <p><strong>What it stores:</strong></p>
+                        <pre><code>data Graph = Graph
+  { vertices :: Set EntityId
+  , edges    :: Map EntityId (Set EntityId)
+  }
+
+-- edges maps: entity → {types of entity}
+-- Example:
+edges = Map.fromList
+  [ ("alice", Set.fromList ["programmer"])
+  , ("programmer", Set.fromList ["worker"])
+  ]</code></pre>
+                        <br>
+                        <p><strong>Meaning:</strong> "Alice IS-A Programmer" (membership/type relationship)</p>
+                    </div>
+
+                    <div class="card" style="border-color: var(--accent-green);">
+                        <h3>🌊 Potentials (P) - Properties</h3>
+                        <p><strong>Purpose:</strong> Define <em>flow gradients</em> and <em>resource states</em></p>
+                        <br>
+                        <p><strong>What it stores:</strong></p>
+                        <pre><code>type Potentials = Map EntityId [Potential]
+
+data Potential = Potential
+  { potentialType :: PotentialType
+  , magnitude     :: SignedQuantity
+  , unit          :: Maybe Text
+  , ...
+  }
+
+-- Example:
+potentials = Map.fromList
+  [ ("alice", [Potential "meals" (-20) ...])
+  , ("kitchen", [Potential "meals" 100 ...])
+  ]</code></pre>
+                        <br>
+                        <p><strong>Meaning:</strong> "Alice HAS-NEED-FOR 20 meals" (flow potential)</p>
+                    </div>
+                </div>
+
+                <div class="example-box" style="margin-top: 2rem;">
+                    <div class="example-title">🔍 Why They're Separate</div>
+
+                    <div style="background: rgba(0, 0, 0, 0.3); padding: 1.5rem; border-radius: 10px; margin: 1rem 0;">
+                        <h4 style="color: var(--accent-primary); margin-bottom: 1rem;">The Complete Commons Structure:
+                        </h4>
+                        <pre><code>data Commons = Commons
+  { graph      :: Graph           -- ← Edges: WHO is related to WHOM
+  , potentials :: Potentials      -- ← Properties: WHAT each vertex has/needs
+  , history    :: History         -- ← Records: WHAT actually flowed
+  }</code></pre>
+                    </div>
+
+                    <p style="margin: 1rem 0;"><strong>Think of it like a database with two tables:</strong></p>
+
+                    <div class="grid">
+                        <div>
+                            <h4 style="color: var(--accent-primary);">Table 1: Relationships (Graph)</h4>
+                            <pre><code>| Entity      | Types          |
+|-------------|----------------|
+| alice       | [programmer]   |
+| bob         | [programmer]   |
+| programmer  | [worker]       |
+| worker      | [person]       |</code></pre>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--accent-green);">Table 2: Properties (Potentials)</h4>
+                            <pre><code>| Entity      | Type    | Magnitude |
+|-------------|---------|-----------|
+| alice       | meals   | -20       |
+| bob         | meals   | -30       |
+| kitchen     | meals   | +100      |
+| alice       | skill   | +7.5      |</code></pre>
+                        </div>
+                    </div>
+
+                    <br>
+                    <p><strong>Key Points:</strong></p>
+                    <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                        <li>✅ <strong>Edges</strong> define <em>IS-A</em> relationships (Alice is a Programmer)</li>
+                        <li>✅ <strong>Potentials</strong> define <em>HAS/NEEDS</em> properties (Alice needs 20 meals)
+                        </li>
+                        <li>✅ Same vertex can have <strong>multiple edges</strong> (many types) AND <strong>multiple
+                                potentials</strong> (many resources)</li>
+                        <li>✅ Edges are <strong>structural</strong> (graph topology), potentials are
+                            <strong>quantitative</strong> (signed magnitudes)
+                        </li>
+                        <li>✅ Aggregation functions <strong>use the graph to traverse</strong> and <strong>sum
+                                potentials along the path</strong></li>
+                    </ul>
+                </div>
+
+                <div class="example-box"
+                    style="margin-top: 2rem; background: rgba(107, 255, 184, 0.1); border-color: var(--accent-green);">
+                    <div class="example-title" style="color: var(--accent-green);">💡 Concrete Example: How They Work
+                        Together</div>
+                    <pre><code>-- 1. GRAPH STRUCTURE (edges define relationships)
+addVertexM "kitchen"
+addVertexM "programmer"
+addVertexM "alice"
+
+addMembershipM "alice" "programmer"      -- Edge: alice → programmer
+addMembershipM "programmer" "kitchen"    -- Edge: programmer → kitchen
+
+-- Now we have:
+-- Graph.edges = { "alice": {"programmer"}, "programmer": {"kitchen"} }
+
+-- 2. POTENTIALS (properties on vertices)
+addPotentialM "kitchen" $ Potential "meals" 100 ...     -- Kitchen HAS 100 meals
+addPotentialM "alice" $ Potential "meals" (-20) ...     -- Alice NEEDS 20 meals
+
+-- Now we have:
+-- Potentials = { "kitchen": [Potential "meals" 100], "alice": [Potential "meals" -20] }
+
+-- 3. ALLOCATION (uses BOTH)
+performAllocationM "kitchen" "meals" noFilter sinkMagnitude "..." "..."
+
+-- What happens:
+-- a) Look up kitchen's POTENTIAL: finds +100 meals (from Potentials map)
+-- b) Find recipients via GRAPH: members("kitchen") = {"programmer"} (from Graph.edges)
+-- c) Recurse: members("programmer") = {"alice"} (from Graph.edges)
+-- d) Check alice's POTENTIAL: finds -20 meals (from Potentials map)
+-- e) Allocate: alice gets min(100 * (20/20), 20) = 20 meals
+
+-- The GRAPH tells us WHO can receive (membership structure)
+-- The POTENTIALS tell us HOW MUCH they need/have (flow magnitudes)</code></pre>
+                </div>
+
+                <div
+                    style="background: rgba(255, 215, 0, 0.1); border: 2px solid var(--accent-tertiary); border-radius: 12px; padding: 1.5rem; margin-top: 2rem;">
+                    <h4 style="color: var(--accent-tertiary); margin-bottom: 1rem;">🎯 The Key Insight</h4>
+                    <p style="font-size: 1.1rem; line-height: 1.8;">
+                        <strong>Edges are not potentials.</strong> Edges define the <em>topology</em> of who's connected
+                        to whom.
+                        Potentials are <em>attributes</em> attached to vertices that describe flow gradients.
+                        The allocation algorithm <strong>traverses the graph structure</strong> (following edges) to
+                        find eligible recipients,
+                        then <strong>reads their potentials</strong> (from a separate map) to determine how much to
+                        allocate.
+                    </p>
+                    <br>
+                    <p style="font-size: 1.1rem;">
+                        Think: <strong>Graph = skeleton</strong>, <strong>Potentials = flesh</strong>.
+                        The skeleton defines the shape and connections. The flesh defines the actual quantities flowing
+                        through those connections.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔄 The Type/Instance Duality</h3>
+                <p>In Commons, <strong>any vertex can be both a type AND an instance simultaneously</strong>. There's no
+                    separate type system—types are just vertices with incoming membership edges.</p>
+                <br>
+                <div class="grid">
+                    <div>
+                        <h4 style="color: var(--accent-primary);">As a Type (has members)</h4>
+                        <pre><code>-- Programmer has members
+members(Programmer) = {Alice, Bob}
+
+-- Check if it's a type
+isType(Programmer) = True</code></pre>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent-secondary);">As an Instance (has types)</h4>
+                        <pre><code>-- Programmer is a member of Worker
+types(Programmer) = {Worker}
+
+-- Check if it's an instance
+isMember(Programmer) = True</code></pre>
+                    </div>
+                </div>
+                <br>
+                <p><strong>Key insight:</strong> Programmer can have its own potentials (e.g., average skill level)
+                    while also serving as a category for Alice and Bob!</p>
+            </div>
+
+            <div class="flow-diagram">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">Membership Relationships</h3>
+
+                <div class="example-box">
+                    <div class="example-title">🕸️ Graph Structure</div>
+                    <p>An edge <code>e₁ → e₂</code> means "<strong>e₁ is a member of e₂</strong>" or equivalently
+                        "<strong>e₂ is a type of e₁</strong>"</p>
+                    <br>
+                    <pre><code>-- Example hierarchy
+Alice → Programmer → Worker → Person
+Bob → Programmer → Worker → Person
+
+-- Graph operations
+types(Alice) = {Programmer}
+members(Programmer) = {Alice, Bob}
+ancestors(Alice) = {Programmer, Worker, Person}
+descendants(Person) = {Worker, Programmer, Alice, Bob}</code></pre>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>types(e)</h3>
+                        <p>Returns immediate types (parents) of entity <code>e</code></p>
+                        <pre><code>types :: Graph -> EntityId -> Set EntityId
+
+-- Example
+types(g, "alice") = {"programmer"}</code></pre>
+                    </div>
+
+                    <div class="card">
+                        <h3>members(t)</h3>
+                        <p>Returns immediate members (children) of type <code>t</code></p>
+                        <pre><code>members :: Graph -> EntityId -> Set EntityId
+
+-- Example
+members(g, "programmer") = {"alice", "bob"}</code></pre>
+                    </div>
+
+                    <div class="card">
+                        <h3>ancestors(e)</h3>
+                        <p>Transitive closure upward—all types reachable from <code>e</code></p>
+                        <pre><code>ancestors :: Graph -> EntityId -> Set EntityId
+
+-- Example
+ancestors(g, "alice") = 
+  {"programmer", "worker", "person"}</code></pre>
+                    </div>
+
+                    <div class="card">
+                        <h3>descendants(t)</h3>
+                        <p>Transitive closure downward—all members reachable from <code>t</code></p>
+                        <pre><code>descendants :: Graph -> EntityId -> Set EntityId
+
+-- Example
+descendants(g, "worker") = 
+  {"programmer", "alice", "bob"}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-diagram">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">Aggregation Mechanics</h3>
+
+                <div class="example-box">
+                    <div class="example-title">📊 Upward Aggregation (Agg_↑)</div>
+                    <p><strong>Aggregate potentials UP through category relationships</strong></p>
+                    <pre><code>Agg_↑(v, τ) = Σ_{c ∈ Categories(v)} (Σ_{p ∈ P(c), type(p) = τ} p.q)
+
+-- Haskell implementation
+aggregateUp :: Graph -> Potentials -> EntityId -> PotentialType -> SignedQuantity
+aggregateUp g pots eid ptype =
+  let categoryIds = Set.toList (types g eid)
+      magnitudes = [ magnitude p
+                   | cid <- categoryIds
+                   , p <- getPotentials pots cid
+                   , potentialType p == ptype
+                   ]
+  in sum magnitudes</code></pre>
+                    <br>
+                    <p><strong>Example:</strong></p>
+                    <pre><code>-- Alice is a member of Programmer
+-- Programmer has skill_level potential of +7.5
+
+aggregateUp(g, pots, "alice", "skill_level") = 7.5
+
+-- Alice inherits the skill_level from Programmer!</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">📉 Downward Aggregation (Agg_↓)</div>
+                    <p><strong>Aggregate potentials DOWN through participant relationships</strong></p>
+                    <pre><code>Agg_↓(c, τ) = Σ_{v ∈ Participants(c)} (Σ_{p ∈ P(v), type(p) = τ} p.q)
+
+-- Haskell implementation
+aggregateDown :: Graph -> Potentials -> EntityId -> PotentialType -> SignedQuantity
+aggregateDown g pots cid ptype =
+  let participantIds = Set.toList (members g cid)
+      magnitudes = [ magnitude p
+                   | eid <- participantIds
+                   , p <- getPotentials pots eid
+                   , potentialType p == ptype
+                   ]
+  in sum magnitudes</code></pre>
+                    <br>
+                    <p><strong>Example:</strong></p>
+                    <pre><code>-- Programmer has members: Alice (-10 hours), Bob (-15 hours)
+
+aggregateDown(g, pots, "programmer", "tutoring") = -25 hours
+
+-- Total tutoring need for all Programmers!</code></pre>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>aggregateSourcesDown</h3>
+                        <p>Sum only <strong>positive</strong> (source) potentials from members</p>
+                        <pre><code>aggregateSourcesDown g pots "kitchen" "meals"
+-- Returns sum of all +meals from kitchen members</code></pre>
+                    </div>
+
+                    <div class="card">
+                        <h3>aggregateSinksDown</h3>
+                        <p>Sum only <strong>negative</strong> (sink) potentials from members (returns absolute value)
+                        </p>
+                        <pre><code>aggregateSinksDown g pots "kitchen" "meals"
+-- Returns |sum of all -meals| from kitchen members</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-diagram">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">Proportional Allocation Calculation
+                </h3>
+
+                <div class="example-box">
+                    <div class="example-title">🧮 Step-by-Step Calculation</div>
+
+                    <div class="flow-step">
+                        <div class="flow-number">1</div>
+                        <div class="flow-content">
+                            <h4>Find Eligible Recipients</h4>
+                            <pre><code>eligibleRecipients :: Graph -> Potentials -> EntityId -> PotentialType -> Filter -> Set EntityId
+eligibleRecipients g pots provider ptype filterFn =
+  let participantIds = members g provider
+      eligible = Set.filter
+        (\eid ->
+          let ctx = FilterContext g pots eid
+          in filterFn ctx && hasMatchingSink pots eid ptype
+        )
+        participantIds
+  in eligible</code></pre>
+                            <p>Get all members of provider, filter by constraints, check for matching sink potentials
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="flow-number">2</div>
+                        <div class="flow-content">
+                            <h4>Compute Weights</h4>
+                            <pre><code>computeWeights :: Graph -> Potentials -> PotentialType -> Weight -> Set EntityId -> Map EntityId Double
+computeWeights g pots ptype weightFn eligible =
+  Map.fromList
+    [ (eid, weight)
+    | eid <- Set.toList eligible
+    , let ctx = WeightContext g pots eid ptype
+    , let weight = weightFn ctx
+    , weight > 0
+    ]</code></pre>
+                            <p>Apply weight function to each eligible recipient (e.g.,
+                                <code>w(r) = recognition × reputation</code>)
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="flow-number">3</div>
+                        <div class="flow-content">
+                            <h4>Normalize to Shares</h4>
+                            <pre><code>normalizeShares :: Map EntityId Double -> Map EntityId Double
+normalizeShares weights
+  | Map.null weights = Map.empty
+  | otherwise =
+      let total = sum (Map.elems weights)
+      in if total > 0
+         then Map.map (/ total) weights
+         else Map.empty</code></pre>
+                            <p>Divide each weight by total to get proportional shares (sum = 1.0)</p>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="flow-number">4</div>
+                        <div class="flow-content">
+                            <h4>Allocate with Min Constraint</h4>
+                            <pre><code>allocations = Map.mapWithKey
+  (\eid share ->
+    let sinkMag = case getPotential pots eid ptype of
+          Just p  -> abs (magnitude p)
+          Nothing -> 0
+        proportional = source * share
+    in min proportional sinkMag
+  )
+  shares</code></pre>
+                            <p>Multiply source by share, but cap at recipient's need magnitude</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">💡 Complete Example: Type-Based Allocation</div>
+                <pre><code>-- Setup hierarchy
+addVertexM "kitchen"
+addVertexM "programmer"
+addVertexM "alice"
+addVertexM "bob"
+
+-- Memberships
+addMembershipM "alice" "programmer"
+addMembershipM "bob" "programmer"
+addMembershipM "programmer" "kitchen"
+
+-- Potentials
+addPotentialM "kitchen" $ Potential "meals" 100 Nothing Nothing Map.empty
+addPotentialM "alice" $ Potential "meals" (-20) Nothing Nothing Map.empty
+addPotentialM "bob" $ Potential "meals" (-30) Nothing Nothing Map.empty
+
+-- Allocation
+performAllocationM "kitchen" "meals" noFilter sinkMagnitude "..." "..."
+
+-- What happens:
+-- 1. members("kitchen") = {"programmer"}
+-- 2. members("programmer") = {"alice", "bob"}  -- Transitive!
+-- 3. Eligible recipients = {"alice", "bob"}
+-- 4. Weights (using sinkMagnitude):
+--      alice: |−20| = 20
+--      bob:   |−30| = 30
+-- 5. Normalize:
+--      alice: 20/50 = 0.4
+--      bob:   30/50 = 0.6
+-- 6. Allocate:
+--      alice: min(100 × 0.4, 20) = min(40, 20) = 20 meals
+--      bob:   min(100 × 0.6, 30) = min(60, 30) = 30 meals
+-- 7. Total allocated: 50 meals (50 remain in kitchen)</code></pre>
+            </div>
+
+            <div class="card">
+                <h3>🎯 Key Insights</h3>
+                <ul style="margin-left: 2rem; margin-top: 1rem;">
+                    <li><strong>No special type system</strong> — Types are just vertices with members</li>
+                    <li><strong>Bidirectional relationships</strong> — types(e) and members(t) are inverses</li>
+                    <li><strong>Transitive aggregation</strong> — Potentials flow up and down the hierarchy</li>
+                    <li><strong>Proportional fairness</strong> — Allocation ratios exactly match weight ratios</li>
+                    <li><strong>Min prevents accumulation</strong> — Can't receive more than your sink magnitude</li>
+                    <li><strong>Everything composes</strong> — Build complex hierarchies from simple edges</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- MONAD TAB -->
+        <div id="monad" class="tab-content">
+            <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--accent-primary);">The Monadic API</h2>
+
+            <div class="card">
+                <h3>CommonsM Monad</h3>
+                <pre><code>newtype CommonsM a = CommonsM
+  { unCommonsM :: StateT Commons (WriterT [AllocationRecord] IO) a
+  }</code></pre>
+                <p style="margin-top: 1rem;">A monad transformer stack combining:</p>
+                <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                    <li><code>StateT Commons</code> — Thread Commons state</li>
+                    <li><code>WriterT [AllocationRecord]</code> — Accumulate history</li>
+                    <li><code>IO</code> — For timestamps and effects</li>
+                </ul>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>State Operations</h3>
+                    <pre><code>addVertexM :: EntityId -> CommonsM ()
+addMembershipM :: EntityId -> EntityId -> CommonsM ()
+addPotentialM :: EntityId -> Potential -> CommonsM ()</code></pre>
+                    <p style="margin-top: 1rem;">Modify the Commons state automatically</p>
+                </div>
+
+                <div class="card">
+                    <h3>Allocation Operation</h3>
+                    <pre><code>performAllocationM
+  :: EntityId
+  -> PotentialType
+  -> Filter
+  -> Weight
+  -> Text
+  -> Text
+  -> CommonsM (Map EntityId SignedQuantity)</code></pre>
+                    <p style="margin-top: 1rem;">Allocate and auto-record to history</p>
+                </div>
+
+                <div class="card">
+                    <h3>Query Operations</h3>
+                    <pre><code>getGraph :: CommonsM Graph
+getPotentials :: CommonsM Potentials
+getHistory :: CommonsM History
+getCommons :: CommonsM Commons</code></pre>
+                    <p style="margin-top: 1rem;">Access current state</p>
+                </div>
+
+                <div class="card">
+                    <h3>Running the Monad</h3>
+                    <pre><code>runCommonsM :: CommonsM a -> Commons -> IO (a, Commons, [AllocationRecord])
+evalCommonsM :: CommonsM a -> Commons -> IO (a, Commons)
+execCommonsM :: CommonsM a -> Commons -> IO Commons</code></pre>
+                    <p style="margin-top: 1rem;">Execute monadic computations</p>
+                </div>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">💡 Example: Monadic Workflow</div>
+                <pre><code>example :: CommonsM ()
+example = do
+  -- Add entities
+  addVertexM "kitchen"
+  addVertexM "alice"
+  
+  -- Add relationships
+  addMembershipM "alice" "kitchen"
+  
+  -- Add potentials
+  addPotentialM "kitchen" $ Potential "meals" 100 Nothing Nothing Map.empty
+  addPotentialM "alice" $ Potential "meals" (-20) Nothing Nothing Map.empty
+  
+  -- Perform allocation (automatically recorded!)
+  allocations <- performAllocationM
+    "kitchen"
+    "meals"
+    noFilter
+    sinkMagnitude
+    "no filter"
+    "proportional"
+  
+  -- Query results
+  history <- getHistory
+  liftIO $ print (length history)  -- Shows 1 record</code></pre>
+            </div>
+        </div>
+
+        <!-- EXAMPLES TAB -->
+        <div id="examples" class="tab-content">
+            <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--accent-primary);">Working Examples</h2>
+
+            <div class="example-box">
+                <div class="example-title">🍽️ Example 1: Proportional Distribution</div>
+                <p><strong>Scenario:</strong> A kitchen with 100 meals distributes to Alice (needs 20) and Bob (needs
+                    30)</p>
+
+                <pre><code>-- Setup
+kitchen: +100 meals (source)
+alice:   -20 meals (sink)
+bob:     -30 meals (sink)
+
+-- Allocation
+Total sink magnitude: 20 + 30 = 50
+Alice's share: (20/50) × 100 = 40 meals
+Bob's share:   (30/50) × 100 = 60 meals
+
+-- Result: Proportional to need!</code></pre>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">🎓 Example 2: Satisfaction-Weighted</div>
+                <p><strong>Scenario:</strong> A tutor with 20 hours distributes based on recognition × reputation</p>
+
+                <pre><code>-- Setup
+tutor: +20 hours (source)
+
+alice: -10 hours (sink)
+  recognition: 0.6
+  reputation:  1.2
+  effective weight: 0.6 × 1.2 = 0.72
+
+bob: -10 hours (sink)
+  recognition: 0.4
+  reputation:  0.8
+  effective weight: 0.4 × 0.8 = 0.32
+
+-- Allocation
+Total weight: 0.72 + 0.32 = 1.04
+Alice's share: (0.72/1.04) × 20 = 13.85 hours
+Bob's share:   (0.32/1.04) × 20 = 6.15 hours
+
+-- Result: Higher recognition/reputation gets more!</code></pre>
+            </div>
+
+            <div class="example-box">
+                <div class="example-title">📝 Example 3: History Accumulation</div>
+                <p><strong>Scenario:</strong> Multiple allocations automatically recorded via Writer monad</p>
+
+                <pre><code>example3M :: CommonsM ()
+example3M = do
+  -- First allocation
+  _ <- performAllocationM "provider" "resource" noFilter sinkMagnitude "..." "..."
+  history1 <- getHistory
+  -- history1 has 1 record
+  
+  -- Second allocation
+  _ <- performAllocationM "provider" "resource" noFilter sinkMagnitude "..." "..."
+  history2 <- getHistory
+  -- history2 has 2 records
+  
+  -- Writer monad automatically accumulates!
+  liftIO $ putStrLn $ "Total records: " ++ show (length history2)</code></pre>
+            </div>
+
+            <div class="card">
+                <h3>🚀 Running the Examples</h3>
+                <pre><code>$ cd haskell-monadic
+$ cabal run commons
+
+=== Example 1: Basic Proportional Distribution (Monadic) ===
+Allocations:
+  alice: 40.0 meals
+  bob: 60.0 meals
+
+=== Example 2: Satisfaction-Weighted Distribution (Monadic) ===
+Allocations (satisfaction-weighted):
+  alice: 13.846153846153847 hours
+    (recognition: 0.6, reputation: 1.2, effective: 0.72)
+  bob: 6.153846153846154 hours
+    (recognition: 0.4, reputation: 0.8, effective: 0.32)
+
+=== Example 3: History Accumulation (Writer Monad) ===
+After first allocation: 1 records
+After second allocation: 2 records</code></pre>
+            </div>
+        </div>
+
+        <!-- GLOBAL COMMONS TAB -->
+        <div id="commons" class="tab-content">
+            <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--accent-primary);">The Global Commons</h2>
+
+            <div
+                style="background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(255, 107, 157, 0.15)); border: 2px solid var(--accent-primary); border-radius: 16px; padding: 2rem; margin-bottom: 2rem;">
+                <h3 style="color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 1rem;">🌍 From Local
+                    Allocation to Global Coordination</h3>
+                <p style="font-size: 1.2rem; line-height: 1.8;">
+                    This isn't just a resource allocation algorithm. It's a <strong>mathematical foundation for
+                        organizing human cooperation at any scale</strong>—from a family kitchen to a planetary economy.
+                    By making fairness, transparency, and sustainability <em>mathematically inevitable</em> rather than
+                    socially enforced, we create a commons that naturally resists capture, accumulation, and
+                    exploitation.
+                </p>
+            </div>
+
+            <div class="flow-diagram">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">🏛️ What Makes This a "Commons"?</h3>
+
+                <div class="grid">
+                    <div class="card">
+                        <span class="card-icon">🔓</span>
+                        <h3>Open Access</h3>
+                        <p>Anyone can join the graph by creating a vertex and declaring edges. There's no gatekeeper
+                            deciding who gets to participate.</p>
+                        <br>
+                        <p><strong>Traditional:</strong> Membership requires approval, credentials, or payment.</p>
+                        <p><strong>Commons:</strong> Existence in the graph IS membership. You participate by being.</p>
+                    </div>
+
+                    <div class="card">
+                        <span class="card-icon">⚖️</span>
+                        <h3>Proportional Fairness</h3>
+                        <p>Allocation ratios are determined by mathematical formulas, not by power, wealth, or social
+                            status.</p>
+                        <br>
+                        <p><strong>Traditional:</strong> Those with more resources get more access.</p>
+                        <p><strong>Commons:</strong> Your share equals your weight divided by total weights—pure math.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <span class="card-icon">🚫</span>
+                        <h3>No Accumulation</h3>
+                        <p>The min function prevents receiving beyond need. You can't hoard resources for later or
+                            accumulate beyond your sink magnitude.</p>
+                        <br>
+                        <p><strong>Traditional:</strong> Accumulation is encouraged (savings, investment, wealth).</p>
+                        <p><strong>Commons:</strong> Accumulation is mathematically impossible—flows seek equilibrium.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <span class="card-icon">📜</span>
+                        <h3>Complete Transparency</h3>
+                        <p>Every allocation is recorded immutably with full metadata. The entire history is auditable by
+                            anyone.</p>
+                        <br>
+                        <p><strong>Traditional:</strong> Transactions are private or require special access to audit.
+                        </p>
+                        <p><strong>Commons:</strong> All flows are public record—radical transparency by default.</p>
+                    </div>
+
+                    <div class="card">
+                        <span class="card-icon">🔄</span>
+                        <h3>Dynamic Equilibrium</h3>
+                        <p>Potentials change over time as needs are satisfied and capacities regenerate. The system
+                            continuously seeks balance.</p>
+                        <br>
+                        <p><strong>Traditional:</strong> Static ownership—once you have it, you keep it.</p>
+                        <p><strong>Commons:</strong> Flowing gradients—potentials update as reality changes.</p>
+                    </div>
+
+                    <div class="card">
+                        <span class="card-icon">🌐</span>
+                        <h3>Scale Invariance</h3>
+                        <p>The same formalism works for 2 people sharing a meal or 2 billion people coordinating
+                            planetary resources.</p>
+                        <br>
+                        <p><strong>Traditional:</strong> Different systems for different scales (family, market, state).
+                        </p>
+                        <p><strong>Commons:</strong> One unified mathematics from micro to macro.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-box" style="background: rgba(107, 255, 184, 0.1); border-color: var(--accent-green);">
+                <div class="example-title" style="color: var(--accent-green);">🌱 Emergent Properties</div>
+                <p style="font-size: 1.1rem; margin-bottom: 1rem;">
+                    When you implement this formalism at scale, certain behaviors <strong>emerge naturally</strong> from
+                    the mathematics without being explicitly programmed:
+                </p>
+
+                <div class="flow-step">
+                    <div class="flow-number">1</div>
+                    <div class="flow-content">
+                        <h4>Organic Reciprocity</h4>
+                        <p>If weight functions incorporate past contributions (from history records), people who provide
+                            when they have capacity naturally receive more when they have need. This creates
+                            <strong>gift economy dynamics</strong> without explicit debt tracking.</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">2</div>
+                    <div class="flow-content">
+                        <h4>Reputation as Network Position</h4>
+                        <p>Recognition edges create a graph where reputation emerges from <strong>who trusts
+                                you</strong>, weighted by their own reputation. This is like PageRank for social
+                            capital—you can't buy it, only earn it through actual flows.</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">3</div>
+                    <div class="flow-content">
+                        <h4>Self-Organizing Hierarchies</h4>
+                        <p>Type hierarchies form naturally as people create membership edges. Programmers group under
+                            Workers, Workers under People. These aren't imposed—they <strong>emerge from participation
+                                patterns</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">4</div>
+                    <div class="flow-content">
+                        <h4>Anti-Gaming Properties</h4>
+                        <p>You can't fake need (your sink potential must match actual consumption over time), can't
+                            accumulate beyond capacity (min function), and can't manipulate reputation (it's computed
+                            from the graph). <strong>Gaming the system requires gaming reality itself</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-number">5</div>
+                    <div class="flow-content">
+                        <h4>Automatic Resource Discovery</h4>
+                        <p>When you declare a need, the system automatically finds all sources with matching capacity
+                            through graph traversal. You don't search for providers—<strong>the graph connects
+                                you</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-diagram">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">🌍 Real-World Applications</h3>
+
+                <div class="example-box">
+                    <div class="example-title">🏘️ Local Mutual Aid Networks</div>
+                    <p><strong>Scenario:</strong> A neighborhood coordinates food, childcare, eldercare, and
+                        skill-sharing.</p>
+                    <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                        <li>Vertices: Individual residents, households, local organizations</li>
+                        <li>Edges: Membership in neighborhood, skill groups, care circles</li>
+                        <li>Potentials: Food capacity/need, time capacity/need, care capacity/need</li>
+                        <li>Weights: Trust relationships, urgency, past contributions</li>
+                    </ul>
+                    <br>
+                    <p><strong>Result:</strong> Resources flow to those who need them most, weighted by community trust
+                        and past participation. No central coordinator needed—the graph IS the coordination.</p>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">🏭 Worker Cooperatives</div>
+                    <p><strong>Scenario:</strong> A cooperative allocates work, income, and decision-making power among
+                        members.</p>
+                    <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                        <li>Vertices: Workers, teams, projects, the cooperative itself</li>
+                        <li>Edges: Membership in teams, skill categories, seniority levels</li>
+                        <li>Potentials: Work capacity/need, income need, expertise levels</li>
+                        <li>Weights: Skill match, project priority, worker preferences</li>
+                    </ul>
+                    <br>
+                    <p><strong>Result:</strong> Work is distributed fairly based on capacity and preference. Income
+                        flows proportionally to contribution and need. Power is distributed through the graph structure
+                        itself.</p>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">🌾 Agricultural Commons</div>
+                    <p><strong>Scenario:</strong> Farmers coordinate land use, water rights, equipment sharing, and
+                        harvest distribution.</p>
+                    <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                        <li>Vertices: Farmers, plots of land, watersheds, equipment, communities</li>
+                        <li>Edges: Land ownership/stewardship, watershed membership, community belonging</li>
+                        <li>Potentials: Water capacity/need, equipment availability/need, crop surplus/deficit</li>
+                        <li>Weights: Sustainable practices, historical stewardship, community contribution</li>
+                    </ul>
+                    <br>
+                    <p><strong>Result:</strong> Resources flow to maximize collective yield while preventing overuse.
+                        Historical good stewardship increases future allocation rights.</p>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">🏥 Healthcare Resource Allocation</div>
+                    <p><strong>Scenario:</strong> A region coordinates medical supplies, specialist time, hospital beds,
+                        and care services.</p>
+                    <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                        <li>Vertices: Patients, doctors, hospitals, clinics, medical supplies</li>
+                        <li>Edges: Patient-doctor relationships, hospital networks, regional health systems</li>
+                        <li>Potentials: Medical need (urgency-weighted), specialist availability, supply stocks</li>
+                        <li>Weights: Medical urgency, proximity, specialist match, equity considerations</li>
+                    </ul>
+                    <br>
+                    <p><strong>Result:</strong> Care flows to those who need it most urgently, while balancing equity
+                        and access. No one can buy their way to the front of the line.</p>
+                </div>
+
+                <div class="example-box">
+                    <div class="example-title">🌐 Global Climate Commons</div>
+                    <p><strong>Scenario:</strong> Humanity coordinates carbon budgets, renewable energy, and climate
+                        adaptation resources.</p>
+                    <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                        <li>Vertices: Countries, regions, cities, industries, individuals</li>
+                        <li>Edges: Geographic containment, trade relationships, climate zones</li>
+                        <li>Potentials: Carbon budget (negative = emissions, positive = sequestration), renewable
+                            capacity, adaptation needs</li>
+                        <li>Weights: Historical emissions, development needs, vulnerability to climate impacts</li>
+                    </ul>
+                    <br>
+                    <p><strong>Result:</strong> Carbon budgets are allocated fairly based on historical responsibility
+                        and development needs. Those who emit less gain more allocation rights. The system naturally
+                        enforces planetary boundaries.</p>
+                </div>
+            </div>
+
+            <div
+                style="background: linear-gradient(135deg, rgba(255, 107, 157, 0.15), rgba(255, 215, 0, 0.15)); border: 2px solid var(--accent-secondary); border-radius: 16px; padding: 2rem; margin: 2rem 0;">
+                <h3 style="color: var(--accent-secondary); margin-bottom: 1.5rem;">🔮 The Paradigm Shift</h3>
+
+                <div class="grid">
+                    <div>
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">From Ownership to Stewardship
+                        </h4>
+                        <p>You don't "own" resources—you're a <strong>temporary steward</strong> of flow potentials.
+                            When your need is satisfied, the potential dissipates and flows elsewhere.</p>
+                    </div>
+
+                    <div>
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">From Scarcity to Sufficiency
+                        </h4>
+                        <p>The system doesn't maximize individual accumulation—it <strong>optimizes for collective
+                                sufficiency</strong>. Everyone gets enough before anyone gets excess.</p>
+                    </div>
+
+                    <div>
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">From Competition to
+                            Coordination</h4>
+                        <p>You don't compete for resources—you <strong>declare your needs and capacities</strong>, and
+                            the graph coordinates flows. Your gain doesn't require someone else's loss.</p>
+                    </div>
+
+                    <div>
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">From Enforcement to Emergence
+                        </h4>
+                        <p>Fairness isn't enforced by rules or police—it <strong>emerges from the mathematics</strong>.
+                            You can't violate proportional fairness any more than you can violate conservation of
+                            energy.</p>
+                    </div>
+
+                    <div>
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">From Centralization to
+                            Distribution</h4>
+                        <p>No central authority decides allocations—the <strong>graph structure itself IS the
+                                authority</strong>. Power is distributed through edges, not concentrated in
+                            institutions.</p>
+                    </div>
+
+                    <div>
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">From Opacity to Transparency
+                        </h4>
+                        <p>Every flow is recorded immutably and publicly. You can't hide accumulation, manipulation, or
+                            unfair advantage—<strong>the history reveals all</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🌟 Why This Matters Now</h3>
+                <p style="font-size: 1.1rem; line-height: 1.8; margin-top: 1rem;">
+                    We face planetary-scale coordination problems: climate change, resource depletion, inequality,
+                    pandemics.
+                    Traditional institutions (markets, states, corporations) have proven inadequate because they're
+                    built on
+                    <strong>accumulation, competition, and centralized control</strong>.
+                </p>
+                <br>
+                <p style="font-size: 1.1rem; line-height: 1.8;">
+                    This formalism offers an alternative: a <strong>mathematical substrate for cooperation</strong> that
+                    works
+                    at any scale, resists capture and corruption, and makes fairness and sustainability <em>structurally
+                        inevitable</em>
+                    rather than aspirational goals.
+                </p>
+                <br>
+                <p style="font-size: 1.1rem; line-height: 1.8;">
+                    It's not a utopian vision—it's a <strong>precise mathematical specification</strong> of how humans
+                    can coordinate
+                    resource flows without markets, money, or central planning. The code is the constitution. The graph
+                    is the government.
+                    The potentials are the economy.
+                </p>
+            </div>
+
+            <div
+                style="background: rgba(0, 212, 255, 0.1); border: 2px solid var(--accent-primary); border-radius: 16px; padding: 2rem; margin-top: 2rem;">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">💭 Final Reflection</h3>
+                <p style="font-size: 1.2rem; line-height: 1.8; font-style: italic;">
+                    "A commons is not a place or a thing—it's a <strong>pattern of relationships</strong> where
+                    resources flow
+                    according to need and capacity, constrained by what's possible and weighted by what's preferred,
+                    with every
+                    flow recorded forever. This formalism makes that pattern <strong>mathematically precise,
+                        computationally
+                        implementable, and globally scalable</strong>. We're not building a better market or a better
+                    state—we're
+                    building a <strong>third way</strong> that transcends both."
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Commons Monadic — A pure formalism for potentials, not containers</p>
+            <p style="margin-top: 0.5rem; color: var(--text-secondary);">
+                <em>"A river is not made of water molecules—it IS the flow pattern."</em>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Activate button
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

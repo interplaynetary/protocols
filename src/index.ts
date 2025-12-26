@@ -1,7 +1,8 @@
 /**
  * Free Association Protocol - Core
  * 
- * Pure, framework-agnostic protocol logic.
+ * Priority aligned capacity distribution protocol.
+ * Pure, framework-agnostic implementation.
  * 
  * For subpath imports, use:
  * - @playnet/free-association/schemas
@@ -12,7 +13,15 @@
  */
 
 // Core exports (main entry point)
-export { calculateSlotBasedPriorityAllocation } from './allocation.js';
+// Distributed IPF Allocation Protocol
+export {
+	updateProviderState,
+	generateFlowProposals,
+	updateRecipientState,
+	type DistributedIPFState,
+	type FlowProposal
+} from './allocation.js';
+
 export { calculateCollectiveRecognitionDistribution } from './distribution.js';
 export { mutualFulfillment } from './tree.js';
 export type { Commitment, NeedSlot, AvailabilitySlot, Node } from './schemas.js';

@@ -1,0 +1,4 @@
+name: "@protocol/root"
+private: true
+packages:
+  - "packages/*"

@@ -1,856 +1,228 @@
 /**
- * Priority-Based Allocation Algorithm (Slot-Based)
+ * Distributed IPF Allocation Protocol
  * 
- * Implements the "Priority Limits with Proportional Surplus Redistribution" algorithm.
+ * Implements the "Distributed Recipient Broadcast" protocol where agents
+ * coordinate asynchronously by exchanging scaling factors.
  * 
- * Core Philosophy:
- * - Priorities define LIMITS on willingness to allocate at the SLOT level
- * - CapacitySlot priority % × capacity = maximum willing to give to specific need slot
- * - Unused allocation returns to capacity slot's pool
- * - Surplus redistributed proportionally among compatible need slots with unmet needs
+ * Unlike `allocation-ipf.ts` (which is a centralized solver), this module
+ * provides functions for a single agent to:
+ * 1. Process incoming "Constraint Factors" (y_r).
+ * 2. Update their own "Row Scaling" (x_p).
+ * 3. Calculate outgoing flow proposals.
+ * 4. Process incoming flow proposals.
+ * 5. Update their own "Constraint Factor" (y_r).
  * 
- * Key Differences from Abstract Model:
- * - Granularity: CapacitySlot <-> NeedSlot (instead of Provider <-> Recipient)
- * - Compatibility: Checked via slotsCompatible() (time, location, type)
- * - Priorities: Distributed specific to each slot
+ * Mathematical Basis:
+ * A_pr = K_pr * x_p * y_r
+ * 
+ * - Provider (p) controls x_p (Row Scaling) to satisfy Capacity.
+ * - Recipient (r) controls y_r (Column Scaling) to satisfy Need.
  */
 
 import type {
     AvailabilitySlot,
     NeedSlot,
     Commitment
-} from './schemas.js';
+} from './schemas';
 
 import {
-    slotsCompatible
-} from './utils/match.js';
-
-import { evaluateComplianceFilter } from './filters/compliance.js';
+    calculateSeedValue,
+    calculateScalingFactor,
+    calculateConstraintFactor,
+    findOwner
+} from './ipf-core';
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════
 
-export interface SlotAllocationRecord {
+export interface DistributedIPFState {
+    /** 
+     * My Row Scaling Factors (x_p)
+     * How much I need to scale my offers to stay within capacity.
+     * x_p = Capacity / Sum(K_pr * y_r)
+     */
+    rowScalings: Record<string, number>; // capacity_slot_id -> x_p
+
+    /**
+     * My Column Scaling Factors (y_r)
+     * How much others need to scale their offers to not overflow my need.
+     * y_r = min(1, Need / Sum(IncomingFlow_proposed))
+     */
+    colScalings: Record<string, number>; // need_slot_id -> y_r
+
+    /**
+     * Cache of others' scaling factors (y_r) received from network.
+     * This represents my view of the recipients' state.
+     */
+    cachedRemoteScalings: Record<string, number>; // recipient_need_slot_id -> y_r
+}
+
+export interface FlowProposal {
     capacity_slot_id: string;
     need_slot_id: string;
-    provider_pubkey: string;
-    recipient_pubkey: string;
-    quantity: number;
-    withinPriorityLimit: boolean;
-    fromSurplus: boolean;
+    provider_pubkey: string;  // ME
+    recipient_pubkey: string; // THEM
+    proposed_quantity: number; // K_pr * x_p (Note: usually we send K*x, recipient applies y)
+
+    // In strict Sinkhorn, we might send K*x. 
+    // If we send K*x*y (fully agreed), we need to know y. 
+    // Protocol: Sender calculates A_proposed = K * x_p * y_r(cached).
+    // Recipient sums these.
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// CONSTANTS
-// ═══════════════════════════════════════════════════════════════════
-
-const EPSILON = 0.0001;
-const MAX_REFINEMENT_ITERATIONS = 100;
-const CONVERGENCE_THRESHOLD = 0.01;
-const MAX_ADJUSTMENT_PER_ITERATION = 0.1; // 10% of current allocation
-const DEVIATION_THRESHOLD = 0.05;
-
-// ═══════════════════════════════════════════════════════════════════
-// UTILITY FUNCTIONS
+// PROVIDER LOGIC
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Redistribute remainder using Largest Remainder Method
- */
-function redistributeRemainder(
-    targets: Map<string, number>,
-    remainingCapacity: number,
-    totalCapacity: number,
-    shares: Map<string, number>,
-    maxNaturalDiv: number,
-    debug: boolean
-): number {
-
-    const unitSize = totalCapacity / maxNaturalDiv;
-    const remainingUnits = Math.floor(remainingCapacity / unitSize);
-
-    if (remainingUnits === 0) return 0;
-
-    if (debug) {
-        console.log(`[REMAINDER-REDISTRIBUTION] ${remainingUnits} units of ${unitSize.toFixed(2)} to redistribute`);
-    }
-
-    // Calculate ideal allocation and remainders
-    const totalAllocated = Array.from(targets.values()).reduce((sum, v) => sum + v, 0);
-    const remainders: Array<{ recipient: string; remainder: number; allocated: number }> = [];
-
-    for (const [recipient, allocated] of targets.entries()) {
-        let proportion = 0;
-        if (shares && shares.has(recipient)) {
-            proportion = shares.get(recipient)!;
-        } else if (totalAllocated > EPSILON) {
-            proportion = allocated / totalAllocated;
-        }
-
-        const idealUnits = remainingUnits * proportion;
-        const integerUnits = Math.floor(idealUnits);
-        const remainder = idealUnits - integerUnits;
-
-        // Add base integer units (fix for re-quantization scenarios)
-        if (integerUnits > 0) {
-            const current = targets.get(recipient) || 0;
-            targets.set(recipient, current + integerUnits * unitSize);
-        }
-
-        if (remainder > EPSILON) {
-            remainders.push({ recipient, remainder, allocated });
-        }
-    }
-
-    // Sort by largest remainder
-    remainders.sort((a, b) => b.remainder - a.remainder);
-
-    // Calculate units to distribute (remaining - used base units)
-    const usedBaseUnits = Array.from(targets.values()).reduce((sum, v) => sum + (v / unitSize), 0);
-    const unitsToDistribute = remainingUnits - usedBaseUnits;
-
-    // Distribute units to recipients with largest remainders
-    let unitsDistributed = 0;
-    for (let i = 0; i < Math.min(unitsToDistribute, remainders.length); i++) {
-        const { recipient } = remainders[i];
-        const current = targets.get(recipient) || 0;
-        targets.set(recipient, current + unitSize);
-        unitsDistributed++;
-    }
-
-    return (usedBaseUnits + unitsDistributed) * unitSize;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// OPTIONS
-// ═══════════════════════════════════════════════════════════════════
-
-export interface PriorityAllocationOptions {
-    /** Enable Phase 2 iterative refinement (default: true) */
-    enableRefinement?: boolean;
-
-    /** Maximum iterations for Phase 2 (default: 100) */
-    maxRefinementIterations?: number;
-
-    /** Weight for provider vs recipient deviations in Phase 2 (default: 0.5) */
-    alpha?: number;
-
-    /** Enable detailed logging */
-    debug?: boolean;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// INTERNAL TYPES
-// ═══════════════════════════════════════════════════════════════════
-
-// Matrix: ProviderSlotID -> RecipientSlotID -> Allocation Record
-interface SlotAllocationMatrix {
-    [capacitySlotId: string]: {
-        [needSlotId: string]: {
-            amount: number;
-            providerPubKey: string;
-            recipientPubKey: string;
-            withinPriorityLimit: boolean;
-            fromSurplus: boolean;
-        };
-    };
-}
-
-interface CompatibilityInfo {
-    isCompatible: boolean;
-    providerLimit: number;
-    recipientLimit: number;
-    bilateralLimit: number;
-    providerPriority: number;
-    recipientPriority: number;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// MAIN ENTRY POINT
-// ═══════════════════════════════════════════════════════════════════
-
-/**
- * Calculate slot-based priority allocation
+ * Step 1: Provider Update (Row Scaling)
  * 
- * @param capacitySlots - Available capacity slots
- * @param needSlots - Requested need slots
- * @param allCommitments - Network commitments (for pubkey lookup)
- * @param options - Configuration options
+ * Given my capacities and the latest signals (y_r) from recipients,
+ * update my row scaling factors (x_p).
+ * 
+ * x_p = C_p / Σ_r (K_pr * y_r)
  */
-export function calculateSlotBasedPriorityAllocation(
+export function updateProviderState(
     capacitySlots: AvailabilitySlot[],
-    needSlots: NeedSlot[],
+    knownNeeds: NeedSlot[], // All needs I am aware of (my "Local View")
     allCommitments: Record<string, Commitment>,
-    options?: PriorityAllocationOptions
-): SlotAllocationRecord[] {
+    state: DistributedIPFState,
+    epsilon: number = 1e-6,
+    gamma: number = 0.5
+): DistributedIPFState {
+    const nextState = { ...state, rowScalings: { ...state.rowScalings } };
 
-    const debug = options?.debug || false;
-
-    if (debug) {
-        console.log(`[PRIORITY-ALLOC] Starting with ${capacitySlots.length} capacity slots, ${needSlots.length} need slots`);
-    }
-
-    // Phase 1: Initial allocation with priority limits and surplus redistribution
-    const allocationMatrix = initialAllocationWithSurplus(
-        capacitySlots,
-        needSlots,
-        allCommitments,
-        debug
-    );
-
-    // Phase 2: Optional iterative refinement
-    let converged = false;
-    let iterations = 0;
-
-    const enableRefinement = options?.enableRefinement ?? true;
-
-    if (enableRefinement) {
-        const refinementResult = iterativeRefinement(
-            allocationMatrix,
-            capacitySlots,
-            needSlots,
-            options
-        );
-        iterations = refinementResult.iterations;
-        converged = refinementResult.converged;
-    }
-
-    // Final Divisibility Check: Re-apply constraints if Phase 2 shifted things off-grid
     for (const cs of capacitySlots) {
-        if (cs.max_natural_div) {
-            // Check if any allocation is invalid
-            let clean = true;
-            const unit = cs.quantity / cs.max_natural_div;
-            const matrixRow = allocationMatrix[cs.id];
+        if (!cs.id) continue;
 
-            for (const nsId in matrixRow) {
-                const amt = matrixRow[nsId].amount;
-                if (amt > EPSILON && Math.abs(amt % unit) > EPSILON && Math.abs((amt % unit) - unit) > EPSILON) {
-                    clean = false;
-                    break;
-                }
-            }
+        let denominator = 0;
 
-            if (!clean) {
-                if (debug) console.log(`[FINAL-DIVISIBILITY] Re-applying constraints for ${cs.id}`);
+        // Sum over all potential recipients
+        for (const ns of knownNeeds) {
+            if (!ns.id) continue;
 
-                // Current total used
-                let totalUsed = 0;
-                const targets = new Map<string, number>();
-                for (const nsId in matrixRow) {
-                    if (matrixRow[nsId].amount > EPSILON) {
-                        targets.set(nsId, matrixRow[nsId].amount);
-                        totalUsed += matrixRow[nsId].amount;
-                    }
-                }
+            // 1. Calculate Seed K_pr
+            const k_pr = calculateSeedValue(cs, ns, allCommitments, epsilon, gamma);
+            if (k_pr <= 0) continue;
 
-                // Shares = current distribution
-                const shares = new Map<string, number>();
-                for (const [id, amt] of targets.entries()) {
-                    shares.set(id, amt / totalUsed);
-                    targets.set(id, 0); // Zero out for clean reconstruction from base
-                    matrixRow[id].amount = 0; // Reset matrix
-                }
+            // 2. Get Recipient's Constraint Factor (y_r) from cache
+            // Default to 1.0 if unknown (optimistic start)
+            const y_r = state.cachedRemoteScalings[ns.id] ?? 1.0;
 
-                redistributeRemainder(
-                    targets, // This map is updated by function
-                    totalUsed, // Amount to distribute (Full amount here for re-quantization)
-                    cs.quantity,
-                    shares,
-                    cs.max_natural_div,
-                    debug
-                );
-
-                // Write back targets to matrix
-                for (const [id, amt] of targets.entries()) {
-                    matrixRow[id].amount = amt;
-                }
-            }
+            denominator += k_pr * y_r;
         }
+
+        // 3. Update x_p via Core Util
+        nextState.rowScalings[cs.id] = calculateScalingFactor(cs.quantity || 0, denominator, epsilon);
     }
 
-    // Convert matrix to flat records
-    return flattenMatrix(allocationMatrix);
+    return nextState;
 }
 
 /**
- * Apply divisibility constraints to a raw quantity
+ * Step 2: Generate Outgoing Proposals
  * 
- * @param rawQuantity - The raw calculated quantity
- * @param sharePercentage - The percentage of total capacity this represents
- * @param slot - The capacity slot with constraints
- * @returns The constrained quantity (rounded down to nearest unit)
+ * Based on updated x_p, calculate flows to send to recipients.
+ * A_pr = K_pr * x_p * y_r
  */
-export function applyDivisibilityConstraints(
-    rawQuantity: number,
-    sharePercentage: number,
-    slot: AvailabilitySlot
-): number {
-    // 1. Check minimum allocation percentage
-    if (slot.min_allocation_percentage) {
-        if (sharePercentage < slot.min_allocation_percentage - EPSILON) {
-            return 0;
-        }
-    }
-
-    // 2. Check natural unit divisibility
-    // Default to 1 if not specified (standard unit)
-    const unitSize = (slot.max_natural_div && slot.max_natural_div > 0) ? slot.max_natural_div : 1.0;
-
-    // If smaller than one unit, return 0
-    if (rawQuantity < unitSize - EPSILON) {
-        return 0;
-    }
-
-    // Round down to nearest unit
-    const units = Math.floor((rawQuantity + EPSILON) / unitSize);
-    return units * unitSize;
-}
-
-/**
- * Check if a quantity meets minimum allocation requirements
- * 
- * @param quantity - The quantity to check
- * @param slot - The capacity slot with constraints
- * @returns True if meets minimums
- */
-export function meetsMinimumAllocation(
-    quantity: number,
-    slot: AvailabilitySlot
-): boolean {
-    if (quantity <= EPSILON) return false;
-
-    // Check percentage
-    if (slot.min_allocation_percentage) {
-        const percentage = quantity / slot.quantity;
-        if (percentage < slot.min_allocation_percentage - EPSILON) {
-            return false;
-        }
-    }
-
-    // Check unit size check
-    const unitSize = (slot.max_natural_div && slot.max_natural_div > 0) ? slot.max_natural_div : 1.0;
-
-    if (quantity < unitSize - EPSILON) {
-        return false;
-    }
-
-    return true;
-}
-
-
-// ═══════════════════════════════════════════════════════════════════
-// PHASE 1: INITIAL ALLOCATION WITH SURPLUS REDISTRIBUTION
-// ═══════════════════════════════════════════════════════════════════
-
-function initialAllocationWithSurplus(
+export function generateFlowProposals(
     capacitySlots: AvailabilitySlot[],
-    needSlots: NeedSlot[],
+    knownNeeds: NeedSlot[],
     allCommitments: Record<string, Commitment>,
-    debug: boolean
-): SlotAllocationMatrix {
+    state: DistributedIPFState,
+    epsilon: number = 1e-6,
+    gamma: number = 0.5
+): FlowProposal[] {
+    const proposals: FlowProposal[] = [];
 
-    const matrix: SlotAllocationMatrix = {};
-
-    // Initialize matrix
     for (const cs of capacitySlots) {
-        matrix[cs.id] = {};
-        for (const ns of needSlots) {
-            // Find pubkeys from slots
-            const providerPubKey = findOwner(cs.id, allCommitments) || 'unknown';
-            const recipientPubKey = findOwner(ns.id, allCommitments) || 'unknown';
-
-            matrix[cs.id][ns.id] = {
-                amount: 0,
-                providerPubKey,
-                recipientPubKey,
-                withinPriorityLimit: true,
-                fromSurplus: false
-            };
-        }
-    }
-
-    // Process each capacity slot
-    for (const cs of capacitySlots) {
-        if (debug) {
-            console.log(`\n[PHASE-1] Capacity Slot ${cs.id.slice(0, 10)}: capacity=${cs.quantity}`);
-        }
-
-        // Step 1: Calculate compatibility and bilateral limits
-        const compatibility = calculateCompatibility(cs, needSlots);
-
-        // Step 2: Tentative allocation
-        const tentativeAllocations = performTentativeAllocation(cs, needSlots, compatibility, debug);
-
-        // Step 3: Calculate surplus
-        const totalTentative = Object.values(tentativeAllocations).reduce((sum, a) => sum + a, 0);
-        let surplus = cs.quantity - totalTentative;
-
-        if (debug) {
-            console.log(`[PHASE-1]   Tentative total: ${totalTentative.toFixed(2)}, Surplus: ${surplus.toFixed(2)}`);
-        }
-
-        // Apply tentative allocations
-        for (const [nsId, amount] of Object.entries(tentativeAllocations)) {
-            if (matrix[cs.id] && matrix[cs.id][nsId]) {
-                matrix[cs.id][nsId].amount = amount;
-            }
-        }
-
-        // Step 4: Redistribute surplus
-        if (surplus > EPSILON) {
-            surplus = redistributeSurplus(
-                cs,
-                needSlots,
-                matrix,
-                compatibility,
-                surplus,
-                debug
-            );
-        }
-
-        // Step 5: Divisibility constraints (Least Remainder)
-        if (surplus > EPSILON && cs.max_natural_div) {
-            surplus = applyLeastRemainderMethod(
-                cs,
-                matrix,
-                surplus,
-                debug
-            );
-        }
-    }
-
-    return matrix;
-}
-
-function calculateCompatibility(
-    cs: AvailabilitySlot,
-    needSlots: NeedSlot[]
-): Map<string, CompatibilityInfo> {
-    const compatibility = new Map<string, CompatibilityInfo>();
-
-    for (const ns of needSlots) {
-        // 1. Check basic compatibility using match.ts logic
-        const isCompatible = slotsCompatible(ns, cs);
-
-        if (!isCompatible) {
-            compatibility.set(ns.id, {
-                isCompatible: false,
-                providerLimit: 0,
-                recipientLimit: 0,
-                bilateralLimit: 0,
-                providerPriority: 0,
-                recipientPriority: 0
-            });
-            continue;
-        }
-
-        // 2. Get Priorities
-        // Provider -> NeedSlot
-        const providerPriority = cs.priority_distribution?.find(
-            p => p.target_slot_id === ns.id
-        )?.priority_percentage || 0;
-
-        // Recipient -> CapacitySlot
-        const recipientPriority = ns.priority_distribution?.find(
-            p => p.target_slot_id === cs.id
-        )?.priority_percentage || 0;
-
-        // 3. Calculate Limits
-        const providerLimit = providerPriority * cs.quantity;
-        const recipientLimit = recipientPriority * ns.quantity;
-        const bilateralLimit = Math.min(providerLimit, recipientLimit);
-
-        compatibility.set(ns.id, {
-            isCompatible: true,
-            providerLimit,
-            recipientLimit,
-            bilateralLimit,
-            providerPriority,
-            recipientPriority
-        });
-    }
-
-    return compatibility;
-}
-
-function performTentativeAllocation(
-    cs: AvailabilitySlot,
-    needSlots: NeedSlot[],
-    compatibility: Map<string, CompatibilityInfo>,
-    debug: boolean
-): Record<string, number> {
-    const allocations: Record<string, number> = {};
-    let totalTentative = 0;
-
-    for (const ns of needSlots) {
-        const info = compatibility.get(ns.id)!;
-        if (!info.isCompatible) continue;
-
-        // Min(bilateral limit, need request)
-        const amount = Math.min(info.bilateralLimit, ns.quantity);
-        allocations[ns.id] = amount;
-        totalTentative += amount;
-    }
-
-    // Handle over-subscription
-    if (totalTentative > cs.quantity + EPSILON) {
-        const scale = cs.quantity / totalTentative;
-        for (const key in allocations) {
-            allocations[key] *= scale;
-        }
-    }
-
-    return allocations;
-}
-
-function redistributeSurplus(
-    cs: AvailabilitySlot,
-    needSlots: NeedSlot[],
-    matrix: SlotAllocationMatrix,
-    compatibility: Map<string, CompatibilityInfo>,
-    surplus: number,
-    debug: boolean
-): number {
-
-    // Identify needs with UNMET need
-    const unmetNeeds: Array<{ nsId: string; priority: number; unmet: number; recipientLimitRemaining: number }> = [];
-
-    for (const ns of needSlots) {
-        const info = compatibility.get(ns.id)!;
-        if (!info.isCompatible || info.providerPriority < EPSILON) continue;
-
-        // Calculate total received across ALL capacity slots
-        let totalReceived = 0;
-        for (const cKey in matrix) {
-            totalReceived += matrix[cKey][ns.id]?.amount || 0;
-        }
-
-        const unmet = Math.max(0, ns.quantity - totalReceived);
-
-        // Check recipient limit remaining for THIS provider
-        const currentFromMe = matrix[cs.id][ns.id].amount;
-        // Logic: RecipientLimit is total willingness to receive FROM THIS PROVIDER
-        // But did we respect it in Tentative? Yes.
-        // So Remaining Limit = Limit - Allocated.
-        const recipientLimitForSlot = info.recipientPriority * getNeedQuantity(needSlots, ns.id);
-        const recipientLimitRemaining = Math.max(0, recipientLimitForSlot - currentFromMe);
-
-        // Only include if they have unmet needs AND room to accept more from us
-        if (unmet > EPSILON && recipientLimitRemaining > EPSILON) {
-            unmetNeeds.push({
-                nsId: ns.id,
-                priority: info.providerPriority,
-                unmet,
-                recipientLimitRemaining
-            });
-        }
-    }
-
-    if (unmetNeeds.length === 0) return surplus;
-
-    // Distribute proportionally
-    const totalPriority = unmetNeeds.reduce((sum, item) => sum + item.priority, 0);
-    if (totalPriority < EPSILON) return surplus;
-
-    let distributed = 0;
-
-    for (const item of unmetNeeds) {
-        const share = item.priority / totalPriority;
-        const potential = surplus * share;
-
-        const actual = Math.min(potential, item.unmet, item.recipientLimitRemaining);
-
-        if (actual > EPSILON) {
-            matrix[cs.id][item.nsId].amount += actual;
-            matrix[cs.id][item.nsId].fromSurplus = true;
-            distributed += actual;
-        }
-    }
-
-    return surplus - distributed;
-}
-
-function getNeedQuantity(needSlots: NeedSlot[], nsId: string): number {
-    return needSlots.find(n => n.id === nsId)?.quantity || 0;
-}
-
-function applyLeastRemainderMethod(
-    cs: AvailabilitySlot,
-    matrix: SlotAllocationMatrix,
-    surplus: number,
-    debug: boolean
-): number {
-    const maxNatural = cs.max_natural_div!;
-    const targets = new Map<string, number>();
-
-    // Collect current allocations
-    let total = 0;
-    for (const [nsId, record] of Object.entries(matrix[cs.id])) {
-        if (record.amount > EPSILON) {
-            targets.set(nsId, record.amount);
-            total += record.amount;
-        }
-    }
-
-    const shares = new Map<string, number>();
-    for (const [id, amt] of targets.entries()) {
-        shares.set(id, amt / total);
-    }
-
-    // Pass shares explicitly although applyLeastRemainderMethod currently derives them?
-    const redistributed = redistributeRemainder(
-        targets,
-        surplus,
-        cs.quantity,
-        undefined as any, // Standard mode: derive shares from targets
-        maxNatural,
-        debug
-    );
-
-    // Write back
-    for (const [nsId, amt] of targets.entries()) {
-        matrix[cs.id][nsId].amount = amt;
-    }
-
-    return surplus - redistributed;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// PHASE 2: ITERATIVE REFINEMENT
-// ═══════════════════════════════════════════════════════════════════
-
-function iterativeRefinement(
-    matrix: SlotAllocationMatrix,
-    capacitySlots: AvailabilitySlot[],
-    needSlots: NeedSlot[],
-    options?: PriorityAllocationOptions
-): { iterations: number; converged: boolean } {
-
-    const maxIter = options?.maxRefinementIterations || MAX_REFINEMENT_ITERATIONS;
-    const alpha = options?.alpha ?? 0.5;
-
-    let iterations = 0;
-    let converged = false;
-
-    while (iterations < maxIter && !converged) {
-        iterations++;
-        const deviations = calculateDeviations(matrix, capacitySlots, needSlots, alpha);
-
-        let totalDev = 0;
-        // Sum absolute deviations
-        for (const row of Object.values(deviations)) {
-            for (const val of Object.values(row)) {
-                totalDev += Math.abs(val);
-            }
-        }
-
-        if (totalDev < CONVERGENCE_THRESHOLD) {
-            converged = true;
-            break;
-        }
-
-        const adjustment = makeAdjustments(matrix, deviations, capacitySlots, needSlots);
-        if (!adjustment) break;
-    }
-
-    return { iterations, converged };
-}
-
-function calculateDeviations(
-    matrix: SlotAllocationMatrix,
-    capacitySlots: AvailabilitySlot[],
-    needSlots: NeedSlot[],
-    alpha: number
-): Record<string, Record<string, number>> {
-
-    const deviations: Record<string, Record<string, number>> = {};
-
-    // 1. Provider (Capacity) Perspective
-    for (const cs of capacitySlots) {
-        deviations[cs.id] = {};
-
-        let totalGiven = 0;
-        const actualShares: Record<string, number> = {};
-
-        for (const nsId in matrix[cs.id]) {
-            const amt = matrix[cs.id][nsId].amount;
-            if (amt > EPSILON) {
-                totalGiven += amt;
-                actualShares[nsId] = amt;
-            }
-        }
-
-        if (totalGiven < EPSILON) continue;
-
-        // Calculate Ideal Shares based on actually served needs
-        let totalPriorityAmongServed = 0;
-        const priorities: Record<string, number> = {};
-
-        for (const nsId in actualShares) {
-            const priority = cs.priority_distribution?.find(
-                p => p.target_slot_id === nsId
-            )?.priority_percentage || 0;
-            priorities[nsId] = priority;
-            totalPriorityAmongServed += priority;
-        }
-
-        if (totalPriorityAmongServed > EPSILON) {
-            for (const nsId in actualShares) {
-                const actual = actualShares[nsId] / totalGiven;
-                const ideal = priorities[nsId] / totalPriorityAmongServed;
-                deviations[cs.id][nsId] = (actual - ideal) * alpha;
-            }
-        }
-    }
-
-    // 2. Recipient (Need) Perspective
-    for (const ns of needSlots) {
-        let totalReceived = 0;
-        const actualShares: Record<string, number> = {};
-
-        for (const csId in matrix) {
-            const amt = matrix[csId]?.[ns.id]?.amount || 0;
-            if (amt > EPSILON) {
-                totalReceived += amt;
-                actualShares[csId] = amt;
-            }
-        }
-
-        if (totalReceived < EPSILON) continue;
-
-        // Ideal shares
-        let totalPriorityAmongSources = 0;
-        const priorities: Record<string, number> = {};
-
-        for (const csId in actualShares) {
-            const priority = ns.priority_distribution?.find(
-                p => p.target_slot_id === csId
-            )?.priority_percentage || 0;
-            priorities[csId] = priority;
-            totalPriorityAmongSources += priority;
-        }
-
-        if (totalPriorityAmongSources > EPSILON) {
-            for (const csId in actualShares) {
-                const actual = actualShares[csId] / totalReceived;
-                const ideal = priorities[csId] / totalPriorityAmongSources;
-
-                if (!deviations[csId]) deviations[csId] = {};
-                const current = deviations[csId][ns.id] || 0;
-                deviations[csId][ns.id] = current + (actual - ideal) * (1 - alpha);
-            }
-        }
-    }
-
-    return deviations;
-}
-
-function makeAdjustments(
-    matrix: SlotAllocationMatrix,
-    deviations: Record<string, Record<string, number>>,
-    capacitySlots: AvailabilitySlot[],
-    needSlots: NeedSlot[]
-): boolean {
-    let adjustmentsMade = false;
-
-    // Adjust per capacity slot
-    for (const csId in deviations) {
-        const row = deviations[csId];
-
-        // Identify over/under allocated
-        const over: string[] = [];
-        const under: string[] = [];
-
-        for (const nsId in row) {
-            if (row[nsId] > EPSILON) over.push(nsId);
-            else if (row[nsId] < -EPSILON) under.push(nsId);
-        }
-
-        if (over.length === 0 || under.length === 0) continue;
-
-        // Reduce over-allocated
-        let pool = 0;
-        for (const nsId of over) {
-            const reduction = Math.min(
-                matrix[csId][nsId].amount * MAX_ADJUSTMENT_PER_ITERATION,
-                matrix[csId][nsId].amount
-            );
-            if (reduction > EPSILON) {
-                matrix[csId][nsId].amount -= reduction;
-                pool += reduction;
-                adjustmentsMade = true;
-            }
-        }
-
-        // Distribute to under-allocated (weighted by magnitude of lack)
-        const totalUnderMagnitude = under.reduce((sum, id) => sum + Math.abs(row[id]), 0);
-
-        for (const nsId of under) {
-            const weight = Math.abs(row[nsId]) / totalUnderMagnitude;
-            const increase = pool * weight;
-
-            if (increase > EPSILON) {
-                // Check recipient priority limit
-                const ns = needSlots.find(n => n.id === nsId);
-                const recipientPriority = ns?.priority_distribution?.find(
-                    p => p.target_slot_id === csId
-                )?.priority_percentage || 0;
-
-                const nsQty = ns ? ns.quantity : 0;
-                const recipientLimit = recipientPriority * nsQty;
-
-                const currentAmount = matrix[csId][nsId].amount;
-                const roomUnderLimit = Math.max(0, recipientLimit - currentAmount);
-
-                const actualIncrease = Math.min(increase, roomUnderLimit);
-
-                if (actualIncrease > EPSILON) {
-                    matrix[csId][nsId].amount += actualIncrease;
-                    adjustmentsMade = true;
-                }
-            }
-        }
-    }
-
-    return adjustmentsMade;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// HELPER: FLATTEN & LOOKUP
-// ═══════════════════════════════════════════════════════════════════
-
-function flattenMatrix(matrix: SlotAllocationMatrix): SlotAllocationRecord[] {
-    const records: SlotAllocationRecord[] = [];
-
-    for (const csId in matrix) {
-        for (const nsId in matrix[csId]) {
-            const entry = matrix[csId][nsId];
-            if (entry.amount > EPSILON) {
-                records.push({
-                    capacity_slot_id: csId,
-                    need_slot_id: nsId,
-                    provider_pubkey: entry.providerPubKey,
-                    recipient_pubkey: entry.recipientPubKey,
-                    quantity: entry.amount,
-                    withinPriorityLimit: entry.withinPriorityLimit,
-                    fromSurplus: entry.fromSurplus
+        if (!cs.id) continue;
+        const x_p = state.rowScalings[cs.id] || 0;
+        if (x_p === 0) continue;
+
+        const providerPubkey = findOwner(cs.id, allCommitments) || 'unknown';
+
+        for (const ns of knownNeeds) {
+            if (!ns.id) continue;
+
+            const k_pr = calculateSeedValue(cs, ns, allCommitments, epsilon, gamma);
+            if (k_pr <= 0) continue;
+
+            const y_r = state.cachedRemoteScalings[ns.id] ?? 1.0;
+            const rawQuantity = k_pr * x_p * y_r;
+
+            // CRITICAL FIX: Clamp to need satisfaction
+            // Even if IPF scaling suggests more, we should never allocate more than the recipient needs
+            const needQuantity = ns.quantity || 0;
+            const quantity = Math.min(rawQuantity, needQuantity);
+
+            if (quantity > epsilon) {
+                const recipientPubkey = findOwner(ns.id, allCommitments) || 'unknown';
+                proposals.push({
+                    capacity_slot_id: cs.id,
+                    need_slot_id: ns.id,
+                    provider_pubkey: providerPubkey,
+                    recipient_pubkey: recipientPubkey,
+                    proposed_quantity: quantity
                 });
             }
         }
     }
 
-    return records;
+    return proposals;
 }
 
-function findOwner(slotId: string, commitments: Record<string, Commitment>): string | undefined {
-    for (const pubkey in commitments) {
-        const c = commitments[pubkey];
-        const capacityMatch = c.capacity_slots?.find(s => s.id === slotId);
-        if (capacityMatch) return pubkey;
-        const needMatch = c.need_slots?.find(s => s.id === slotId);
-        if (needMatch) return pubkey;
+// ═══════════════════════════════════════════════════════════════════
+// RECIPIENT LOGIC
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Step 3: Recipient Update (Column Scaling)
+ * 
+ * Calculate my constraint factor y_r based on incoming flow proposals.
+ * 
+ * y_r_new = min(1, Need / TotalProposed)
+ * 
+ * Note: Strictly speaking in Sinkhorn, y_r is updated iteratively.
+ * But practically, we can just clamp the sum of incoming proposals.
+ * If providers sent K*x*y_old, then TotalReceived = Sum(K*x*y_old).
+ * We want TotalReceived_New <= Need.
+ * So y_new = y_old * min(1, Need / TotalReceived).
+ * 
+ * However, to be robust to async, we can just publish "Saturation Level":
+ * Saturation = TotalProposed / Need
+ * y_target = 1 / Saturation (clamped at 1)
+ */
+export function updateRecipientState(
+    needSlots: NeedSlot[],
+    incomingProposals: FlowProposal[], // Aggregated from network
+    state: DistributedIPFState,
+    epsilon: number = 1e-6
+): DistributedIPFState {
+    const nextState = { ...state, colScalings: { ...state.colScalings } };
+
+    // Group proposals by need slot
+    const proposalsByNeed: Record<string, number> = {};
+    for (const p of incomingProposals) {
+        const current = proposalsByNeed[p.need_slot_id] || 0;
+        proposalsByNeed[p.need_slot_id] = current + p.proposed_quantity;
     }
-    return undefined;
+
+    for (const ns of needSlots) {
+        if (!ns.id) continue;
+
+        const totalProposed = proposalsByNeed[ns.id] || 0;
+        const needCap = ns.quantity || 0;
+
+        // Use Core Util for robust calculation
+        nextState.colScalings[ns.id] = calculateConstraintFactor(needCap, totalProposed, epsilon);
+    }
+
+    return nextState;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS 
+// ═══════════════════════════════════════════════════════════════════

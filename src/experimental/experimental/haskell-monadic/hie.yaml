@@ -1,0 +1,6 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:commons-monadic"
+    - path: "app/Main.hs"
+      component: "commons-monadic:exe:commons-monadic"

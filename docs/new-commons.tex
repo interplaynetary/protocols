@@ -1,0 +1,964 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{geometry}
+
+\geometry{margin=1.2in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+\newtheorem{axiom}{Axiom}
+\newtheorem{example}{Example}
+
+\title{\textbf{Free Association}\\
+\large A Mathematical Framework for Sovereign Voluntary Resource Allocation}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a mathematical framework for resource allocation based on the Entity-Attribute-Value (EAV) paradigm with \textbf{observer recognition}. The system consists of entities with attributes, where special attributes create relational structure (membership), flow gradients (potentials), and allocation constraints. Each attribute has an associated observer who recognized it, creating a \textbf{distributed epistemic property attribution system}. We derive a \textbf{Constrained Weighted Allocation framework} and prove that when weights represent net-benefit gradients toward goal realization, the system converges to a Pareto-optimal equilibrium that respects both provider capacity constraints and recipient need limits. This formulation replaces rigid market clearing with a continuous optimization process that maximizes priority alignment, making honest preference signaling the unique optimal strategy.
+\end{abstract}
+
+\section{The Entity-Attribute-Value Model}
+
+\begin{definition}[Free Association]
+Let $\mathbb{E}$ be the universe of entities, $\mathbb{A}$ the universe of attributes, $\mathbb{V}$ the universe of values, $\mathbb{T}$ the universe of types, $\mathbb{O} \subseteq \mathbb{E}$ the set of observers, and $\mathbb{T}_{\text{discrete}}$ discrete time. The \textbf{Commons} is the quadruple:
+\[
+\mathcal{C} = \langle \mathcal{N}, \Pi, \Omega, \{\Delta_t\}_{t \in \mathbb{T}_{\text{discrete}}} \rangle
+\]
+where:
+\begin{itemize}
+\item $\mathcal{N} \subseteq \mathbb{E}$ is a finite set of entities
+\item $\Pi: \mathcal{N} \to (\mathbb{A} \to \mathbb{V})$ assigns each entity a mapping from attributes to values
+\item $\Omega: \mathcal{N} \times \mathbb{A} \to \mathbb{O}$ records which observer recognized each attribute
+\item $\{\Delta_t\}_{t \in \mathbb{T}_{\text{discrete}}}$ is the allocation history
+\item $\mathbb{T}$ is the universe of types, where $\mathcal{N} \subseteq \mathbb{T}$ (entities can serve as types)
+\end{itemize}
+\end{definition}
+
+\begin{remark}[Distributed Epistemic Property Attribution]
+Free Association uses a \textbf{distributed Entity-Attribute-Value (EAV) model with observer recognition}:
+\begin{itemize}
+\item \textbf{Entities} are the fundamental objects (nodes in traditional graph terminology)
+\item \textbf{Attributes} are property keys (e.g., ``memberOf'', ``potentials'', ``reputation'')
+\item \textbf{Values} are property values (sets of entities, lists of potentials, numbers, etc.)
+\item \textbf{Observers} are entities who recognize/assert attributes of other entities
+\end{itemize}
+
+The observer function $\Omega$ creates a \textbf{distributed epistemic system}:
+\[
+\Omega(e, a) = o \quad \text{means} \quad \text{``Observer } o \text{ asserts that entity } e \text{ has attribute } a\text{''}
+\]
+
+This enables:
+\begin{itemize}
+\item \textbf{Perspective}: Different observers may recognize different attributes
+\item \textbf{Provenance}: Every attribute has a source (who recognized it)
+\item \textbf{Distribution}: No single authority on truth
+\item \textbf{Disagreement}: Multiple observers can have conflicting views
+\end{itemize}
+
+This model is more general than traditional EAV, as it captures \emph{who knows what about whom}.
+\end{remark}
+
+\subsection{Attribute Types}
+
+\begin{remark}[Value Flexibility]
+Values in $\mathbb{V}$ can be of any type: primitives (text, numbers, booleans), structured data (lists, maps, records), or domain-specific types (potentials, entity references, etc.). The model imposes no restrictions on value types, allowing maximum flexibility for different use cases.
+\end{remark}
+
+\begin{definition}[Attribute Recognition]
+An \textbf{attribute recognition} (or \textbf{assertion}) is a tuple:
+\[
+(o, e, a, v) \in \mathbb{O} \times \mathcal{N} \times \mathbb{A} \times \mathbb{V}
+\]
+meaning ``Observer $o$ recognizes that entity $e$ has attribute $a$ with value $v$''.
+
+The system state is the set of all current recognitions:
+\[
+\mathcal{R} = \{ (o, e, a, v) \mid \Omega(e, a) = o \land \Pi(e)(a) = v \}
+\]
+\end{definition}
+
+\begin{remark}[Observer-Relative Truth]
+In this model, there is no objective truth about attributes — only \textbf{observer-relative assertions}. An entity may have different attribute values according to different observers:
+\[
+\Omega(e, a) = o_1 \land \Pi(e)(a) = v_1 \quad \text{(according to } o_1\text{)}
+\]
+\[
+\Omega(e, a) = o_2 \land \Pi(e)(a) = v_2 \quad \text{(according to } o_2\text{)}
+\]
+where $v_1 \neq v_2$ represents disagreement.
+
+For implementation, we typically maintain a single "current view'' per entity-attribute pair, with $\Omega$ tracking the most recent or most trusted observer.
+\end{remark}
+
+\subsection{The Membership Attribute}
+
+\begin{definition}[Membership as Attribute]
+The \textbf{memberOf} attribute creates the relational structure. For entity $e \in \mathcal{N}$:
+\[
+\Pi(e)(\text{``memberOf''}) \in \mathbb{V}_{\text{refs}}
+\]
+The membership relation $E$ is \textbf{emergent} from this attribute:
+\[
+E = \{ (e_1, e_2) \in \mathcal{N} \times \mathcal{N} \mid e_2 \in \Pi(e_1)(\text{``memberOf''}) \}
+\]
+For $e_1, e_2 \in \mathcal{N}$, we write $e_1 \to e_2$ when $e_2 \in \Pi(e_1)(\text{``memberOf''})$, meaning ``$e_1$ is a member of $e_2$''.
+\end{definition}
+
+\begin{definition}[Categories and Participants]
+For any entity $e \in \mathcal{N}$:
+\begin{align}
+\text{Categories}(e) &= \Pi(e)(\text{``memberOf''}) \\
+\text{Participants}(c) &= \{ e \in \mathcal{N} \mid c \in \Pi(e)(\text{``memberOf''}) \}
+\end{align}
+\end{definition}
+
+\begin{definition}[Transitive Closure]
+Let $E^*$ be the reflexive transitive closure of the emergent relation $E$. Define:
+\begin{align}
+\text{Ancestors}(e) &= \{ a \in \mathcal{N} \mid (e, a) \in E^* \land e \neq a \} \\
+\text{Descendants}(c) &= \{ d \in \mathcal{N} \mid (d, c) \in E^* \land d \neq c \}
+\end{align}
+These capture the full inheritance hierarchy.
+\end{definition}
+
+\begin{remark}[Graph as Emergent Structure]
+In the EAV model, the graph $G = \langle \mathcal{N}, E \rangle$ is not a primitive but an \textbf{emergent structure} derived from the memberOf attribute. This has profound implications:
+\begin{itemize}
+\item The relational structure is just another attribute, not special
+\item Entities can have arbitrary attributes beyond membership
+\item The model generalizes naturally to other relational patterns
+\item Constraints can uniformly reference any attribute
+\item Different observers may recognize different membership relations
+\end{itemize}
+\end{remark}
+
+\subsection{Observer-Based Queries}
+
+\begin{definition}[Observer Query]
+For observer $o \in \mathbb{O}$, entity $e \in \mathcal{N}$, and attribute $a \in \mathbb{A}$, define:
+\[
+\Pi_o(e, a) = \begin{cases} \Pi(e)(a) & \text{if } \Omega(e, a) = o \\ \bot & \text{otherwise} \end{cases}
+\]
+This returns the attribute value \emph{only if} observer $o$ recognized it.
+\end{definition}
+
+\begin{definition}[Observer Assertions]
+The set of all assertions by observer $o$ is:
+\[
+\text{Assertions}(o) = \{ (e, a, v) \mid \Omega(e, a) = o \land \Pi(e)(a) = v \}
+\]
+This captures ``what does observer $o$ think about the world?''
+\end{definition}
+
+\begin{definition}[Entity Observers]
+The set of observers who have recognized attributes of entity $e$ is:
+\[
+\text{Observers}(e) = \{ o \in \mathbb{O} \mid \exists a \in \mathbb{A}: \Omega(e, a) = o \}
+\]
+This captures ``who has opinions about entity $e$?''
+\end{definition}
+
+\begin{remark}[Consensus and Conflict]
+When multiple observers have recognized the same attribute of an entity, we may need to aggregate their views. Common strategies include:
+\begin{itemize}
+\item \textbf{Most recent}: Use the observation with highest timestamp
+\item \textbf{Highest confidence}: Weight by observer confidence scores
+\item \textbf{Trust-weighted}: Weight by observer reputation/trust
+\item \textbf{Consensus}: Use majority value (for discrete attributes)
+\end{itemize}
+
+For the purposes of allocation, we typically use a single ``current view'' per entity-attribute pair, with $\Omega$ tracking the authoritative observer for that view.
+\end{remark}
+
+\subsection{The Potentials Attribute}
+
+\begin{definition}[Potential]
+A \textbf{potential} is a 4-tuple $p = (\tau, q, C, M)$ where:
+\begin{itemize}
+\item $\tau \in \mathbb{T}$ is the type (from the universe of types)
+\item $q \in \mathbb{R}^\pm$ is the signed magnitude
+\item $C \in \mathcal{C}$ is a constraint predicate
+\item $M$ is metadata (a map of key-value pairs)
+\end{itemize}
+We say $p$ is a \textbf{source} if $q > 0$ and a \textbf{sink} if $q < 0$.
+
+Since $\mathcal{N} \subseteq \mathbb{T}$, entities can serve as types (types-as-nodes), but types can also be abstract identifiers, strings, or other type representations not necessarily corresponding to entities in $\mathcal{N}$.
+
+For a potential $p = (\tau, q, C, M)$, we use projection notation:
+\begin{itemize}
+\item $\tau(p)$ denotes the type component
+\item $q(p)$ denotes the magnitude component
+\item $C(p)$ denotes the constraint component
+\item $M(p)$ denotes the metadata component
+\end{itemize}
+
+\textbf{Metadata for Space-Time Matching}: The metadata $M$ enables sophisticated matching beyond type compatibility. Common metadata includes:
+\begin{itemize}
+\item \textbf{Temporal}: time\_zone, recurrence (daily/weekly/monthly/yearly), start\_date, end\_date, availability\_window (hierarchical time patterns)
+\item \textbf{Spatial}: location\_type, coordinates (latitude/longitude), city, country, online\_link
+\item \textbf{Constraints}: advance\_notice\_hours, booking\_window\_hours, mutual\_agreement\_required
+\item \textbf{Descriptive}: name, unit, description
+\end{itemize}
+
+Two potentials $p_1$ (source) and $p_2$ (sink) are \textbf{compatible} if:
+\begin{enumerate}
+\item Type matches: $\tau(p_1) = \tau(p_2)$
+\item Constraint satisfied: $C(p_2)$ accepts the source entity
+\item Metadata compatible: A user-provided match function $\phi(M(p_1), M(p_2))$ returns true
+\end{enumerate}
+
+The match function $\phi$ can check arbitrary compatibility criteria, such as:
+\begin{itemize}
+\item Time overlap (accounting for timezones and recurrence patterns)
+\item Location proximity or online availability
+\item Mutual agreement requirements
+\end{itemize}
+
+\textbf{Terminology}: For intuitive exposition, we refer to a potential's magnitude as its \textbf{capacity} when the potential is a source ($q > 0$) and as its \textbf{need} when the potential is a sink ($|q|$ where $q < 0$).
+\end{definition}
+
+\begin{definition}[Potentials as Attribute]
+The \textbf{potentials} attribute stores flow gradients. For entity $e \in \mathcal{N}$:
+\[
+\Pi(e)(\text{``potentials''}) \in \mathbb{V}_{\text{pots}}
+\]
+This is a list of potentials representing the entity's capacities (sources) and needs (sinks).
+\end{definition}
+
+\begin{remark}[Types from Universe $\mathbb{T}$]
+In this framework, types come from the universe $\mathbb{T}$, which includes entities as a special case ($\mathcal{N} \subseteq \mathbb{T}$). This means:
+
+\textbf{Types can be entities} (types-as-nodes): When $\tau \in \mathcal{N}$, the type is an entity that may itself have:
+\begin{itemize}
+\item Categories (via memberOf attribute, enabling type hierarchies)
+\item Potentials (via potentials attribute, enabling meta-properties and flows)
+\item Participants (entities with this entity in their memberOf)
+\end{itemize}
+
+\textbf{Types can be abstract}: When $\tau \in \mathbb{T} \setminus \mathcal{N}$, the type is an abstract identifier (e.g., string, UUID) not corresponding to any entity in the system.
+
+This creates a flexible type system: use types-as-nodes when you want rich type metadata and hierarchies, use abstract types when you just need simple type matching. For example, an entity representing ``MealType'' could have ``Food'' and ``Consumable'' in its memberOf attribute, while also being referenced as the type in potentials like $(\text{MealType}, +100)$.
+\end{remark}
+
+\begin{definition}[Accessing Potentials]
+For entity $e \in \mathcal{N}$, we define:
+\[
+P(e) = \Pi(e)(\text{``potentials''})
+\]
+This is the list of potentials for entity $e$. We can filter by type:
+\[
+P(e, \tau) = \{ p \in P(e) \mid \tau(p) = \tau \}
+\]
+\end{definition}
+
+\subsection{Constraints and Weights}
+
+\begin{definition}[Constraint]
+A \textbf{constraint} is a function $C: \mathcal{N} \to \mathbb{R}_{\geq 0} \cup \{\infty\}$ that limits the maximum flow to each entity:
+\begin{itemize}
+\item $C(e) = 0$ excludes $e$ from receiving flow
+\item $C(e) = \infty$ imposes no limit on $e$
+\item $C(e) = k \in (0, \infty)$ caps flow to $e$ at $k$
+\end{itemize}
+Constraints express policy limits, rate caps, distance bounds, and other restrictions on flow.
+
+\textbf{Attribute-based constraints}: Constraints can reference any attribute:
+\[
+C_{\text{reputation}}(e) = \begin{cases} \infty & \text{if } \Pi(e)(\text{``reputation''}) > 0.5 \\ 0 & \text{otherwise} \end{cases}
+\]
+\end{definition}
+
+\begin{definition}[Filter as Special Constraint]
+A \textbf{filter} is a constraint that takes only values in $\{0, \infty\}$:
+\[
+\Phi: \mathcal{N} \to \{0, \infty\} \subset \mathbb{R}_{\geq 0} \cup \{\infty\}
+\]
+Filters determine binary eligibility (include/exclude) and are a special case of constraints.
+\end{definition}
+
+\begin{definition}[Weight]
+A \textbf{weight function} is $w: \mathcal{N} \to \mathbb{R}_{\geq 0}$ assigning preference to each entity.
+
+\textbf{Attribute-based weights}: Weights can reference any attribute:
+\[
+w_{\text{reputation}}(e) = \Pi(e)(\text{``reputation''})
+\]
+\end{definition}
+
+\subsection{Allocation Records}
+
+\begin{definition}[Record]
+An \textbf{allocation record} at time $t$ is:
+\[
+\Delta_t = (t, s, \tau, \{(r_i, q_i)\}_{i=1}^n, C, w, M)
+\]
+where $s$ is the source entity, $\tau$ the type, $\{(r_i, q_i)\}$ the recipient-quantity pairs, and $M$ metadata.
+\end{definition}
+
+\section{Constrained Weighted Allocation}
+
+\begin{remark}[Optimization-Based Allocation]
+The allocation mechanism is formulated as a \textbf{constrained optimization problem}. This departs from ad-hoc procedural rules or "min" functions. By defining a global objective function (minimizing deviation from priority-weighted targets) subject to physical constraints (needs and capacity), we derive an allocation that is mathematically guaranteed to be the "fairest" possible distribution given the competing preferences.
+\end{remark}
+
+\subsection{Phase 1: Provider Constraints (Optimization)}
+
+\begin{definition}[Provider Optimization Problem]
+Let a provider $P$ have total capacity $C$.
+Let $R = \{r_1, ..., r_n\}$ be the set of eligible recipients.
+Let $N_i$ be the declared need of recipient $r_i$.
+Let $w_i$ be the provider's priority weight for recipient $r_i$, where $\sum w_i = 1$.
+
+We seek the allocation vector $A = (A_1, ..., A_n)$ that solves:
+
+\[
+\text{Minimize } \quad J(A) = \sum_{i=1}^n \left( A_i - w_i C \right)^2
+\]
+
+Subject to constraints:
+\begin{enumerate}
+   \item \textbf{Need Constraint}: $0 \le A_i \le N_i \quad \forall i$
+   \item \textbf{Capacity Constraint}: $\sum_{i=1}^n A_i \le C$
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[Optimization Properties]
+This quadratic optimization problem over a convex polytope has a unique global minimum. The solution $A^*$ represents the allocation that is "closest" (in the least-squares sense) to the provider's ideal weighted distribution $w_i C$, while strictly respecting all physical limitations.
+\end{theorem}
+
+\begin{remark}[Intutition]
+This formulation naturally handles scarcity and abundance:
+\begin{itemize}
+   \item \textbf{Abundance}: If capacity is sufficient to meet all weighted targets without hitting need limits, $A_i = w_i C$.
+   \item \textbf{Need Limits}: If a recipient needs less than their weighted share ($N_i < w_i C$), the solver caps them at $N_i$.
+   \item \textbf{Surplus Redistribution}: The "unused" capacity from capped recipients is automatically redistributed to others who have unmet need, minimizing the total squared error. This replicates the "remainder redistribution" logic but as an intrinsic property of the optimization.
+\end{itemize}
+\end{remark}
+
+\subsection{Phase 2: Recipient Source Refinement}
+
+\begin{definition}[Source Preference Problem]
+While Phase 1 optimizes from the provider's perspective, Phase 2 optimizes for the recipient.
+
+Let a recipient $R$ receive a total allocation $A_{total}$ from a set of providers $S = \{s_1, ..., s_m\}$.
+Let $w_{recip}$ be the recipient's preference weights for each source ($w_{recip}(s_j)$), where $\sum w_{recip} = 1$.
+
+Recipients seek to adjust the source mix $S = (S_1, ..., S_m)$ (where $\sum S_j = A_{total}$) to match their preferences:
+
+\[
+\text{Minimize } \quad K(S) = \sum_{j=1}^m \left( S_j - w_{recip}(s_j) A_{total} \right)^2
+\]
+
+Subject to:
+\begin{enumerate}
+   \item \textbf{Provider Feasibility}: $S_j$ cannot exceed provider $s_j$'s physical capacity, though it may temporarily exceed their initial Phase 1 target to accommodate high-priority displacement.
+   \item \textbf{Total Conservation}: $\sum S_j \approx A_{total}$ (total help targeting typically aims to preserve volume, though overshoot is permitted during iteration).
+\end{enumerate}
+\end{definition}
+
+\begin{remark}[Two-Sided Matching]
+The combination of Phase 1 (Provider Constraints) and Phase 2 (Recipient Refinement) creates a dynamic equilibrium that respects the autonomy of both sides.
+\begin{itemize}
+   \item Providers set the \textbf{Initial Supply Envelope} (what they ideally want to give).
+   \item Recipients set the \textbf{Demand Composition} (who they prefer to receive from).
+   \item The final equilibrium is the vector-sum minimal deviation from both sets of preferences.
+\end{itemize}
+\end{remark}
+
+\section{Multi-Provider Coordination and Convergence}
+
+\begin{remark}[From Single to Multiple Providers]
+The flow equations in Section 4 describe allocation from a single source to multiple recipients. In practice, multiple independent providers may simultaneously allocate to the same recipients. This section addresses how the system coordinates across providers to achieve equilibrium without centralized control.
+
+The key insight: each provider independently computes allocations using the Constrained Weighted Allocation (Phase 1), while recipients aggregate allocations to compute their \textbf{deviations from source preference} (Phase 2). This deviation acts as a coordination signal that guides all providers toward equilibrium through iterative adjustment.
+\end{remark}
+
+\subsection{Source Preference as Coordination Signal}
+
+\begin{definition}[Distance from Ideal Source Mix]
+For recipient $r$ and type $\tau$, let $S_r^\tau$ be the set of all sources providing type $\tau$. Define:
+
+\textbf{Total received allocation}:
+\[
+A_r^\tau = \sum_{s \in S_r^\tau} a_{sr}^\tau
+\]
+This aggregates allocations from all providers.
+
+\textbf{Source Deviation}:
+For each source $s$, the deviation is:
+\[
+D_{sr} = a_{sr} - (w_{recip}(s) \cdot A_r^\tau)
+\]
+where $w_{recip}(s)$ is the recipient's preference for source $s$.
+\end{definition}
+
+\subsection{Convergence to Equilibrium}
+
+\begin{definition}[Distance-Based Adjustment]
+The allocation adjustment based on deviation follows:
+\[
+a_{sr}^{\tau}(t+1) = a_{sr}^{\tau}(t) - \alpha \cdot D_{sr}(t)
+\]
+where $\alpha \in (0,1]$ is the damping factor.
+
+This implements discrete-time gradient descent on the global energy landscape, minimizing both provider variance (Phase 1) and recipient composition error (Phase 2).
+\end{definition}
+
+\begin{remark}[Continuous-Time Interpretation]
+In the continuous-time limit (infinitesimal time steps $\Delta t \to 0$), the discrete update becomes:
+\[
+\frac{dE}{dt} = \lim_{\Delta t \to 0} \frac{E(t + \Delta t) - E(t)}{\Delta t} \leq -\alpha E(t)
+\]
+
+This is analogous to thermodynamic systems where energy decreases monotonically toward equilibrium. However, the actual algorithm operates in discrete time with finite iteration steps.
+\end{remark}
+
+\begin{theorem}[Multi-Provider Equilibrium]
+\label{thm:multi-provider-equilibrium}
+In a system with multiple independent providers, the equilibrium state satisfies:
+\[
+\forall s,r,\tau: \quad a_{sr}^\tau = t_{sr}^\tau
+\]
+where $t_{sr}^\tau$ is the target from Phase 1 (with Phase 2 refinements).
+
+This equilibrium is reached via two critical mechanisms:
+\begin{enumerate}
+    \item \textbf{Hidden Demand Discovery}: Providers calculate deviation based on \emph{all} compatible needs (not just currently served ones), allowing them to discover and reallocate to high-priority but initially unserved recipients.
+    \item \textbf{Overshoot \& Clamping}: During adjustment, providers are permitted to temporarily ``overshoot'' recipient need limits. This allows high-priority providers to displace low-priority incumbents, with global clamping enforcing strict limits at the end of each iteration to ensure feasibility.
+\end{enumerate}
+
+At equilibrium:
+\begin{enumerate}
+\item \textbf{Universal satisfaction} (if capacity sufficient): Needs are met according to priorities.
+\item \textbf{Full utilization} (if need sufficient): Capacity is exhausted.
+\item \textbf{Optimal alignment}: All allocations match targets respecting both provider and recipient priorities.
+\item \textbf{Pareto-optimal}: No reallocation can improve any participant without violating another's priorities.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Each provider independently computes targets using Phase 1 and applies full utilization. The source preference adjustment ensures convergence to targets.
+
+The system is a contraction mapping with rate $\kappa = (1-\alpha) < 1$:
+\[
+\|\Delta(t+1)\|_F \leq (1-\alpha) \|\Delta(t)\|_F
+\]
+
+By the Banach fixed-point theorem, this converges to the unique fixed point. At equilibrium, $a_{sr}^\tau = t_{sr}^\tau$ for all providers.
+\qed
+\end{proof}
+
+\begin{corollary}[Scarcity Equilibrium]
+\label{cor:scarcity-equilibrium}
+When total capacity is insufficient ($\sum_s q_s < \sum_r N_r^\tau$), equilibrium is characterized by:
+\begin{align}
+a_{sr}^\tau &= t_{sr}^\tau \quad \forall s,r,\tau \quad \text{(allocations match targets)} \\
+\sum_r a_{sr}^\tau &= q_s \quad \forall s,\tau \quad \text{(full capacity utilization)} \\
+\Delta_r^\tau &> 0 \quad \text{for some } r \quad \text{(partial satisfaction)}
+\end{align}
+
+At this equilibrium, no provider can improve any recipient's satisfaction without violating their own priority constraints or capacity limits. The distribution of scarce resources is determined by the interplay of all provider weights $w_s(r)$ and recipient prioritizations $G_r(s)$, achieving maximal satisfaction subject to capacity constraints.
+\end{corollary}
+
+\begin{proof}
+When capacity is insufficient, not all needs can be satisfied. Full utilization ensures all capacity is used ($\sum_r a_{sr}^\tau = q_s$). The distance-based adjustment converges to the state where each provider's allocation matches their target, which represents their optimal distribution given their priorities. Some recipients remain unsatisfied ($\Delta_r^\tau > 0$), but the allocation is Pareto-optimal: any reallocation that improves one recipient would require violating some provider's priority weights. \qed
+\end{proof}
+
+\begin{remark}[The Utilization-Satisfaction Trade-off]
+The system exhibits a fundamental trade-off between capacity utilization and need satisfaction:
+
+\textbf{Abundance} (capacity $>$ need):
+\begin{itemize}
+\item[\(\checkmark\)] Need satisfaction: 100\% (all recipients fully satisfied)
+\item[\(\times\)] Capacity utilization: $<$ 100\% (some capacity unused)
+\item Equilibrium: $\Delta_r = 0$ for all $r$, but $\sum_r a_{sr} < q_s$
+\end{itemize}
+
+\textbf{Scarcity} (capacity $<$ need):
+\begin{itemize}
+\item[\(\times\)] Need satisfaction: $<$ 100\% (some recipients unsatisfied)
+\item[\(\checkmark\)] Capacity utilization: 100\% (all capacity allocated)
+\item Equilibrium: $\sum_r a_{sr} = q_s$, but $\Delta_r > 0$ for some $r$
+\end{itemize}
+
+\textbf{System priority}: The algorithm prioritizes recipient satisfaction over provider utilization. Once a recipient is satisfied ($\Delta_r = 0$), they are removed from allocation even if capacity remains. The system will not force allocation on satisfied recipients merely to achieve 100\% utilization.
+\end{remark}
+
+\subsection{Robustness to Network Partitions}
+
+\begin{proposition}[Self-Correction via Negative Feedback]
+When network partitions create inconsistent views of total received allocation $A_r^\tau$, the system self-corrects through negative feedback on the source deviation $D_{sr}$:
+
+\textbf{Temporary over-allocation} ($D_{sr} < 0$): Providers retract allocations to align with preferences.
+
+\textbf{Temporary under-allocation} ($D_{sr} > 0$): Providers expand allocations to align with preferences.
+
+Errors decay geometrically with rate $(1-\alpha)^t$, ensuring rapid convergence once partitions heal.
+\end{proposition}
+
+\begin{proposition}[Bounded Oscillation]
+Maximum allocation is always bounded by provider capacity ($a_{sr} \le q_s$) and recipient need ($A_r \le N_r$). Even in worst-case network partitions where feedback is delayed, the system remains physically bounded and cannot diverge.
+\end{proposition}
+
+\subsection{Distributed Coordination Mechanisms}
+
+\begin{remark}[The Distributed Challenge]
+In distributed systems, providers may not have consistent views of recipient states due to network delays or partitions. The framework requires a mechanism to synchronize the "Source Preference" signal without central coordination.
+\end{remark}
+
+\begin{definition}[Recipient Broadcast Protocol]
+To enable coordination, recipients broadcast their current total received allocation $A_r^\tau$ to all connected providers:
+\begin{enumerate}
+\item Recipient computes: $A_r^\tau = \sum_s a_{sr}^\tau$
+\item Recipient broadcasts: $(r, \tau, A_r^\tau, \text{timestamp})$
+\item Providers receive and cache latest $A_r^\tau$ value
+\item Providers compute deviation: $D_{sr} = a_{sr} - w_{recip}(s) \cdot A_r^\tau$
+\end{enumerate}
+
+This ensures all providers act on a consistent (even if slightly stale) view of the global state.
+\end{definition}
+
+\begin{proposition}[Robustness to Stale Information]
+\label{prop:stale-robustness}
+Suppose providers observe stale totals $A_r^\tau$ with bounded staleness. The system still converges because the negative feedback mechanism is robust to noise. Staleness acts as a temporary perturbation; once the network stabilizes, the system converges to the global equilibrium.
+\end{proposition}
+
+\section{Aggregation Along Edges}
+
+\begin{definition}[Upward Aggregation]
+For entity $e$ and type $\tau$:
+\[
+\text{Agg}_\uparrow(e, \tau) = \sum_{c \in \text{Categories}(e)} \sum_{\substack{p \in P(c) \\ \tau(p) = \tau}} q(p)
+\]
+\end{definition}
+
+\begin{definition}[Downward Aggregation]
+For category $c$ and type $\tau$:
+\[
+\text{Agg}_\downarrow(c, \tau) = \sum_{e \in \text{Participants}(c)} \sum_{\substack{p \in P(e) \\ \tau(p) = \tau}} q(p)
+\]
+\end{definition}
+
+\begin{proposition}[Aggregation Duality]
+Aggregation preserves the sign structure:
+\begin{align}
+\text{Agg}_\uparrow(n, \tau) &\in \mathbb{R}^\pm \\
+\text{Agg}_\downarrow(c, \tau) &\in \mathbb{R}^\pm
+\end{align}
+\end{proposition}
+
+\begin{proof}
+Both aggregations are sums of signed quantities $q(p) \in \mathbb{R}^\pm$. Sums of signed reals remain in $\mathbb{R}^\pm$. \qed
+\end{proof}
+
+\section{Emergent Properties}
+
+\begin{theorem}[Entity-Type Duality]
+Every entity $e \in \mathcal{N}$ can simultaneously be:
+\begin{enumerate}
+\item A \textbf{type} if $\text{Participants}(e) \neq \emptyset$
+\item An \textbf{instance} if $\text{Categories}(e) \neq \emptyset$ (i.e., $\Pi(e)(\text{``memberOf''}) \neq \emptyset$)
+\item A \textbf{concrete entity} if $P(e) \neq \emptyset$ (i.e., $\Pi(e)(\text{``potentials''}) \neq \emptyset$)
+\item A \textbf{potential type} if $\exists p \in P(e'): \tau(p) = e$ for some $e' \in \mathcal{N}$
+\end{enumerate}
+These roles are not mutually exclusive. Since types are entities ($\tau \in \mathcal{N}$), an entity referenced as a type in a potential can simultaneously be an instance of other types, creating rich type hierarchies.
+\end{theorem}
+
+\begin{proof}
+The EAV structure makes no distinction between entities serving different roles. An entity may have:
+\begin{itemize}
+\item Other entities with it in their memberOf attribute (making it a type)
+\item Entities in its own memberOf attribute (making it an instance)
+\item Values in its potentials attribute (making it concrete)
+\item Be referenced as $\tau$ in other entities' potentials (making it a potential type)
+\end{itemize}
+All four roles can coexist. \qed
+\end{proof}
+
+\begin{theorem}[Non-Accumulation]
+No node can accumulate beyond its need. Formally, if $r$ receives flow $f$ of type $\tau$ and has need $|q_r|$ (where $q_r < 0$), then:
+\[
+f \leq |q_r|
+\]
+\end{theorem}
+
+\begin{proof}
+Immediate from the Need Constraint ($0 \le A_i \le N_i$) in the Provider Optimization Problem. \qed
+\end{proof}
+
+\begin{theorem}[Proportional Fairness]
+The allocation ratios equal the weight ratios in the absence of boundary constraints. For recipients $r_1, r_2 \in R$:
+\[
+\frac{\text{Flow}(s, r_1, \tau)}{\text{Flow}(s, r_2, \tau)} = \frac{w(r_1)}{w(r_2)}
+\]
+\end{theorem}
+
+\begin{proof}
+The optimization objective $\sum (A_i - w_i C)^2$ minimizes deviation from the proportional targets $w_i C$. In the absence of binding need constraints, the solution is exactly $A_i = w_i C$, satisfying proportional fairness. \qed
+\end{proof}
+
+\begin{theorem}[Determinism]
+The allocation function is deterministic: identical inputs produce identical outputs. Formally:
+\[
+\forall S_1, S_2: \text{if } (G_1, P_1, C_1, w_1) = (G_2, P_2, C_2, w_2) \text{ then } \text{Flow}_1 = \text{Flow}_2
+\]
+\end{theorem}
+
+\begin{proof}
+The Provider Optimization Problem is a quadratic optimization over a convex polytope. Such problems have a unique global minimum. Therefore, identical system states produce identical flows. \qed
+\end{proof}
+
+\section{The Three-Layer Ontology}
+
+\begin{definition}[Ontological Layers]
+Free Association embodies three layers of reality:
+\begin{enumerate}
+\item \textbf{Structural Layer}: Entity-attribute structure defines what exists through relationships
+\item \textbf{Potential Layer}: Potentials attribute defines what \emph{could} flow through gradients
+\item \textbf{Actual Layer}: Records $\{\Delta_t\}$ define what \emph{did} flow through events
+\end{enumerate}
+\end{definition}
+
+\begin{remark}[Ontological Priority]
+The layers exhibit a natural precedence:
+\[
+\mathcal{N}, \Pi \prec \text{potentials} \prec \{\Delta_t\}
+\]
+where $\prec$ denotes ontological precedence: entities and their attributes must exist before having potentials, and potentials must exist before being actualized. This is a design principle rather than a mathematical theorem.
+\end{remark}
+
+\section{Composition of Constraints and Weights}
+
+\begin{definition}[Constraint Algebra]
+Constraints form a semilattice under minimum:
+\begin{align}
+(C_1 \wedge C_2)(n) &= \min(C_1(n), C_2(n)) \\
+\top(n) &= \infty \quad \text{(no constraint)} \\
+\bot(n) &= 0 \quad \text{(total exclusion)}
+\end{align}
+The minimum operation selects the tightest constraint.
+\end{definition}
+
+\begin{proposition}[Filter Algebra as Special Case]
+When constraints are restricted to $\{0, \infty\}$, they form a Boolean algebra:
+\begin{align}
+(\Phi_1 \land \Phi_2)(n) &= \min(\Phi_1(n), \Phi_2(n)) \\
+(\Phi_1 \lor \Phi_2)(n) &= \max(\Phi_1(n), \Phi_2(n)) \\
+(\neg \Phi)(n) &= \begin{cases} \infty & \text{if } \Phi(n) = 0 \\ 0 & \text{if } \Phi(n) = \infty \end{cases}
+\end{align}
+This recovers standard Boolean filter composition.
+\end{proposition}
+
+\begin{definition}[Constraint Examples]
+Common constraint patterns include:
+\begin{align}
+C_{\text{filter}}(n) &= \begin{cases} \infty & \text{if eligible}(n) \\ 0 & \text{otherwise} \end{cases} \quad \text{(binary)} \\
+C_{\text{cap}}(n) &= k \quad \text{(absolute limit)} \\
+C_{\text{percent}}(n) &= \alpha \cdot q_s \quad \text{(proportional limit)} \\
+C_{\text{distance}}(n) &= \max(0, d_{\max} - d(s, n)) \quad \text{(spatial decay)} \\
+C_{\text{rate}}(n, t) &= r \cdot \Delta t \quad \text{(temporal limit)}
+\end{align}
+\end{definition}
+
+\begin{definition}[Weight Function]
+A \textbf{weight function} is $w: N \to \mathbb{R}_{\geq 0}$ assigning preference to each node, subject to normalization:
+\[
+\sum_{r \in N} w(r) = 1
+\]
+\end{definition}
+
+\begin{proposition}[Weight Algebra]
+Weights form a semiring under:
+\begin{align}
+(w_1 \oplus w_2)(n) &= w_1(n) + w_2(n) \\
+(w_1 \otimes w_2)(n) &= w_1(n) \cdot w_2(n)
+\end{align}
+Note that $\otimes$ preserves proportions but requires renormalization: $w' = (w_1 \otimes w_2) / \sum_r (w_1 \otimes w_2)(r)$.
+\end{proposition}
+
+\begin{definition}[Weight Examples]
+Common weight patterns include:
+
+\textbf{Uniform weights}: $w_{\text{uniform}}(n) = 1/|N|$ for all $n \in N$
+
+\textbf{Recognition}: Each node $n$ assigns recognition weights $w_n: N \to [0,1]$ with $\sum_r w_n(r) = 1$. The \textbf{mutual recognition} between $v_1$ and $v_2$ is:
+\[
+\text{MR}(v_1, v_2) = \min(w_{v_1}(v_2), w_{v_2}(v_1))
+\]
+Normalized MR values into weights:
+\[
+w_{\text{MR}}(n) = \frac{\text{MR}(p, n)}{\sum_{r \in N} \text{MR}(p, r)}
+\]
+
+\textbf{Composite weights}: Combine multiple factors through multiplication and renormalization:
+\[
+w_{\text{composite}}(n) \propto w_1(n) \cdot w_2(n) \cdot \ldots \cdot w_k(n)
+\]
+For example, social allocation might weight by mutual recognition and reputation:
+\[
+w_{\text{social}}(n) = \frac{\text{MR}(\text{provider}, n) \cdot \text{reputation}(n)}{\sum_{r \in N} \text{MR}(\text{provider}, r) \cdot \text{reputation}(r)}
+\]
+where reputation could be derived from past allocation records or other sources.
+\end{definition}
+
+\begin{proposition}[Composability]
+Complex allocation strategies emerge from composition:
+\begin{align}
+C_{\text{complex}} &= C_1 \wedge C_2 \wedge \cdots \wedge C_n \quad \text{(tightest constraint)} \\
+w_{\text{complex}} &\propto w_1 \otimes w_2 \otimes \cdots \otimes w_n \quad \text{(multiplicative preference)}
+\end{align}
+\end{proposition}
+
+\section{Dynamic Equilibrium}
+
+\begin{definition}[Fill Fraction]
+For a given allocation round, the \textbf{fill fraction} is:
+\[
+f = \frac{\sum_{r \in N} \sum_{\tau} \text{Flow}(s, r, \tau)}{\sum_{r \in N} \sum_{p \in P(r), q(p) < 0} |q(p)|}
+\]
+This measures what fraction of total need is satisfied per round.
+\end{definition}
+
+\begin{theorem}[Convergence to Equilibrium]
+Let $\mathcal{S}^+ = \sum_{s \in N} \sum_{p \in P(s), q(p) > 0} q(p)$ be total capacity and $\mathcal{S}^- = \sum_{r \in N} \sum_{p \in P(r), q(p) < 0} |q(p)|$ be total need.
+
+\textbf{Static Case:} If $\mathcal{S}^+ \geq \mathcal{S}^-$ and network state is fixed, then:
+\[
+\|r(t)\| \leq (1-f)^t \cdot \|r(0)\|
+\]
+where $\|r(t)\|$ is the total unsatisfied need at time $t$. The system converges to full satisfaction in:
+\[
+T_\varepsilon = O\left(\frac{\log(1/\varepsilon)}{\log(1/(1-f))}\right) \text{ rounds}
+\]
+
+\textbf{Dynamic Case:} When needs and capacities evolve over time, the system does not converge to a fixed point but instead recomputes optimal allocation at each time step based on the current state $S(t) = (G^{(t)}, P^{(t)}, C^{(t)}, w^{(t)})$. The allocation at time $t$ is optimal for the state at time $t$, providing adaptive rather than convergent behavior.
+\end{theorem}
+
+\begin{proof}
+\textbf{Static case:} Each round satisfies fraction $f$ of remaining needs. By the allocation capping property, receiving always reduces need. Thus:
+\[
+\|r(t+1)\| = \|r(t) - \phi(r(t))\| \leq (1-f) \cdot \|r(t)\|
+\]
+Iterating gives $\|r(t)\| \leq (1-f)^t \cdot \|r(0)\|$. Setting $(1-f)^t \cdot \|r(0)\| \leq \varepsilon$ and solving for $t$ yields the convergence rate.
+
+\textbf{Dynamic case:} The system recomputes optimal allocation for current state $S(t)$ at each step, maintaining instantaneous optimality without requiring convergence to zero. \qed
+\end{proof}
+
+\section{Sovereignty and Anti-Gaming}
+
+\begin{remark}[Why Normalization Matters]
+Weight normalization ($\sum_{r \in N} w(r) = 1$) is essential for meaningful optimization. Without it, entities could assign arbitrarily large weights to all nodes, making $w(r_1)/\sum_{r'} w(r') = 1/n$ independent of preferences. Normalization creates scarcity, forcing genuine trade-offs in preference expression.
+\end{remark}
+
+\subsection{Weak Monotonicity}
+
+\begin{axiom}[Weak Monotonicity]
+\label{ax:weak-monotonicity}
+The allocation function satisfies weak monotonicity in weights:
+\[
+\frac{\partial \text{Flow}(s, r, \tau)}{\partial w(r)} \geq 0
+\]
+Increasing a recipient's weight does not decrease their allocation.
+\end{axiom}
+
+\begin{proposition}[Monotonicity as Respect]
+Weak monotonicity is not merely technical—it is the mathematical expression of respecting sovereign preference expression.
+
+\textbf{If violated}: Increasing weight to beneficial partner $r$ decreases allocation to $r$, creating perverse incentives to misrepresent preferences.
+
+\textbf{When satisfied}: Honest preference expression is optimal—no strategic manipulation needed.
+\end{proposition}
+
+\subsection{The Anti-Gaming Theorem}
+
+We now prove that Free Association framework guarantees anti-gaming properties when weights represent benefit gradients.
+
+\begin{definition}[Net-Benefit Gradient]
+For entity $e$ with goal $G_e$, define the \textbf{net-benefit gradient} from provider $p$:
+\[
+\beta_e(p) = \frac{\partial \mathbb{P}(G_e)}{\partial \text{received}(p, e)} \in \mathbb{R}
+\]
+This measures how much receiving from $p$ contributes to achieving $e$'s goal:
+\begin{itemize}
+\item $\beta_e(p) > 0$: Receiving from $p$ helps achieve $G_e$ (beneficial)
+\item $\beta_e(p) = 0$: Receiving from $p$ is neutral to $G_e$ (irrelevant)
+\item $\beta_e(p) < 0$: Receiving from $p$ harms achievement of $G_e$ (costly)
+\end{itemize}
+
+\textbf{Examples}:
+\begin{itemize}
+\item \textbf{Hospital}: A patient receiving critical care has $\beta_{\text{hospital}}(\text{patient}) > 0$ because providing care realizes the hospital's goal of ``providing critical care''. The patient contributes to goal realization by being a recipient.
+\item \textbf{Need-based allocation}: An entity distributing food may set $\beta_e(p) \propto \text{urgency}(p)$ or $\beta_e(p) \propto \text{need}(p)$, prioritizing those who most need it.
+\item \textbf{Harmful relationships}: If receiving from $p$ undermines $e$'s goals (e.g., accepting resources with strings attached that conflict with mission), then $\beta_e(p) < 0$.
+\end{itemize}
+
+This generalizes beyond private benefit to \emph{any} goal-directed allocation, including altruistic, mission-driven, or collective goals.
+\end{definition}
+
+\begin{theorem}[Anti-Gaming]
+\label{thm:anti-gaming-commons}
+Suppose entity $e$ controls weights $w_e: N \to \mathbb{R}_{\geq 0}$ subject to normalization $\sum_r w_e(r) = 1$. If:
+\begin{enumerate}
+\item Allocation satisfies the Constrained Weighted Allocation
+\item Weights satisfy weak monotonicity (Axiom \ref{ax:weak-monotonicity})
+\item Entity seeks to maximize goal achievement: $\max_{w_e} \mathbb{P}(G_e)$
+\end{enumerate}
+
+Then the optimal weight allocation is:
+\[
+w_e^*(r) \propto \max(0, \beta_e(r))
+\]
+Setting weights proportional to \emph{positive} net-benefit gradients is optimal.
+
+\textbf{Implication}: Honest signaling of relationship benefit is the best strategy. Entities with $\beta_e(r) \leq 0$ should receive zero weight. Gaming (allocating to non-beneficial or harmful partners) is strictly suboptimal.
+\end{theorem}
+
+\begin{proof}
+Entity $e$'s goal achievement depends on received allocations:
+\[
+\mathbb{P}(G_e) = f\left(\sum_{p \in N} \beta_e(p) \cdot \text{Flow}(p, e, \tau)\right)
+\]
+
+From the Constrained Weighted Allocation optimization:
+\begin{itemize}
+\item The system minimizes $\sum (A_i - w_i C)^2$.
+\item In the unconstrained regime (not hitting need limits), the solution matches the target: $A_i = w_i C$.
+\end{itemize}
+
+Substituting this unconstrained solution:
+\[
+\mathbb{P}(G_e) = f\left(\sum_{p \in N} \beta_e(p) \cdot q_p \cdot w_e(p)\right)
+\]
+
+To maximize, take derivative with respect to $w_e(p)$ subject to $\sum_r w_e(r) = 1$:
+\[
+\mathcal{L} = \sum_{p} \beta_e(p) \cdot q_p \cdot w_e(p) - \lambda\left(\sum_r w_e(r) - 1\right)
+\]
+
+First-order conditions:
+\[
+\frac{\partial \mathcal{L}}{\partial w_e(p)} = \beta_e(p) \cdot q_p - \lambda = 0
+\]
+
+Therefore:
+\[
+w_e^*(p) \propto \beta_e(p) \cdot q_p
+\]
+
+\textbf{Conclusion}: Optimal weights are proportional to the product of net-benefit gradients and provider capacities: $w_e^*(p) \propto \max(0, \beta_e(p) \cdot q_p)$. This naturally accounts for varying provider capacities: larger capacity providers receive proportionally more weight. Allocating weight to neutral partners ($\beta_e(p) = 0$) or harmful partners ($\beta_e(p) < 0$) is strictly suboptimal regardless of their capacity. \qed
+\end{proof}
+
+\begin{remark}[Capacity-Aware Weighting Emerges Naturally]
+Recipients don't need explicit knowledge of provider capacities. The iterative convergence process naturally teaches them: providers with larger capacity consistently deliver more, leading recipients to increase their expectations from those providers over time. This is a form of \textbf{learned prioritization} where the system discovers optimal weights through experience, not through explicit capacity information exchange.
+\end{remark}
+
+\begin{corollary}[Honest Signaling]
+Under Free Association framework:
+\begin{itemize}
+\item \textbf{Beneficial partners}: Allocate weight proportional to benefit → receive more
+\item \textbf{Non-beneficial partners}: Allocate zero weight → receive nothing
+\item \textbf{Gaming (false signaling)}: Allocate weight to non-beneficial partners → reduces allocation from beneficial ones → decreases goal achievement
+\end{itemize}
+
+Honest preference expression is optimal.
+\end{corollary}
+
+\begin{corollary}[Sybil Resistance]
+Creating fake identities (Sybils) provides no advantage:
+
+\textbf{Proof}: If entity $e$ creates Sybil $s$ and allocates weight $w_e(s) > 0$:
+\begin{itemize}
+\item Sybil $s$ has zero capacity ($q_s = 0$) or provides no benefit ($\beta_e(s) = 0$)
+\item By anti-gaming theorem, $w_e^*(s) = 0$
+\item Allocating $w_e(s) > 0$ reduces weight available for beneficial partners
+\item Result: Decreases goal achievement
+\end{itemize}
+
+Sybil creation is strictly suboptimal. \qed
+\end{corollary}
+
+\subsection{Controllability and Memory}
+
+\begin{proposition}[Controllability]
+\label{prop:controllability-commons}
+Free Association framework permits memory in weight functions, provided current weights retain ultimate control.
+
+\textbf{Valid (memory with controllability)}:
+\[
+w^{(t)}(r) = \alpha \cdot w_{\text{current}}^{(t)}(r) + \beta \cdot w_{\text{past}}^{(t-1)}(r) \quad \text{with } \alpha > 0
+\]
+Current weights can override past patterns.
+
+\textbf{Invalid (memory without controllability)}:
+\[
+w^{(t)}(r) = \begin{cases}
+w_{\text{current}}^{(t)}(r) & \text{if never decreased in past} \\
+0 & \text{if ever decreased in past}
+\end{cases}
+\]
+Past actions create dead zones—violates sovereignty.
+
+\textbf{Key insight}: Learning, adaptation, and temporal smoothing are permitted as long as current weights can achieve any desired allocation.
+\end{proposition}
+
+\section{The Paradigm Shift}
+
+\begin{proposition}[Unification]
+Free Association framework provides a unified treatment of:
+\begin{enumerate}
+\item \textbf{Categorization} (memberOf attribute creating emergent graph)
+\item \textbf{Resource allocation} (potentials attribute enabling flow equilibration)
+\item \textbf{Type inheritance} (upward aggregation along memberOf)
+\item \textbf{Computation} (constraint satisfaction + preference optimization)
+\end{enumerate}
+Each emerges as a pattern within the Entity-Attribute-Value model.
+\end{proposition}
+
+\begin{proof}
+\begin{itemize}
+\item Categorization: memberOf attribute creates type hierarchies (Definition 5)
+\item Allocation: The Constrained Weighted Allocation distributes potentials (Theorem 1)
+\item Inheritance: $\text{Agg}_\uparrow$ propagates along memberOf (Definition 11)
+\item Computation: Constraints $C$ limit possibilities, weights $w$ optimize preferences (Section 6)
+\end{itemize}
+Each is expressible within $\mathcal{C} = \langle \mathcal{N}, \Pi, \{\Delta_t\} \rangle$. \qed
+\end{proof}
+
+\section{A Simple Example}
+
+Consider a kitchen $k$ with meal potential $({\tt meals}, +100)$ and two people: Alice with potential $({\tt meals}, -20)$ and Bob with potential $({\tt meals}, -30)$. Using unit weights ($w(n) = 0.5$ for all $n$), the Provider Optimization Problem seeks:
+\[
+\text{Minimize } (A_{\text{Alice}} - 50)^2 + (A_{\text{Bob}} - 50)^2
+\]
+Subject to:
+\[
+0 \le A_{\text{Alice}} \le 20, \quad 0 \le A_{\text{Bob}} \le 30
+\]
+
+\textbf{Solution}:
+The unconstrained targets are 50 and 50. Since $50 > 20$, Alice is capped at 20. Since $50 > 30$, Bob is capped at 30.
+\[
+A_{\text{Alice}} = 20, \quad A_{\text{Bob}} = 30
+\]
+Total allocated: 50. Remaining capacity: 50.
+Both recipients are fully satisfied. The allocation is fair, efficient, and complete relative to needs.
+
+\section{Conclusion}
+
+Five primitives—graphs, potentials, constraints, weights, and records—yield one framework. From this framework implies a remarkable property: when weights represent benefit gradients, honest preference signaling is the unique optimal strategy. Strategic manipulation, vote trading, coalition formation, and Sybil attacks all become strictly suboptimal.
+
+This provides mathematical foundations for sovereign coordination: systems where participants retain full autonomy over their preferences while achieving collectively optimal resource allocation. Categorization, allocation, and type hierarchies all emerge as patterns within the same unified structure.
+
+\end{document}

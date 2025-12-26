@@ -1,279 +1,274 @@
-# P2P Protocol Implementation
+# Free Association Protocol
 
-A peer-to-peer, offline-first, capability-secure protocol implementation with cryptographic identities, content-addressed storage, and UCAN-based authorization.
+A pure, framework-agnostic protocol for decentralized resource allocation and mutual recognition.
 
-## 🎯 Project Status
+## 📦 Package: `@playnet/free-association`
 
-**Phase 1 & 2: Complete** ✅
+**Version:** 1.0.8  
+**License:** AGPL-3.0-or-later
 
-- ✅ Identity Module (36 tests)
-- ✅ Storage Module (29 tests)
-- ✅ ucanto Module (15 tests)
-- ✅ Integration Example
+## 🎯 Overview
 
-**Total: 80 tests passing**
+The Free Association Protocol implements **priority aligned capacity distribution**, enabling decentralized communities to coordinate resource allocation without central authority, bureaucratic overhead, or market exclusion.
 
-## 📦 Modules
+### Core Features
 
-### Identity Module
+- **Priority Aligned Capacity Distribution** - Resources flow based on priority alignment and declared needs
+- **Distributed IPF Allocation** - Iterative Proportional Fitting for decentralized coordination
+- **Recognition Trees** - Hierarchical contribution attribution and priority derivation
+- **Interval Tree Clocks (ITC)** - Causality tracking for distributed systems
+- **Compliance Filters** - JSON Logic-based slot compatibility rules
+- **Zod Schemas** - Runtime validation for all data structures
 
-Cryptographic identities with ed25519 signatures and DID support.
+## 🚀 Installation
+
+```bash
+npm install @playnet/free-association
+```
+
+## 📚 Module Exports
+
+### Main Entry Point
 
 ```typescript
-import { generateKeypair, publicKeyToDID, sign, verify } from '@protocol/identity';
+import { 
+  calculateSlotBasedPriorityAllocation,
+  calculateCollectiveRecognitionDistribution,
+  mutualFulfillment
+} from '@playnet/free-association';
+```
 
-// Generate a keypair
-const keypair = await generateKeypair();
+### Subpath Exports
 
-// Convert to DID
-const did = publicKeyToDID(keypair.publicKey);
-// did:key:z6Mk...
+```typescript
+// Schemas and types
+import { type Commitment, type NeedSlot, type AvailabilitySlot } from '@playnet/free-association/schemas';
 
-// Sign and verify
-const message = new TextEncoder().encode('Hello, world!');
-const signature = await sign(message, keypair.secretKey);
-const isValid = await verify(signature, message, keypair.publicKey);
+// Allocation algorithm
+import { calculateSlotBasedPriorityAllocation } from '@playnet/free-association/allocation';
+
+// Recognition distribution
+import { calculateCollectiveRecognitionDistribution } from '@playnet/free-association/distribution';
+
+// Recognition trees
+import { mutualFulfillment } from '@playnet/free-association/tree';
+
+// Interval Tree Clocks
+import { itcSeed, itcEvent, itcFork, itcJoin } from '@playnet/free-association/itc';
+
+// Utilities
+import { slotsCompatible, passesSlotFilters } from '@playnet/free-association/utils/match';
+
+// Filters
+import { evaluateComplianceFilter } from '@playnet/free-association/filters/compliance';
+
+// Configuration
+import { DEFAULT_CONFIG } from '@playnet/free-association/config';
+```
+
+## 🔧 Core Modules
+
+### 1. Allocation (`allocation.ts`)
+
+**Distributed IPF Allocation Protocol** - Implements the "Distributed Recipient Broadcast" protocol where agents coordinate asynchronously by exchanging scaling factors.
+
+**Key Functions:**
+```typescript
+function updateProviderState(
+  capacitySlots: AvailabilitySlot[],
+  knownNeeds: NeedSlot[],
+  allCommitments: Record<string, Commitment>,
+  state: DistributedIPFState,
+  epsilon?: number,
+  gamma?: number
+): DistributedIPFState
+
+function generateFlowProposals(
+  capacitySlots: AvailabilitySlot[],
+  knownNeeds: NeedSlot[],
+  allCommitments: Record<string, Commitment>,
+  state: DistributedIPFState,
+  epsilon?: number,
+  gamma?: number
+): FlowProposal[]
+
+function updateRecipientState(
+  needSlots: NeedSlot[],
+  incomingProposals: FlowProposal[],
+  state: DistributedIPFState,
+  epsilon?: number
+): DistributedIPFState
 ```
 
 **Features:**
-- ed25519 keypair generation
-- did:key format conversion
-- Message signing and verification
-- Zod schemas for validation
+- Asynchronous coordination via scaling factor exchange
+- Provider row scaling (x_p) to satisfy capacity constraints
+- Recipient column scaling (y_r) to satisfy need constraints
+- Mathematical basis: A_pr = K_pr * x_p * y_r (Iterative Proportional Fitting)
+- Converges to optimal allocation through distributed computation
 
-### Storage Module
+### 2. Distribution (`distribution.ts`)
 
-Content-addressed storage with CIDs and IndexedDB persistence.
+Collective recognition distribution using Shapley values.
+
+**Key Function:**
+```typescript
+function calculateCollectiveRecognitionDistribution(
+  nodes: Node[],
+  options?: DistributionOptions
+): RecognitionDistribution
+```
+
+### 3. Recognition Trees (`tree.ts`)
+
+Hierarchical contribution tracking and mutual fulfillment.
+
+**Key Function:**
+```typescript
+function mutualFulfillment(
+  tree: Node,
+  recognitionWeights: Record<string, number>
+): MutualFulfillmentResult
+```
+
+### 4. Schemas (`schemas.ts`)
+
+Comprehensive Zod schemas for runtime validation:
+- `CommitmentSchema` - User commitments with slots and recognition
+- `NeedSlotSchema` - Resource needs with priorities
+- `AvailabilitySlotSchema` - Resource capacity with priorities
+- `SlotAllocationRecordSchema` - Allocation results
+- And many more...
+
+### 5. ITC (`itc.ts`)
+
+Interval Tree Clocks for distributed causality tracking.
 
 ```typescript
-import { ContentAddressedStorage, createCID } from '@protocol/storage';
+import { itcSeed, itcEvent, itcFork, itcJoin, itcLeq } from '@playnet/free-association/itc';
 
-const storage = new ContentAddressedStorage();
-
-// Store data
-const data = new TextEncoder().encode('Hello, IPFS!');
-const cid = await storage.put(data);
-
-// Retrieve data
-const retrieved = await storage.get(cid);
-
-// Pin important blocks
-await storage.pin(cid);
-
-// Garbage collection
-const stats = await storage.gc();
+const stamp1 = itcSeed();
+const stamp2 = itcEvent(stamp1);
+const isOrdered = itcLeq(stamp1, stamp2); // true
 ```
-
-**Features:**
-- SHA-256 + dag-cbor CID generation
-- IndexedDB persistence
-- Block pinning
-- Garbage collection
-- Integrity verification
-
-### ucanto Module
-
-UCAN-based authorization with capability delegation.
-
-```typescript
-import { delegate, verify, invoke } from '@protocol/ucanto';
-import { generateKeypair, publicKeyToDID } from '@protocol/identity';
-
-const alice = await generateKeypair();
-const bob = await generateKeypair();
-
-// Alice delegates capability to Bob
-const delegation = await delegate({
-  issuer: alice,
-  audience: publicKeyToDID(bob.publicKey),
-  capabilities: [{
-    with: 'https://example.com/doc/123',
-    can: 'doc/write',
-    nb: { maxSize: 1024 } // Optional caveats
-  }],
-  expiration: Date.now() + 3600 * 1000
-});
-
-// Verify delegation
-const result = await verify(delegation.token);
-console.log(result.valid); // true
-```
-
-**Features:**
-- UCAN delegation creation
-- Delegation verification
-- Proof chains
-- Capability caveats
-- Expiration handling
-
-## 🚀 Getting Started
-
-### Installation
-
-```bash
-# Install dependencies for all packages
-cd packages/identity && npm install
-cd ../storage && npm install
-cd ../ucanto && npm install
-cd ../examples && npm install
-```
-
-### Running Tests
-
-```bash
-# Test specific module
-cd packages/identity && npm test
-cd packages/storage && npm test
-cd packages/ucanto && npm test
-```
-
-### Running the Integration Example
-
-```bash
-cd packages/examples
-npm install
-npm run build
-npm run example
-```
-
-## 🏗️ Architecture
-
-### Module Dependencies
-
-```
-┌─────────────┐
-│   ucanto    │ ← UCAN delegation & verification
-└──────┬──────┘
-       │
-       ↓
-┌─────────────┐
-│  Identity   │ ← Cryptographic identities
-└─────────────┘
-
-┌─────────────┐
-│   Storage   │ ← Content-addressed blocks
-└─────────────┘
-```
-
-### Design Principles
-
-1. **Zod Schemas** - Runtime validation at all module boundaries
-2. **Type Safety** - Full TypeScript with strict mode
-3. **Standards Compliance** - did:key, CIDs, UCAN, ed25519
-4. **Test Coverage** - Comprehensive tests for all functionality
-5. **Minimal Dependencies** - Only well-maintained libraries
-
-## 📚 Documentation
-
-- [Walkthrough](/.gemini/antigravity/brain/8cc0e755-ff4a-4303-895a-25c7ef278179/walkthrough.md) - Detailed implementation walkthrough
-- [Task Checklist](/.gemini/antigravity/brain/8cc0e755-ff4a-4303-895a-25c7ef278179/task.md) - Implementation progress
-- [Implementation Plan](/.gemini/antigravity/brain/8cc0e755-ff4a-4303-895a-25c7ef278179/implementation_plan.md) - Original architecture plan
 
 ## 🧪 Testing
 
-All modules have comprehensive test coverage:
+**90 tests passing** across all modules:
 
-**Test Results:**
-- Identity: 36/36 passing ✅
-- Storage: 29/29 passing ✅
-- ucanto: 15/15 passing ✅
+```bash
+npm test
+```
 
-**Total: 80 tests passing in <3 seconds**
+**Test Coverage:**
+- Allocation: 6 tests
+- Divisibility: 18 tests
+- Matching: 39 tests
+- Distribution: 17 tests
+- ADMM Optimization: 2 tests
+- And more...
 
-## 🔧 Development
+## 📖 Documentation
+
+Detailed documentation available in `/docs`:
+- Algorithm specifications
+- Schema definitions
+- Integration guides
+- Performance benchmarks
+
+## 🏗️ Architecture
+
+### Design Principles
+
+1. **Pure Functions** - No side effects, fully testable
+2. **Framework Agnostic** - Works with any JS/TS framework
+3. **Runtime Validation** - Zod schemas at all boundaries
+4. **Type Safety** - Full TypeScript with strict mode
+5. **Standards Compliance** - JSON Logic, Zod, modern ES modules
 
 ### Project Structure
 
 ```
-packages/
-├── identity/          # Cryptographic identities
-│   ├── src/
-│   │   ├── schemas.ts      # Zod schemas
-│   │   ├── keypair.ts      # Keypair generation
-│   │   ├── did.ts          # DID conversion
-│   │   ├── signing.ts      # Sign/verify
-│   │   └── index.ts
-│   └── test/
-├── storage/           # Content-addressed storage
-│   ├── src/
-│   │   ├── schemas.ts      # Zod schemas
-│   │   ├── cid.ts          # CID generation
-│   │   ├── storage.ts      # Storage class
-│   │   └── index.ts
-│   └── test/
-├── ucanto/            # UCAN authorization
-│   ├── src/
-│   │   ├── schemas.ts      # Zod schemas
-│   │   ├── principal.ts    # Principal conversion
-│   │   ├── delegation.ts   # Delegation logic
-│   │   └── index.ts
-│   └── test/
-└── examples/          # Integration examples
-    └── src/
-        └── integration.ts
+src/
+├── allocation.ts          # Slot-based priority allocation
+├── distribution.ts        # Recognition distribution (Shapley)
+├── tree.ts               # Recognition trees & mutual fulfillment
+├── itc.ts                # Interval Tree Clocks
+├── schemas.ts            # Zod schemas & types
+├── config.ts             # Default configuration
+├── utils/                # Utility functions
+│   ├── match.ts         # Slot compatibility matching
+│   ├── memoize.ts       # Memoization helpers
+│   └── ...
+├── filters/              # Compliance filters
+│   ├── compliance.ts    # JSON Logic evaluation
+│   └── ...
+├── attributes/           # Attribute definitions
+└── collective/           # Collective coordination
 ```
 
-## 🌟 Key Features
+## 🌟 Key Concepts
 
-### Runtime Validation
+### Priority Aligned Capacity Distribution
 
-All data is validated at module boundaries using Zod:
+Resources flow based on **priority alignment** and **declared needs**:
+- **Capacity Slots** - What you can provide (time, money, skills)
+- **Need Slots** - What you need
+- **Priority Weights** - How you prioritize capacity distribution to different recipients
+- **Priority Alignment** - Resources flow to entities contributing to your priorities
 
+### Distributed Coordination
+
+Decentralized allocation through Iterative Proportional Fitting (IPF):
+- **Provider Scaling (x_p)** - Providers adjust their offers to stay within capacity
+- **Recipient Scaling (y_r)** - Recipients signal saturation to prevent overflow
+- **Seed Values (K_pr)** - Base compatibility between capacity and need slots
+- **Flow Proposals** - Asynchronous exchange of allocation proposals: A_pr = K_pr * x_p * y_r
+- **Convergence** - System converges to optimal allocation through iterative updates
+
+### Recognition Trees
+
+Hierarchical contribution tracking:
+- **Recognition Weights** - How much you value others' contributions to your priorities
+- **Priority Derivation** - Priorities often derived from recognition of contribution
+- **Recognition Trees** - Hierarchical attribution of collective value
+
+### Compliance Filters
+
+JSON Logic rules for slot compatibility:
 ```typescript
-import { publicKeySchema, didSchema } from '@protocol/identity';
-
-// Validates at runtime
-const publicKey = publicKeySchema.parse(data);
-const did = didSchema.parse(didString);
-```
-
-### Type Inference
-
-TypeScript types are inferred from Zod schemas:
-
-```typescript
-import { type PublicKey, type DID } from '@protocol/identity';
-
-function example(pk: PublicKey, did: DID) {
-  // Fully typed!
+{
+  "filter_rule": {
+    "and": [
+      { ">=": [{ "var": "quantity" }, 10] },
+      { "in": [{ "var": "location" }, ["NYC", "SF"]] }
+    ]
+  }
 }
 ```
 
-### Standards Compliance
+## 🔗 Related Projects
 
-- **did:key** - W3C DID standard with ed25519
-- **CIDs** - IPLD Content Identifiers
-- **UCAN** - User Controlled Authorization Networks
-- **ed25519** - EdDSA signatures
+- **Free Association App** - SvelteKit application using this protocol
+- **Playnet** - Broader ecosystem of decentralized coordination tools
 
-## 📈 Next Steps
+## 📄 License
 
-Future phases:
-
-1. **Transport Module** - Noise protocol for P2P communication
-2. **Sync Module** - CRDT-based data synchronization
-3. **Production Adapters** - Node.js backends, network transports
-4. **Documentation** - API docs, tutorials
+AGPL-3.0-or-later
 
 ## 🤝 Contributing
 
-This is a reference implementation. Key areas for contribution:
+This is an active research and development project. Contributions welcome!
 
-- Additional storage backends (filesystem, S3, etc.)
-- Network transport implementations
-- CRDT synchronization
-- Performance optimizations
-- Documentation improvements
+**Repository:** https://github.com/playnet/free-association
 
 ## 🙏 Acknowledgments
 
 Built with:
-- [@noble/ed25519](https://github.com/paulmillr/noble-ed25519) - Cryptography
-- [multiformats](https://github.com/multiformats/js-multiformats) - CIDs
-- [@ucanto](https://github.com/web3-storage/ucanto) - UCAN
 - [Zod](https://github.com/colinhacks/zod) - Schema validation
-- [Vitest](https://vitest.dev/) - Testing
+- [json-logic-js](https://github.com/jwadhams/json-logic-js) - Filter evaluation
+- [Vitest](https://vitest.dev/) - Testing framework
 
 ---
 
-**Status:** Production-ready foundation with 80 tests passing ✅
+**Status:** Production-ready v1.0.8 with 90 tests passing ✅
