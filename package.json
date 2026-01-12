@@ -31,6 +31,11 @@
       "import": "./dist/tree.js",
       "source": "./src/tree.ts"
     },
+    "./tree-v2": {
+      "types": "./dist/tree-v2/index.d.ts",
+      "import": "./dist/tree-v2/index.js",
+      "source": "./src/tree-v2/index.ts"
+    },
     "./itc": {
       "types": "./dist/itc.d.ts",
       "import": "./dist/itc.js",
@@ -96,15 +101,36 @@
   },
   "homepage": "https://github.com/playnet/free-association#readme",
   "dependencies": {
+    "@chainsafe/libp2p-noise": "^17.0.0",
+    "@fireproof/connect": "^0.17.7",
+    "@fireproof/core": "^0.24.7",
+    "@fireproof/partykit": "^0.19.118",
+    "@hono/node-server": "^1.19.8",
+    "@libp2p/bootstrap": "^12.0.10",
+    "@libp2p/gossipsub": "^15.0.11",
+    "@libp2p/identify": "^4.0.9",
+    "@libp2p/kad-dht": "^16.1.2",
+    "@libp2p/ping": "^3.0.9",
+    "@libp2p/webrtc": "^6.0.10",
+    "@libp2p/websockets": "^10.1.2",
+    "@libp2p/yamux": "^8.0.1",
+    "@types/uuid": "^10.0.0",
+    "@ucanto/principal": "^9.0.3",
+    "hono": "^4.11.3",
     "json-logic-js": "^2.0.2",
+    "libp2p": "^3.1.2",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "uuid": "^13.0.0",
     "ws": "^8.18.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/json-logic-js": "^2.0.7",
-    "@types/node": "^24.10.2",
+    "@types/node": "^24.10.7",
     "@vitest/coverage-v8": "^2.1.9",
     "typescript": "^5.6.3",
+    "vite": "^5.4.21",
     "vitest": "^2.1.9"
   },
   "publishConfig": {
