@@ -1,18 +1,10 @@
 import { z } from 'zod';
-import { EntityIdSchema, WeightSchema, TimestampSchema } from './primitives';
+import { EntityIdSchema, WeightSchema, TimestampSchema, ShareMapSchema, type ShareMap } from './primitives';
 import { TreeStoreSchema } from './tree';
 import { SymLinkCacheSchema } from './symlinks';
 import { AllocationRecordSchema } from './allocations';
 
-// ═══════════════════════════════════════════════════════════════════════
-// SHARE MAP
-// ═══════════════════════════════════════════════════════════════════════
 
-/**
- * ShareMap tracks ShareOfGeneralSatisfaction for each entity
- */
-export const ShareMapSchema = z.record(EntityIdSchema, WeightSchema);
-export type ShareMap = z.infer<typeof ShareMapSchema>;
 
 // ═══════════════════════════════════════════════════════════════════════
 // ENTITY STATE

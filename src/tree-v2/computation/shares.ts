@@ -1,7 +1,6 @@
 import type { TreeStore } from '../schemas/tree';
 import type { SymLinkCache } from '../schemas/symlinks';
-import type { ShareMap } from '../schemas/entity';
-import type { EntityId, Weight } from '../schemas/primitives';
+import type { EntityId, Weight, ShareMap } from '../schemas/primitives';
 import { getNode, getDerivedState } from '../tree/navigation';
 import { traverseBFS } from '../tree/traversal';
 
