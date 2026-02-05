@@ -96,8 +96,8 @@ export function createMembershipAttribute(members: string[]): MembershipList {
  * @example
  * ```typescript
  * const slots = parseCapacityAttribute([
- *   { id: "slot1", quantity: 100, need_type_id: "food", name: "Food", ... },
- *   { id: "slot2", quantity: 50, need_type_id: "food", name: "Snacks", ... }
+ *   { id: "slot1", quantity: 100, type_id: "food", name: "Food", ... },
+ *   { id: "slot2", quantity: 50, type_id: "food", name: "Snacks", ... }
  * ]);
  * ```
  */
@@ -133,8 +133,8 @@ export function isCapacityAttribute(value: any): boolean {
  * @example
  * ```typescript
  * const slots = parseNeedAttribute([
- *   { id: "need1", quantity: 10, need_type_id: "housing", name: "Housing", ... },
- *   { id: "need2", quantity: 5, need_type_id: "housing", name: "Shelter", ... }
+ *   { id: "need1", quantity: 10, type_id: "housing", name: "Housing", ... },
+ *   { id: "need2", quantity: 5, type_id: "housing", name: "Shelter", ... }
  * ]);
  * ```
  */
@@ -249,15 +249,15 @@ export function isLocationAttribute(value: any): boolean {
  * @param attribute_name - Attribute name
  * @returns Detected type
  */
-export function detectAttributeType(attribute_name: string): 
+export function detectAttributeType(attribute_name: string):
 	'membership' | 'capacity' | 'need' | 'skill' | 'location' | 'generic' {
-	
+
 	if (attribute_name === 'membership') return 'membership';
 	if (attribute_name.startsWith('capacity:')) return 'capacity';
 	if (attribute_name.startsWith('need:')) return 'need';
 	if (attribute_name.startsWith('skill:')) return 'skill';
 	if (attribute_name === 'location') return 'location';
-	
+
 	return 'generic';
 }
 
@@ -273,7 +273,7 @@ export function detectAttributeType(attribute_name: string):
  */
 export function parseAttributeValue(attribute_name: string, value: any): any {
 	const type = detectAttributeType(attribute_name);
-	
+
 	switch (type) {
 		case 'membership':
 			return parseMembershipAttribute(value);
@@ -302,7 +302,7 @@ export function parseAttributeValue(attribute_name: string, value: any): any {
  */
 export function validateAttributeValue(attribute_name: string, value: any): boolean {
 	const type = detectAttributeType(attribute_name);
-	
+
 	switch (type) {
 		case 'membership':
 			return MembershipListSchema.safeParse(value).success;
@@ -369,21 +369,21 @@ export function extractSkillName(attribute_name: string): string | undefined {
 /**
  * Create capacity attribute name
  * 
- * @param need_type_id - Need type ID
+ * @param type_id - Need type ID
  * @returns Attribute name (e.g., "capacity:food")
  */
-export function createCapacityAttributeName(need_type_id: string): string {
-	return `capacity:${need_type_id}`;
+export function createCapacityAttributeName(type_id: string): string {
+	return `capacity:${type_id}`;
 }
 
 /**
  * Create need attribute name
  * 
- * @param need_type_id - Need type ID
+ * @param type_id - Need type ID
  * @returns Attribute name (e.g., "need:housing")
  */
-export function createNeedAttributeName(need_type_id: string): string {
-	return `need:${need_type_id}`;
+export function createNeedAttributeName(type_id: string): string {
+	return `need:${type_id}`;
 }
 
 /**
@@ -415,17 +415,17 @@ export function createSkillAttributeName(skill_name: string): string {
 export function membershipEquals(a: any, b: any): boolean {
 	if (!Array.isArray(a) || !Array.isArray(b)) return false;
 	if (a.length !== b.length) return false;
-	
+
 	// Convert to sets for order-independent comparison
 	const setA = new Set(a);
 	const setB = new Set(b);
-	
+
 	if (setA.size !== setB.size) return false;
-	
+
 	for (const item of setA) {
 		if (!setB.has(item)) return false;
 	}
-	
+
 	return true;
 }
 
@@ -446,33 +446,33 @@ export function membershipEquals(a: any, b: any): boolean {
 export function slotArrayEquals(a: any, b: any): boolean {
 	if (!Array.isArray(a) || !Array.isArray(b)) return false;
 	if (a.length !== b.length) return false;
-	
+
 	// Create maps by slot ID for O(n) comparison
 	const mapA = new Map(a.map((slot: any) => [slot.id, slot]));
 	const mapB = new Map(b.map((slot: any) => [slot.id, slot]));
-	
+
 	if (mapA.size !== mapB.size) return false;
-	
+
 	// Compare each slot by ID
 	for (const [id, slotA] of mapA.entries()) {
 		const slotB = mapB.get(id);
 		if (!slotB) return false;
-		
+
 		// Compare key properties
 		if (slotA.quantity !== slotB.quantity) return false;
-		if (slotA.need_type_id !== slotB.need_type_id) return false;
-		
+		if (slotA.type_id !== slotB.type_id) return false;
+
 		// Compare optional time constraints
 		if (JSON.stringify(slotA.time_constraint) !== JSON.stringify(slotB.time_constraint)) {
 			return false;
 		}
-		
+
 		// Compare optional location constraints
 		if (JSON.stringify(slotA.location_constraint) !== JSON.stringify(slotB.location_constraint)) {
 			return false;
 		}
 	}
-	
+
 	return true;
 }
 
@@ -491,19 +491,19 @@ export function slotArrayEquals(a: any, b: any): boolean {
  * const isSame = checker(['alice', 'bob'], ['bob', 'alice']); // → true
  * ```
  */
-export function getEqualityChecker(attribute_name: string): 
+export function getEqualityChecker(attribute_name: string):
 	((a: any, b: any) => boolean) | undefined {
-	
+
 	const type = detectAttributeType(attribute_name);
-	
+
 	switch (type) {
 		case 'membership':
 			return membershipEquals;
-		
+
 		case 'capacity':
 		case 'need':
 			return slotArrayEquals;
-		
+
 		default:
 			return undefined; // Use default deepEquals
 	}

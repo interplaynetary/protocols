@@ -12,8 +12,8 @@ import {
     createCustomDistribution,
     createMultiTierDistribution,
     computeMutualRecognition
-} from '../distribution.js';
-import type { GlobalRecognitionWeights } from '../schemas.js';
+} from '../distribution';
+import type { GlobalRecognitionWeights } from '../schemas';
 
 describe('distribution.ts - Distribution Calculations', () => {
     describe('Mutual Recognition Computation', () => {

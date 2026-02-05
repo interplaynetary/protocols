@@ -68,6 +68,38 @@ Because scaling is multiplicative, ratios are preserved. If $A$ was preferred 2x
 ### 3. Hidden Demand Resolution
 The $\epsilon$ term ensures that if "Plan A" (high priority) is blocked, the algorithm can "wake up" "Plan B" (zero priority compatible matches) because $0+\epsilon$ can be scaled up to a significant number if necessary.
 
+### 4. Seed Values and Expected Distribution
+
+The seed matrix determines the **proportional distribution** of allocations. Understanding this relationship is critical for predicting outcomes.
+
+#### How Seed Values Translate to Allocations
+
+Given the seed formula:
+$$ Seed_{pr} = (Priority_{pr} + \epsilon) \times (Preference_{pr} + \epsilon)^\gamma $$
+
+**Key Insight**: When multiple providers compete for the same recipient, their **relative seed values** determine their **relative allocations** (subject to capacity constraints).
+
+#### Concrete Example
+
+**Scenario**: Two providers competing for one recipient's $100 need:
+
+| Provider | Capacity | Priority (recognition of recipient) | Seed Value (γ=0.5, ε≈0) |
+|----------|----------|-------------------------------------|-------------------------|
+| Provider A (Self) | $100 | 0.37 (37% recognition) | 0.37 × 1^0.5 = 0.37 |
+| Provider B (Other) | $100 | 0.15 (15% recognition) | 0.15 × 1^0.5 = 0.15 |
+
+**Expected Allocation Ratio**: 0.37 : 0.15 = **2.47 : 1**
+
+If both have sufficient capacity:
+- Provider A should provide: $100 × (0.37 / 0.52) = **$71.15**
+- Provider B should provide: $100 × (0.15 / 0.52) = **$28.85**
+
+**Important**: The priority values (0.37, 0.15) are typically derived from:
+- **Global recognition weights** (`global_recognition_weights[recipientPubkey]`)
+- **Slot-specific priorities** (`priority_distribution[recipientPubkey]`)
+
+These values should be **normalized** (sum to 1.0) within the provider's commitment to represent their relative valuation of different recipients.
+
 ## Mathematical Formulation
 
 We seek the matrix $A$ that minimizes the Kullback-Leibler divergence from the Seed Matrix $S$:

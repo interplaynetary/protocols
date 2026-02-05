@@ -17,7 +17,7 @@
 
 \title{\textbf{Free Association}\\
 \large A Mathematical Framework for Sovereign Voluntary Resource Allocation}
-\author{Rüzgar Imski and Free-Association Research Community}
+\author{Rüzgar Imski and Playnet}
 \date{}
 
 \begin{document}
@@ -363,12 +363,6 @@ Unlike the gradient descent approach which requires explicit "overshoot" logic, 
 \begin{theorem}[Sinkhorn Convergence]
 The Iterative Proportional Fitting algorithm (alternating row and column scaling) is guaranteed to converge to the unique Entropic Equilibrium for any matrix with support compatible with the constraints.
 \end{theorem}
-
-\begin{remark}[Distributed Implementation]
-In the distributed implementation, where agents coordinate asynchronously by exchanging scaling factors, proposals are computed directly as $A_{pr} = K_{pr} \cdot x_p \cdot y_r$ without iterating through the full Sinkhorn loop. Since providers and recipients update their scaling factors independently and asynchronously, the product $K_{pr} \cdot x_p \cdot y_r$ may temporarily exceed the recipient's need $N_r$ before the system converges. To ensure the need constraint is always respected, proposals are explicitly clamped:
-\[ A_{pr} = \min(K_{pr} \cdot x_p \cdot y_r, N_r) \]
-In contrast, the centralized algorithm enforces this constraint through iterative column scaling (lines 150-167 in the implementation), which scales down all allocations to a recipient when their column sum exceeds their need. Both approaches ensure $\sum_p A_{pr} \le N_r$, but the distributed version requires the explicit clamp because it computes final proposals from potentially stale scaling factors rather than iterating to convergence.
-\end{remark}
 
 \begin{corollary}[Scarcity Equilibrium]
 \label{cor:scarcity-equilibrium}

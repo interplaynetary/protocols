@@ -2,13 +2,13 @@
  * Slot-to-Slot Matching Logic v5 - Multi-Dimensional Framework
  * 
  * Pure functions for matching need slots to availability slots based on:
- * - **Type compatibility (need_type_id matching) - NEW in v5**
+ * - **Type compatibility (type_id matching) - NEW in v5**
  * - Time compatibility (date/time range overlap)
  * - Location compatibility (city/country/coordinates/online)
  * - Quantity constraints
  * 
  * v5 changes:
- * - Uses v5 schemas with required need_type_id
+ * - Uses v5 schemas with required type_id
  * - Type matching is built into slotsCompatible()
  * - Pure multi-dimensional design
  */
@@ -1313,7 +1313,7 @@ export function locationsCompatible(
  * Check if a need slot can be fulfilled by an availability slot (v5 - Multi-Dimensional)
  * 
  * COMPATIBILITY REQUIREMENTS:
- * - **Type match: need_type_id must be identical (E28' - CRITICAL for multi-dimensional)**
+ * - **Type match: type_id must be identical (E28' - CRITICAL for multi-dimensional)**
  * - **Time compatibility: date/time ranges must overlap**
  * - **Location compatibility: city/country/coordinates must match**
  * - **Recurrence: NO FILTERING** - capacity can serve any compatible need regardless of recurrence pattern
@@ -1341,7 +1341,7 @@ export function locationsCompatible(
 export function slotsCompatible(needSlot: NeedSlot, availabilitySlot: AvailabilitySlot): boolean {
 	// **V5 CRITICAL: Type matching (E28')**
 	// Different need types CANNOT be matched (no cross-type allocation)
-	if (needSlot.need_type_id !== availabilitySlot.need_type_id) {
+	if (needSlot.type_id !== availabilitySlot.type_id) {
 		return false;
 	}
 
@@ -1616,7 +1616,7 @@ export function passesSlotFilters(
  * NOTE: v5 uses slot-native allocation directly in algorithm.svelte.ts
  * 
  * The core matching logic is in slotsCompatible() above, which checks:
- * - Type compatibility (need_type_id match)
+ * - Type compatibility (type_id match)
  * - Time compatibility (date/time overlap)
  * - Location compatibility (city/country/coordinates)
  * 

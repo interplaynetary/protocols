@@ -53,8 +53,8 @@ export function slotMatchesFilter<T extends AvailabilitySlot | NeedSlot>(
 	}
 
 	// Check need type filter
-	if (filter.need_type_ids && filter.need_type_ids.length > 0) {
-		if (!filter.need_type_ids.includes(slot.need_type_id)) {
+	if (filter.type_ids && filter.type_ids.length > 0) {
+		if (!filter.type_ids.includes(slot.type_id)) {
 			return false;
 		}
 	}

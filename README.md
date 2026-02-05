@@ -1,15 +1,35 @@
 # Free Association Protocol
 
-A pure, framework-agnostic protocol for decentralized resource allocation and mutual recognition.
+A pure, framework-agnostic protocol for decentralized resource allocation based on mutual recognition of contribution to priority realization.
 
 ## 📦 Package: `@playnet/free-association`
 
-**Version:** 1.0.8  
 **License:** AGPL-3.0-or-later
 
-## 🎯 Overview
+## 🎯 Foundations
 
-The Free Association Protocol implements **priority aligned capacity distribution**, enabling decentralized communities to coordinate resource allocation without central authority, bureaucratic overhead, or market exclusion.
+*Proportional Distribution Under Bounded Constraints*
+
+The protocol is built on five fundamental elements that describe the cycle of production and recognition:
+
+### Capacity (Finite Resources)
+What you can provide - time, skills, money, attention.
+
+### Goals (Pursued Ends)
+What you're trying to achieve - individual and collective priorities.
+
+### Recognition (Subjective Assessment)
+Your assessment of who contributes to realizing your goals.
+
+### Allocation (Objective Distribution)
+How capacity actually flows based on recognition.
+
+### Outcomes (Realized Results)
+What actually happens when capacity is allocated.
+
+**Core Principle:** Entities allocate their capacity in proportion to their recognition of contribution toward their goals.
+
+*Allocation follows Recognition.*
 
 ### Core Features
 
@@ -25,6 +45,28 @@ The Free Association Protocol implements **priority aligned capacity distributio
 ```bash
 npm install @playnet/free-association
 ```
+
+## 🔄 The Circuit
+
+*Coordination as Scientific Capacity Allocation*
+
+The protocol creates a continuous cycle that transforms subjective understanding into objective reality and back:
+
+### 1. Subjective Recognition → Objective Allocation
+Your current (imperfect) recognition of contributions becomes concrete capacity allocation. What you believe becomes what you do.
+
+### 2. Objective Allocation → Objective Outcomes
+Capacity allocation produces real-world results. Resources flow, work happens, goals are pursued.
+
+### 3. Objective Outcomes → Subjective Experience
+You experience the results of your allocation decisions. Did your goals get realized? Were your expectations met?
+
+### 4. Subjective Experience → Updated Recognition
+Outcomes educate your recognition. You learn who actually contributed, adjust your understanding, and the cycle continues.
+
+**Convergence:** Under the right conditions (voluntary allocation, transparent outcomes, revocable commitments), this cycle drives recognition toward truth and allocation toward optimality.
+
+The gap between subjective recognition and objective truth creates the pressure for learning. The protocol doesn't prescribe what to recognize - it makes accurate recognition advantageous.
 
 ## 📚 Module Exports
 
@@ -123,14 +165,6 @@ function calculateCollectiveRecognitionDistribution(
 
 Hierarchical contribution tracking and mutual fulfillment.
 
-**Key Function:**
-```typescript
-function mutualFulfillment(
-  tree: Node,
-  recognitionWeights: Record<string, number>
-): MutualFulfillmentResult
-```
-
 ### 4. Schemas (`schemas.ts`)
 
 Comprehensive Zod schemas for runtime validation:
@@ -207,7 +241,47 @@ src/
 └── collective/           # Collective coordination
 ```
 
-## 🌟 Key Concepts
+## 🌟 Core Concepts
+
+### Alignment (α)
+
+**Alignment** measures how closely your capacity allocation matches true recognition of contribution to your goals.
+
+*"What percentage of my capacity flows proportionally to who actually helps me achieve my goals?"*
+
+- **100% aligned** → All capacity goes to the right people in the right proportions
+- **50% aligned** → Half well-directed, half misdirected  
+- **0% aligned** → Completely opposite to who actually helps
+
+### Alignment Velocity (v)
+
+**Alignment Velocity** measures how fast alignment improves or degrades. Every moment of misallocation is lost goal achievement.
+
+- **Positive velocity** → Getting more aligned (learning, correcting)
+- **Negative velocity** → Getting less aligned (degrading)
+- **Zero velocity** → Stable (either perfect or stuck)
+
+The protocol creates incentives to: (1) **Discover** misallocations as fast as possible, (2) **Correct** them immediately, and (3) **Uphold** conditions that enable fast discovery and correction.
+
+### True vs False Recognition
+
+**True Recognition:** Recognition of contribution that *enables the continued realization of priorities* (self-sustaining).
+
+**False Recognition:** Recognition of contribution that *impairs the continued realization of priorities* (self-terminating).
+
+**The Anti-Gaming Proof:** False recognition displaces capacity from beneficial allocations → worse outcomes → immediate incentive to correct → free-rider loses allocation.
+
+The system creates natural incentives for true recognition because the cost of misrecognition falls directly on you.
+
+### Abundance
+
+**Proportional relationships have infinite potential.** Each relationship is a proportion, not an absolute quantity.
+
+- 30% of 10 = 3
+- 30% of 100 = 30
+- 30% of 1,000,000 = 300,000
+
+The proportion remains constant while absolute values scale infinitely. This is abundance: not that resources are unlimited, but that *relationships scale without limit*.
 
 ### Priority Aligned Capacity Distribution
 
@@ -228,10 +302,10 @@ Decentralized allocation through Iterative Proportional Fitting (IPF):
 
 ### Recognition Trees
 
-Hierarchical contribution tracking:
-- **Recognition Weights** - How much you value others' contributions to your priorities
-- **Priority Derivation** - Priorities often derived from recognition of contribution
-- **Recognition Trees** - Hierarchical attribution of collective value
+Recognition of contribution to priority realization:
+- **Contribution to Priority Realization** - Mutual recognition of who contributed, how much, to which priorities, and how those priorities compose
+- **Proportional Structure** - Recognition flows through hierarchical priorities, capturing the full picture
+- **Four Dimensions** - Contribution accuracy (who), proportional accuracy (how much), priority accuracy (what matters), compositional accuracy (how goals decompose)
 
 ### Compliance Filters
 
@@ -246,6 +320,23 @@ JSON Logic rules for slot compatibility:
   }
 }
 ```
+
+## 🌍 The Transformation
+
+*From Coercion to Voluntary Coordination*
+
+This protocol enables a fundamental shift in how we coordinate:
+
+### Voluntary Contribution Substitutes Coerced Labor
+Organizational priorities realized through voluntary contribution as the primary mechanism.
+
+### Organizations Become Free
+Organizations operate through voluntary association rather than coercion. Participants directly shape organizational function.
+
+### Coordination Becomes Scientific
+Scientific capacity allocation replaces ideological struggle, enabling continuous discovery of effective coordination patterns.
+
+**The Vision:** A civilization where the fulfillment of needs and the pursuit of goals are coordinated through the free alignment of capacity rather than directed by force. By making the social direction of production legible, voluntary, and scientifically adjustable, we unleash the collective intelligence of the species.
 
 ## 🔗 Related Projects
 
@@ -270,5 +361,3 @@ Built with:
 - [Vitest](https://vitest.dev/) - Testing framework
 
 ---
-
-**Status:** Production-ready v1.0.8 with 90 tests passing ✅

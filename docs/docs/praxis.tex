@@ -1,0 +1,108 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+% Operational formatting
+\geometry{a4paper, margin=1in}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.8em}
+\linespread{1.1}
+
+% Section styling
+\titleformat{\section}{\Large\bfseries\sffamily}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\sffamily}{\thesubsection}{1em}{}
+
+\title{\textbf{\sffamily Social Capacity Praxis Manual}}
+\author{Operational Framework}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Purpose}
+This manual translates the Social Capacity theoretical framework into operational metrics, diagnostic tools, and intervention strategies. It is designed for researchers, policymakers, and organizers.
+
+\section*{1. Operational Equations}
+
+\subsection*{1.1 Outcome Realization}
+Outcomes emerge from objective amplification before subjective valuation.
+\begin{equation}
+O_{im} = \sum_j X_{ij} A_{jm}
+\end{equation}
+\textbf{Metric:} $O_{im}$ is measurable (e.g., liters of water, hours of care, bits of bandwidth).
+
+\subsection*{1.2 Sustainability Thresholds}
+Systems exhibit bifurcation dynamics based on participation levels.
+\begin{equation}
+\frac{dA_j}{dt} = \alpha_j \left( \sum_i X_{ij} - \kappa_j \right)
+\end{equation}
+\begin{itemize}
+    \item If $\sum X < \kappa_j$: System decays (commons tragedy).
+    \item If $\sum X \ge \kappa_j$: System sustains or grows.
+    \item $\kappa_j$: The maintenance cost (e.g., minimum maintainers for OSS, minimum tax base).
+\end{itemize}
+
+\subsection*{1.3 Inequality Structure}
+Inequality is defined as the ratio of maximum accessible amplification.
+\begin{equation}
+I_{ik} = \frac{\max_j A_j^{(i)}}{\max_j A_j^{(k)}} \quad \text{assuming } X_{ij} = X_{kj}
+\end{equation}
+If $I_{ik} \gg 1$, agent $i$ has structural privilege. Inequality is not difference in effort ($X$), but difference in available multiplication ($A$).
+
+\subsection*{1.4 Power Analysis}
+Operational power is the capacity to shift others' allocations or system properties.
+\begin{align}
+P_{\text{alloc}} (i \to k) &= \sum_j \left| \frac{\partial X_{kj}}{\partial X_{ij}} \right| \quad \text{(Influence)} \\
+P_{\text{amp}} (i \to j) &= \frac{\partial A_j}{\partial X_{ij}} \quad \text{(Control)}
+\end{align}
+\textit{Diagnosis:} A "boss" is an agent where $\frac{\partial X_{kj}}{\partial X_{ij}} \approx 1$ (k moves where i directs).
+
+\section*{2. Measurement Protocol}
+
+To measure $A_{jm}$ (Amplification) empirically:
+
+\subsection*{2.1 Difference-in-Differences}
+\begin{equation}
+\hat{A}_{jm} = \frac{\mathbb{E}[O_{im} \mid X_{ij}=1, Z] - \mathbb{E}[O_{im} \mid X_{ij}=0, Z]}{\mathbb{E}[O_{im} \mid \text{baseline}]}
+\end{equation}
+Where $Z$ is the vector of confounders (e.g., prior wealth, education).
+
+\section*{3. Diagnostic Checklist}
+
+Use this checklist to analyze any social system (e.g., a coop, a corporation, a city).
+
+\begin{enumerate}
+    \item \textbf{Identify Goals ($W$)}: What does the community actually value? (Health, autonomy, profit?)
+    \item \textbf{Map Systems ($j$)}: What distinct relations/institutions exist?
+    \item \textbf{Estimate Amplification ($A_j$)}:
+        \begin{itemize}
+            \item Does System J multiply effort or just extract it?
+            \item Is $A_j$ visible to participants? (Transparency $\eta$)
+        \end{itemize}
+    \item \textbf{Check Sustainability ($\kappa$)}:
+        \begin{itemize}
+            \item Is $\sum X_{ij} \ge \kappa_j$?
+            \item Are there free riders ($A > 0, X=0$)?
+        \end{itemize}
+    \item \textbf{Analyze Barriers ($\Delta X$)}:
+        \begin{itemize}
+            \item Can members leave? (Switching costs)
+            \item Do they know about better alternatives? (Information costs)
+        \end{itemize}
+\end{enumerate}
+
+\section*{4. Intervention Strategy}
+
+To increase freedom (Correction Velocity $V_i$):
+
+1.  **Increase Transparency ($\eta$)**: Make $A_j$ distinct and measurable.
+2.  **Reduce Switching Costs**: Guarantee basic needs so $X_{ij}$ isn't forced by survival.
+3.  **Lower Sustainability Thresholds ($\kappa$)**: Automate maintenance to make commons easier to sustain.
+
+\end{document}

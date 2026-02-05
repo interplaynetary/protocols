@@ -40,7 +40,6 @@ import type {
 	AvailabilitySlot,
 	NeedSlot,
 	Commitment,
-	TwoTierAllocationState,
 	SlotAllocationRecord,
 	ITCStamp,
 	GlobalRecognitionWeights,
@@ -257,11 +256,11 @@ function calculateNodeContributorShare(
 	// Find this contributor's entry
 	const contributor = findContributor(contributorId, contributors, resolveToPublicKey);
 	if (!contributor) return 0;
-	
+
 	// Calculate total points across all contributors
 	const totalPoints = totalContributorPoints(contributors);
 	if (totalPoints === 0) return 0;
-	
+
 	// Share = (node's weight × node's value) × (contributor's points / total points)
 	return (nodeWeight * nodeValue) * (contributor.points / totalPoints);
 }
@@ -315,37 +314,37 @@ export function shareOfGeneralFulfillment(
 			const nodeFulfillment = fulfilled(node, target);
 			const nodeDesire = desire(node, target);
 
-		// Process positive contributions (V5: weighted by contributor points)
-		if (isContribution(node)) {
-			const contributors = nonRootNode.contributors || [];
-			const contributor = findContributor(resolvedContributorId, contributors, resolveToPublicKey);
-			if (contributor) {
-				rawPositiveShare += calculateNodeContributorShare(
-					nonRootNode,
-					resolvedContributorId,
-					nodeWeight,
-					nodeFulfillment,
-					contributors,
-					resolveToPublicKey
-				);
+			// Process positive contributions (V5: weighted by contributor points)
+			if (isContribution(node)) {
+				const contributors = nonRootNode.contributors || [];
+				const contributor = findContributor(resolvedContributorId, contributors, resolveToPublicKey);
+				if (contributor) {
+					rawPositiveShare += calculateNodeContributorShare(
+						nonRootNode,
+						resolvedContributorId,
+						nodeWeight,
+						nodeFulfillment,
+						contributors,
+						resolveToPublicKey
+					);
+				}
 			}
-		}
 
-		// Process negative contributions (V5: weighted by anti-contributor points)
-		if (isContribution(node)) {
-			const antiContributors = nonRootNode.anti_contributors || [];
-			const antiContributor = findContributor(resolvedContributorId, antiContributors, resolveToPublicKey);
-			if (antiContributor) {
-				rawAntiShare += calculateNodeContributorShare(
-					nonRootNode,
-					resolvedContributorId,
-					nodeWeight,
-					nodeDesire,
-					antiContributors,
-					resolveToPublicKey
-				);
+			// Process negative contributions (V5: weighted by anti-contributor points)
+			if (isContribution(node)) {
+				const antiContributors = nonRootNode.anti_contributors || [];
+				const antiContributor = findContributor(resolvedContributorId, antiContributors, resolveToPublicKey);
+				if (antiContributor) {
+					rawAntiShare += calculateNodeContributorShare(
+						nonRootNode,
+						resolvedContributorId,
+						nodeWeight,
+						nodeDesire,
+						antiContributors,
+						resolveToPublicKey
+					);
+				}
 			}
-		}
 		}
 	}
 
@@ -629,7 +628,7 @@ export function addContributors(
 ): void {
 	if (node.type === 'NonRootNode') {
 		const nonRootNode = node as NonRootNode;
-		
+
 		// Anti-contributors can be placed on:
 		// 1. Contribution nodes (nodes with positive contributors)
 		// 2. Empty leaf nodes (no contributors and no children)
@@ -724,15 +723,15 @@ export function updateContributorPoints(
 	isAntiContributor: boolean = false
 ): boolean {
 	if (node.type !== 'NonRootNode') return false;
-	
+
 	const nonRootNode = node as NonRootNode;
-	const contributors = isAntiContributor 
+	const contributors = isAntiContributor
 		? (nonRootNode.anti_contributors || [])
 		: (nonRootNode.contributors || []);
-	
+
 	const contributor = contributors.find(c => c.id === contributorId);
 	if (!contributor) return false;
-	
+
 	contributor.points = Math.max(0, newPoints); // Ensure non-negative
 	return true;
 }
@@ -751,12 +750,12 @@ export function getContributorPoints(
 	isAntiContributor: boolean = false
 ): number | undefined {
 	if (node.type !== 'NonRootNode') return undefined;
-	
+
 	const nonRootNode = node as NonRootNode;
-	const contributors = isAntiContributor 
+	const contributors = isAntiContributor
 		? (nonRootNode.anti_contributors || [])
 		: (nonRootNode.contributors || []);
-	
+
 	const contributor = contributors.find(c => c.id === contributorId);
 	return contributor?.points;
 }
@@ -782,8 +781,8 @@ export function getSubtreeContributorMap(
 				const contributors = (n as NonRootNode).contributors || [];
 				contributors.forEach((contributor) => {
 					// Resolve to public key if resolver is provided
-					const resolvedId = resolveToPublicKey 
-						? resolveToPublicKey(contributor.id) || contributor.id 
+					const resolvedId = resolveToPublicKey
+						? resolveToPublicKey(contributor.id) || contributor.id
 						: contributor.id;
 					contributorIds.add(resolvedId);
 				});
@@ -823,8 +822,8 @@ export function getSubtreeAntiContributorMap(
 			if (n.type === 'NonRootNode' && isContribution(n)) {
 				const antiContributors = (n as NonRootNode).anti_contributors || [];
 				antiContributors.forEach((antiContributor) => {
-					const resolvedId = resolveToPublicKey 
-						? resolveToPublicKey(antiContributor.id) || antiContributor.id 
+					const resolvedId = resolveToPublicKey
+						? resolveToPublicKey(antiContributor.id) || antiContributor.id
 						: antiContributor.id;
 					antiContributorIds.add(resolvedId);
 				});
@@ -985,14 +984,14 @@ export function calculateNodePoints(parentNode: Node): number {
 	const siblingPoints = parentNode.children
 		.filter((child: Node) => child.type === 'NonRootNode')
 		.map((child: Node) => (child as NonRootNode).points);
-	
+
 	if (siblingPoints.length === 0) {
 		return 100; // Safety: no valid siblings
 	}
-	
+
 	const totalPoints = siblingPoints.reduce((sum: number, pts: number) => sum + pts, 0);
 	const averagePoints = totalPoints / siblingPoints.length;
-	
+
 	return Math.max(1, Math.round(averagePoints)); // Round to nearest integer, min 1
 }
 
@@ -1070,7 +1069,6 @@ export type {
 	AvailabilitySlot,
 	NeedSlot,
 	Commitment,
-	TwoTierAllocationState,
 	SlotAllocationRecord,
 	ITCStamp,
 	GlobalRecognitionWeights,

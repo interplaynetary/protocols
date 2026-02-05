@@ -19,7 +19,7 @@ Tree nodes contain REFERENCES to derived values, not the values themselves.
 interface TreeNode {
   id: string;
   name: string;
-  type: 'Root' | 'Goal' | 'CapacitySlot' | 'NeedSlot' | 'NonSlot';
+  type: 'Root' | 'Goal' | 'CapacitySlot' | 'NeedSlot' | 'ContributionNode';
   
   // User inputs (stable - only change when user edits)
   points?: number;
@@ -135,7 +135,7 @@ State: Tree (User Inputs - Stable)
         name: string
         entity_id: string
         
-        User-Input: Non-Slot Node
+        User-Input: Contribution Node
             id: string
             name: string
             manual_satisfaction?: number
@@ -257,7 +257,7 @@ State: Tree (User Inputs - Stable)
         name: string
         entity_id: string
         
-        User-Input: Non-Slot Node
+        User-Input: Contribution Node
             id: string
             name: string
             manual_satisfaction?: number
@@ -301,6 +301,789 @@ State: Tree (User Inputs - Stable)
                 ...
             ...
 
+
+═══════════════════════════════════════════════════════════════════════
+SYMBOLIC LINKS: CROSS-ENTITY TREE REFERENCES
+═══════════════════════════════════════════════════════════════════════
+
+**Core Insight:**
+At any point in a tree, you can create a symbolic link (pointer) to any 
+tree/subtree/node of another entity's tree. This enables recognizing 
+external contributions without duplicating their entire tree structure.
+
+**Example Use Case:**
+
+```
+Entity A (Space Advocacy Org):
+  Root: "Space Exploration Advocacy"
+    Goal: "Public Outreach"
+      SymLink → NASA.tree["Public Education Programs"]  // Cross-entity reference
+      SymLink → SpaceX.tree["Starship Updates"]
+    Goal: "Research Funding"
+      SymLink → NSF.tree["Space Grants"]
+```
+
+Entity A doesn't need NASA's full tree. They only care about NASA's 
+"Public Education Programs" subtree and how satisfied NASA is with it.
+
+**Key Properties:**
+
+1. **Any-Level Linking**: Can link to:
+   - Entire tree (Root)
+   - Subtree (any Goal node)
+   - Single slot (CapacitySlot or NeedSlot)
+   - Leaf node (ContributionNode)
+
+2. **Read-Only Remote Access**: 
+   - You can't modify the linked entity's tree
+   - You only read their ShareOfGeneralSatisfaction distribution
+   - You subscribe to updates, not edit permissions
+
+3. **Recognition Without Ownership**:
+   - Linking means "I recognize this contributes to my goals"
+   - You still assign local points to express how much you value it
+   - Combined with their internal satisfaction to compute final contribution
+
+═══════════════════════════════════════════════════════════════════════
+TREE STORAGE: ID-BASED REFERENCES WITH REUSABLE NODES
+═══════════════════════════════════════════════════════════════════════
+
+**Architecture Change:**
+Trees are stored as **flat lists of node IDs** with references, not nested objects.
+
+**Why:**
+- Efficient updates (modify one node, not rebuild tree)
+- Easy symbolic link resolution (just reference IDs)
+- Enables caching and pub-sub propagation
+- Simpler synchronization across distributed systems
+- **Allows nodes to appear in multiple places in the tree**
+
+**Key Insight: Node Reuse**
+A node can be referenced in multiple places in the tree, potentially with 
+different children at each reference point. This enables:
+- A capacity to appear under multiple goals
+- A need to be fulfilled by multiple capacity providers
+- Same resource offered in different contexts
+
+**Storage Format:**
+
+```typescript
+// Tree stored as map of node IDs to nodes
+type TreeStore = {
+  entity_id: string;
+  root_id: string;  // Entry point
+  nodes: Record<NodeId, NodeDefinition>;  // Canonical node definitions
+  tree_references: Record<TreeRefId, TreeReference>;  // How nodes are used in tree
+  derived_state: Record<NodeId, DerivedState>;  // Computed values
+}
+
+// Canonical node definition (the "base" node)
+interface NodeDefinition {
+  id: string;
+  type: 'Root' | 'Goal' | 'CapacitySlot' | 'NeedSlot' | 'ContributionNode' | 'SymLink';
+  name: string;
+  
+  // Core node data
+  points?: number;
+  contributors?: Contributor[];
+  resource_type?: string;
+  available_quantity?: number;
+  declared_quantity?: number;
+  
+  // Default children (used if not overridden in tree reference)
+  default_child_ids: string[];
+  
+  // Symbolic link specific
+  symlink_target?: SymLinkTarget;
+}
+
+// Tree reference (how a node is used in a specific location)
+interface TreeReference {
+  ref_id: string;           // Unique ID for this reference
+  node_id: string;          // Which node definition this references
+  parent_ref_id?: string;   // Parent reference (not node!)
+  
+  // Optional overrides for this specific tree placement
+  child_ref_ids?: string[]; // Override children for this reference
+  points_override?: number; // Override points at this location
+}
+
+interface SymLinkTarget {
+  entity_id: string;     // Which entity's tree
+  node_id: string;       // Which node in their tree
+  link_type: 'tree' | 'subtree' | 'node';  // What to include
+}
+```
+
+**Example: Node Reuse**
+
+```typescript
+// Entity with a capacity that appears in multiple goals
+const entityA_tree: TreeStore = {
+  entity_id: "entity_a",
+  root_id: "ref_root",
+  
+  // Canonical node definitions (the actual nodes)
+  nodes: {
+    "root_1": {
+      id: "root_1",
+      type: "Root",
+      name: "Community Garden",
+      default_child_ids: []
+    },
+    "goal_education": {
+      id: "goal_education",
+      type: "Goal",
+      name: "Educational Programs",
+      points: 70,
+      default_child_ids: []
+    },
+    "goal_production": {
+      id: "goal_production",
+      type: "Goal", 
+      name: "Food Production",
+      points: 30,
+      default_child_ids: []
+    },
+    "capacity_garden_space": {
+      id: "capacity_garden_space",
+      type: "CapacitySlot",
+      name: "Garden Plot Access",
+      resource_type: "space",
+      available_quantity: 100,  // 100 sq meters
+      default_child_ids: []  // Default: no specific needs
+    },
+    "need_school_plot": {
+      id: "need_school_plot",
+      type: "NeedSlot",
+      name: "School Garden Plot",
+      resource_type: "space",
+      declared_quantity: 40,
+      default_child_ids: []
+    },
+    "need_composting": {
+      id: "need_composting",
+      type: "NeedSlot",
+      name: "Composting Area",
+      resource_type: "space",
+      declared_quantity: 15,
+      default_child_ids: []
+    },
+    "need_crop_beds": {
+      id: "need_crop_beds",
+      type: "NeedSlot",
+      name: "Vegetable Beds",
+      resource_type: "space",
+      declared_quantity: 60,
+      default_child_ids: []
+    }
+  },
+  
+  // Tree references (how nodes are arranged in the tree)
+  tree_references: {
+    "ref_root": {
+      ref_id: "ref_root",
+      node_id: "root_1",
+      parent_ref_id: undefined,
+      child_ref_ids: ["ref_goal_edu", "ref_goal_prod"]
+    },
+    
+    // Education goal branch
+    "ref_goal_edu": {
+      ref_id: "ref_goal_edu",
+      node_id: "goal_education",
+      parent_ref_id: "ref_root",
+      child_ref_ids: ["ref_cap_edu"]  // Reference to capacity
+    },
+    "ref_cap_edu": {
+      ref_id: "ref_cap_edu",
+      node_id: "capacity_garden_space",  // REUSING the same capacity node
+      parent_ref_id: "ref_goal_edu",
+      points_override: 80,  // Within education goal, this is 80 points
+      child_ref_ids: ["ref_need_school"]  // Override: only school plot for education
+    },
+    "ref_need_school": {
+      ref_id: "ref_need_school",
+      node_id: "need_school_plot",
+      parent_ref_id: "ref_cap_edu"
+    },
+    
+    // Production goal branch
+    "ref_goal_prod": {
+      ref_id: "ref_goal_prod",
+      node_id: "goal_production",
+      parent_ref_id: "ref_root",
+      child_ref_ids: ["ref_cap_prod"]  // Reference to capacity
+    },
+    "ref_cap_prod": {
+      ref_id: "ref_cap_prod",
+      node_id: "capacity_garden_space",  // REUSING the same capacity node!
+      parent_ref_id: "ref_goal_prod",
+      points_override: 60,  // Within production goal, this is 60 points
+      child_ref_ids: ["ref_need_compost", "ref_need_crops"]  // Different children!
+    },
+    "ref_need_compost": {
+      ref_id: "ref_need_compost",
+      node_id: "need_composting",
+      parent_ref_id: "ref_cap_prod"
+    },
+    "ref_need_crops": {
+      ref_id: "ref_need_crops",
+      node_id: "need_crop_beds",
+      parent_ref_id: "ref_cap_prod"
+    }
+  },
+  
+  derived_state: {
+    "root_1": { weight: 1.0, satisfaction: 0.75 },
+    "goal_education": { weight: 0.7, satisfaction: 0.68 },
+    "goal_production": { weight: 0.3, satisfaction: 0.82 },
+    "capacity_garden_space": { weight: 0.56, satisfaction: 0.71 },
+    "need_school_plot": { weight: 0.56, satisfaction: 0.85 },
+    "need_composting": { weight: 0.09, satisfaction: 0.60 },
+    "need_crop_beds": { weight: 0.21, satisfaction: 0.90 }
+  }
+}
+```
+
+**Key Benefits:**
+
+1. **Same capacity, different contexts:**
+   - `capacity_garden_space` appears in both education and production goals
+   - Different children (needs) in each context
+   - Different points/weights in each context
+
+2. **Efficient storage:**
+   - Node definition stored once
+   - Multiple references point to it
+   - Override only what's different
+
+3. **Flexible modeling:**
+   - Model reality: same resource serves multiple purposes
+   - Track total capacity once, allocate across multiple needs
+   - Different satisfaction in different contexts
+
+**Navigation:**
+
+```typescript
+// Get node definition from reference
+function getNode(tree: TreeStore, ref_id: string): NodeDefinition {
+  const ref = tree.tree_references[ref_id];
+  return tree.nodes[ref.node_id];
+}
+
+// Get children references
+function getChildRefs(tree: TreeStore, ref_id: string): TreeReference[] {
+  const ref = tree.tree_references[ref_id];
+  const node = tree.nodes[ref.node_id];
+  
+  // Use override if present, otherwise use default
+  const childRefIds = ref.child_ref_ids ?? 
+                      node.default_child_ids.map(id => findRefForNode(tree, id, ref_id));
+  
+  return childRefIds.map(id => tree.tree_references[id]);
+}
+
+// Get effective points (with override)
+function getEffectivePoints(tree: TreeStore, ref_id: string): number {
+  const ref = tree.tree_references[ref_id];
+  const node = tree.nodes[ref.node_id];
+  
+  return ref.points_override ?? node.points ?? 0;
+}
+
+// Traverse upward
+function getAncestorRefs(tree: TreeStore, ref_id: string): TreeReference[] {
+  const ancestors = [];
+  let current = tree.tree_references[ref_id];
+  while (current.parent_ref_id) {
+    current = tree.tree_references[current.parent_ref_id];
+    ancestors.push(current);
+  }
+  return ancestors;
+}
+```
+
+═══════════════════════════════════════════════════════════════════════
+SUBSCRIPTION CACHE: TRACTABLE CROSS-ENTITY CALCULATION
+═══════════════════════════════════════════════════════════════════════
+
+**Problem:**
+Computing allocations across entities requires knowing their satisfaction 
+distributions. You CAN'T traverse entire remote trees every time—too expensive.
+
+**Solution:**
+Maintain a **subscription cache** of remote satisfaction distributions.
+
+**Pub-Sub Model:**
+
+```
+Entity A has SymLink → NASA.tree["education_goal"]
+
+Subscription:
+  A subscribes to topic: "nasa/satisfaction/education_goal"
+  
+Publish:
+  NASA computes satisfaction for education_goal → publishes update
+  
+Cache:
+  A receives update → caches NASA's satisfaction distribution locally
+  
+Allocation Computation:
+  A uses cached satisfaction values (not live tree traversal)
+```
+
+**Cache Structure:**
+
+```typescript
+interface SymLinkCache {
+  // Which symbolic links we're subscribed to
+  subscriptions: Record<SymLinkId, SymLinkSubscription>;
+  
+  // Cached satisfaction data from remote entities
+  remote_satisfaction: Record<SymLinkId, RemoteSatisfactionData>;
+}
+
+interface SymLinkSubscription {
+  symlink_id: string;           // Local symlink node ID
+  target_entity_id: string;     // Remote entity
+  target_node_id: string;       // Remote node
+  subscribed_at: number;        // When we subscribed
+  last_update: number;          // Last time we got data
+}
+
+interface RemoteSatisfactionData {
+  entity_id: string;
+  node_id: string;
+  
+  // The critical data we need for allocation
+  satisfaction: number;         // 0.0-1.0
+  weight: number;               // Within their tree
+  
+  // ShareOfGeneralSatisfaction distribution for this subtree
+  // (Who THEY recognize as contributing to this goal)
+  contributor_shares: Record<EntityId, number>;
+  
+  // Metadata
+  computed_at: number;
+  tree_version: string;         // For change detection
+}
+```
+
+**Example Cache:**
+
+```typescript
+const entityA_cache: SymLinkCache = {
+  subscriptions: {
+    "a_symlink_1": {
+      symlink_id: "a_symlink_1",
+      target_entity_id: "nasa",
+      target_node_id: "nasa_education_goal",
+      subscribed_at: 1704672000,
+      last_update: 1704675600
+    },
+    "a_symlink_2": {
+      symlink_id: "a_symlink_2",
+      target_entity_id: "spacex", 
+      target_node_id: "spacex_comms_capacity",
+      subscribed_at: 1704672000,
+      last_update: 1704675300
+    }
+  },
+  
+  remote_satisfaction: {
+    "a_symlink_1": {
+      entity_id: "nasa",
+      node_id: "nasa_education_goal",
+      satisfaction: 0.82,        // NASA's calculated satisfaction
+      weight: 0.25,              // Within NASA's tree
+      contributor_shares: {
+        "smithsonian": 0.35,     // NASA recognizes Smithsonian 35%
+        "planetarium_network": 0.28,
+        "university_consortium": 0.22,
+        "entity_a": 0.15         // NASA recognizes Entity A 15%!
+      },
+      computed_at: 1704675600,
+      tree_version: "nasa_v142"
+    },
+    "a_symlink_2": {
+      entity_id: "spacex",
+      node_id: "spacex_comms_capacity",
+      satisfaction: 0.45,
+      weight: 0.08,
+      contributor_shares: {
+        "marketing_team": 0.60,
+        "entity_a": 0.25,        // SpaceX recognizes Entity A 25%
+        "media_partners": 0.15
+      },
+      computed_at: 1704675300,
+      tree_version: "spacex_v89"
+    }
+  }
+}
+```
+
+═══════════════════════════════════════════════════════════════════════
+PUB-SUB PROPAGATION: EFFICIENT UPDATES
+═══════════════════════════════════════════════════════════════════════
+
+**Topic Structure:**
+
+```
+Topics follow pattern: {entity_id}/satisfaction/{node_id}
+
+Examples:
+  "nasa/satisfaction/education_goal"
+  "spacex/satisfaction/comms_capacity"  
+  "entity_a/satisfaction/root"
+```
+
+**Subscription Flow:**
+
+```
+1. Entity A creates SymLink to NASA's node
+   ↓
+2. A subscribes to topic: "nasa/satisfaction/education_goal"
+   ↓
+3. NASA computes satisfaction (during their calculation cycle)
+   ↓
+4. NASA publishes to topic: "nasa/satisfaction/education_goal"
+   Message: { satisfaction: 0.82, weight: 0.25, contributor_shares: {...} }
+   ↓
+5. A receives update → stores in cache
+   ↓
+6. A's allocation computation uses cached value (no tree traversal!)
+```
+
+**Propagation Algorithm:**
+
+```typescript
+// When NASA recalculates their tree
+function propagateSatisfactionUpdates(
+  entity: EntityState,
+  tree: TreeStore,
+  derived_state: DerivedStateMap
+) {
+  // For each node in the tree
+  for (const node_id in tree.nodes) {
+    const node = tree.nodes[node_id];
+    const state = derived_state[node_id];
+    
+    // Check if anyone is subscribed to this node
+    const subscribers = getSubscribers(`${entity.entity_id}/satisfaction/${node_id}`);
+    
+    if (subscribers.length > 0) {
+      // Compute contributor shares for this node's subtree
+      const contributorShares = computeShareOfGeneralSatisfaction(
+        tree,
+        derived_state,
+        node_id
+      );
+      
+      // Publish update
+      publish(`${entity.entity_id}/satisfaction/${node_id}`, {
+        entity_id: entity.entity_id,
+        node_id: node_id,
+        satisfaction: state.satisfaction,
+        weight: state.weight,
+        contributor_shares: contributorShares,
+        computed_at: Date.now(),
+        tree_version: entity.tree_version
+      });
+    }
+  }
+}
+```
+
+**Incremental Updates:**
+
+Only publish when values actually change:
+
+```typescript
+function shouldPublishUpdate(
+  previous: RemoteSatisfactionData,
+  current: RemoteSatisfactionData,
+  threshold: number = 0.01  // 1% change threshold
+): boolean {
+  // Check if satisfaction changed significantly
+  if (Math.abs(current.satisfaction - previous.satisfaction) > threshold) {
+    return true;
+  }
+  
+  // Check if any contributor share changed significantly
+  for (const entity_id in current.contributor_shares) {
+    const prevShare = previous.contributor_shares[entity_id] || 0;
+    const currShare = current.contributor_shares[entity_id];
+    if (Math.abs(currShare - prevShare) > threshold) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+```
+
+**Subscription Management:**
+
+```typescript
+interface SubscriptionManager {
+  // Track all subscriptions
+  active_subscriptions: Map<Topic, Set<EntityId>>;
+  
+  // Subscribe to a topic
+  subscribe(topic: string, subscriber_id: string): void;
+  
+  // Unsubscribe (when symlink deleted)
+  unsubscribe(topic: string, subscriber_id: string): void;
+  
+  // Get all subscribers to a topic
+  getSubscribers(topic: string): string[];
+  
+  // Publish to all subscribers
+  publish(topic: string, data: RemoteSatisfactionData): void;
+}
+```
+
+═══════════════════════════════════════════════════════════════════════
+ALLOCATION WITH SYMBOLIC LINKS
+═══════════════════════════════════════════════════════════════════════
+
+**Computing ShareOfGeneralSatisfaction with SymLinks:**
+
+```typescript
+function computeShareWithSymLinks(
+  tree: TreeStore,
+  derived_state: DerivedStateMap,
+  cache: SymLinkCache,
+  target_contributor: EntityId
+): number {
+  let totalShare = 0;
+  
+  // Traverse tree to find all contribution nodes
+  for (const node_id in tree.nodes) {
+    const node = tree.nodes[node_id];
+    const state = derived_state[node_id];
+    
+    if (node.type === 'ContributionNode' && node.contributors) {
+      // Direct contributor recognition
+      const contributor = node.contributors.find(c => c.id === target_contributor);
+      if (contributor) {
+        const nodeShare = (contributor.points / sumPoints(node.contributors)) 
+                        * state.weight 
+                        * state.satisfaction;
+        totalShare += nodeShare;
+      }
+    }
+    
+    if (node.type === 'SymLink' && node.symlink_target) {
+      // Indirect recognition via symbolic link
+      const cached = cache.remote_satisfaction[node_id];
+      if (cached && cached.contributor_shares[target_contributor]) {
+        // The remote entity recognizes this contributor
+        // Weight it by our local importance of this symlink
+        const localWeight = state.weight;  // How important this symlink is in our tree
+        const remoteShare = cached.contributor_shares[target_contributor];  // Their recognition
+        const remoteSatisfaction = cached.satisfaction;  // How satisfied they are
+        
+        const symlinkShare = localWeight * remoteShare * remoteSatisfaction;
+        totalShare += symlinkShare;
+      }
+    }
+  }
+  
+  return totalShare;
+}
+```
+
+**Example Calculation:**
+
+```
+Entity A calculating ShareOfGeneralSatisfaction for "entity_b":
+
+1. Direct Recognition (Contribution nodes):
+   Node "marketing_efforts" has entity_b with 40 points (out of 100 total)
+   weight=0.3, satisfaction=0.8
+   → 0.4 × 0.3 × 0.8 = 0.096
+
+2. Indirect Recognition (SymLink to NASA):
+   SymLink "nasa_education" has weight=0.56 in A's tree
+   NASA's cached data shows entity_b gets 0.15 share from NASA
+   NASA's satisfaction for this node = 0.82
+   → 0.56 × 0.15 × 0.82 = 0.069
+   
+3. Indirect Recognition (SymLink to SpaceX):
+   SymLink "spacex_comms" has weight=0.14 in A's tree
+   SpaceX's cached data shows entity_b gets 0.25 share from SpaceX
+   SpaceX's satisfaction = 0.45
+   → 0.14 × 0.25 × 0.45 = 0.016
+
+Total Share: 0.096 + 0.069 + 0.016 = 0.181 (18.1%)
+```
+
+**Key Insight:**
+Entity A values NASA's education programs (weight=0.56 in their tree).
+NASA values entity_b (0.15 share in NASA's contributor distribution).
+Therefore, A should value entity_b transitively for their contribution to NASA.
+
+═══════════════════════════════════════════════════════════════════════
+TRACTABILITY ANALYSIS
+═══════════════════════════════════════════════════════════════════════
+
+**Without Caching (Naïve Approach):**
+```
+For each allocation cycle:
+  For each entity A:
+    For each symlink in A's tree:
+      Traverse remote entity's ENTIRE tree
+      Compute satisfaction from scratch
+      Compute contributor shares from scratch
+      
+Complexity: O(Entities × SymLinks × RemoteTreeSize)
+With 1000 entities, 10 symlinks each, trees of 100 nodes:
+  = 1,000,000 tree traversals per cycle
+  = INTRACTABLE
+```
+
+**With Subscription Cache (This Design):**
+```
+Offline (when trees change):
+  Each entity computes their own tree ONCE
+  Publishes to subscribed topics
+  Subscribers cache the results
+  
+During allocation cycle:
+  For each entity A:
+    For each symlink in A's tree:
+      Look up cached satisfaction (O(1) hash lookup)
+      Use cached contributor_shares (already computed)
+      
+Complexity: O(Entities × SymLinks × 1)
+With same parameters:
+  = 10,000 cache lookups per cycle
+  = TRACTABLE ✓
+```
+
+**Space Complexity:**
+```
+Per entity cache storage:
+  SymLinks × (Satisfaction data + Contributor shares)
+  
+Assume 10 symlinks, 20 contributors per linked node:
+  10 × (8 bytes + 20 × 16 bytes) = 10 × 328 bytes = 3.28 KB per entity
+  
+For 10,000 entities: 32.8 MB total cache
+  = Easily fits in memory ✓
+```
+
+**Update Frequency:**
+```
+Trees don't change every second—they change on allocation cycles.
+
+Typical update pattern:
+  - Allocation cycle runs: every hour (or day)
+  - Satisfaction ratings added: after allocations
+  - Tree structure changes: manually (rare)
+  
+Update propagation:
+  1 cycle → 10,000 entities → 100,000 symlinks (worst case)
+  = 100,000 pub-sub messages per cycle
+  = Easily handled by message queue systems ✓
+```
+
+═══════════════════════════════════════════════════════════════════════
+SCHEMA ADDITIONS FOR SYMBOLIC LINKS
+═══════════════════════════════════════════════════════════════════════
+
+```typescript
+// SymLink Node Type
+const SymLinkNodeSchema = BaseNodeSchema.extend({
+  type: z.literal('SymLink'),
+  points: PointsSchema,  // How much THIS entity values the link
+  
+  symlink_target: z.object({
+    entity_id: EntityIdSchema,
+    node_id: z.string(),
+    link_type: z.enum(['tree', 'subtree', 'node'])
+  }),
+  
+  // SymLinks are leaf nodes (no local children)
+  default_child_ids: z.array(z.never()).default([]),
+  parent_id: z.string()
+});
+
+type SymLinkNode = z.infer<typeof SymLinkNodeSchema>;
+
+// Base node definition (canonical node in flat store)
+const NodeDefinitionSchema = z.union([
+  RootNodeSchema,
+  GoalNodeSchema,
+  CapacitySlotSchema,
+  ContributionNodeSchema,
+  ContributionNodeSchema,
+  SymLinkNodeSchema,
+]).extend({
+  default_child_ids: z.array(z.string())  // Default children if not overridden
+});
+
+type NodeDefinition = z.infer<typeof NodeDefinitionSchema>;
+
+// Tree reference (how a node appears in a specific tree location)
+const TreeReferenceSchema = z.object({
+  ref_id: z.string(),
+  node_id: z.string(),  // Points to NodeDefinition
+  parent_ref_id: z.string().optional(),
+  
+  // Optional overrides for this specific placement
+  child_ref_ids: z.array(z.string()).optional(),  // Override children
+  points_override: PointsSchema.optional()  // Override points
+});
+
+type TreeReference = z.infer<typeof TreeReferenceSchema>;
+
+// Flat tree storage with reusable nodes
+const TreeStoreSchema = z.object({
+  entity_id: EntityIdSchema,
+  root_id: z.string(),  // Points to root TreeReference
+  nodes: z.record(z.string(), NodeDefinitionSchema),  // Canonical node definitions
+  tree_references: z.record(z.string(), TreeReferenceSchema),  // Tree structure
+  derived_state: z.record(z.string(), DerivedStateSchema)
+});
+
+type TreeStore = z.infer<typeof TreeStoreSchema>;
+
+// Subscription cache
+const RemoteSatisfactionDataSchema = z.object({
+  entity_id: EntityIdSchema,
+  node_id: z.string(),
+  satisfaction: SatisfactionSchema,
+  weight: z.number().min(0).max(1),
+  contributor_shares: z.record(EntityIdSchema, z.number().min(0).max(1)),
+  computed_at: TimestampSchema,
+  tree_version: z.string()
+});
+
+const SymLinkCacheSchema = z.object({
+  subscriptions: z.record(z.string(), z.object({
+    symlink_id: z.string(),
+    target_entity_id: EntityIdSchema,
+    target_node_id: z.string(),
+    subscribed_at: TimestampSchema,
+    last_update: TimestampSchema
+  })),
+  remote_satisfaction: z.record(z.string(), RemoteSatisfactionDataSchema)
+});
+
+type SymLinkCache = z.infer<typeof SymLinkCacheSchema>;
+
+// Updated entity state
+const EntityStateSchema = z.object({
+  tree_store: TreeStoreSchema,  // Flat store with reusable nodes
+  symlink_cache: SymLinkCacheSchema,
+  share_map: ShareMapSchema,
+  last_updated: TimestampSchema
+});
+```
+
 ═══════════════════════════════════════════════════════════════════════
 SATISFACTION AGGREGATION FORMULAS
 ═══════════════════════════════════════════════════════════════════════
@@ -334,8 +1117,26 @@ Non-Slot Contributors (Initial/Ongoing Recognition):
     
     Usage:
         - Cold start: Establish initial recognition before any allocations
+SATISFACTION AGGREGATION FORMULAS
+═══════════════════════════════════════════════════════════════════════
+
+Need-Slot Satisfaction (weighted by accepted quantity):
+    Σ(allocation.accepted × allocation.satisfaction) / Σ(allocation.accepted)
+    
+    If no allocations: 0.0
+
+Capacity-Slot Satisfaction (weighted by child weights):
+    Σ(need_slot.weight × need_slot.satisfaction) / Σ(need_slot.weight)
+    
+    If no needs: 0.0
+
+Goal Satisfaction (weighted by child weights):
+    Σ(child.weight × child.satisfaction) / Σ(child.weight)
+    
+    For leaf contribution nodes: Uses manual_satisfaction if provided, else 1.0
+    For empty leaf nodes: 0.0
         - Ongoing: Recognize intangible contributions parallel to tangible resources
-        - Bootstrap new relationships: Give initial points to build mutual satisfaction
+        - Bootstrap new relationships: Give initial points to build trust and recognition
 
 Slot-Based Satisfaction (Operational Feedback):
     - Automatically derived from actual allocation outcomes
@@ -396,50 +1197,74 @@ ShareOfGeneralSatisfaction(Target_Entity, Contributor):
 ShareOfTotal-Satisfaction_A→B = ShareOfGeneralSatisfaction(A, B)
 
 ═══════════════════════════════════════════════════════════════════════
-MUTUAL SATISFACTION & ALLOCATION
+ALLOCATION MODEL
 ═══════════════════════════════════════════════════════════════════════
-
-Mutual-Satisfaction(Entity_A, Entity_B):
-    = min(ShareOfTotalSatisfaction_A→B, ShareOfTotalSatisfaction_B→A)
 
 Collective-Satisfaction(Capacity-Contributors):
     When multiple entities co-provide capacity:
         For each contributor C in Capacity-Contributors:
-            CollectiveShare_C = Σ(mutual_satisfaction with other contributors)
+            CollectiveShare_C = ShareOfGeneralSatisfaction with other contributors
         
         Normalize shares to sum to 1.0
 
-Allocation(Provider, Recipient, Resource-Type):
-    Filter Step: Apply time, location, and type filters
-    
-    Phase 1 - Priority Alignment:
-        For recipients with Reciprocal-Alignment > 0:
-            RawShare_R = Reciprocal-Alignment(Provider, R) / 
-                        Σ(Reciprocal-Alignment(Provider, all_aligned_recipients))
-            
-            RawAllocation_R = Provider_Capacity × RawShare_R
-            FinalAllocation_R = min(RawAllocation_R, Recipient_Declared_Need)
-    
-    Phase 2 - Unilateral Priority (remaining capacity):
-        RemainingCapacity = Provider_Capacity - Σ(Phase1_Allocations)
-        
-        For recipients with unilateral priority:
-            RawShare_R = ShareOfTotalSatisfaction_Provider→R / 
-                        Σ(ShareOfTotalSatisfaction for non-aligned recipients)
-            
-            RawAllocation_R = RemainingCapacity × RawShare_R
-            FinalAllocation_R = min(RawAllocation_R, Recipient_Remaining_Need)
+## Allocation
 
-═══════════════════════════════════════════════════════════════════════
-KEY PROPERTIES
-═══════════════════════════════════════════════════════════════════════
+*The Core Mechanism*
 
-1. Weights sum to 1.0 at each level (proper probability distribution)
-2. Satisfaction ∈ [0.0, 1.0] at all levels
-3. ShareOfTotal-Satisfaction values sum to 1.0 across all contributors
-4. Allocations capped at declared needs (non-accumulative)
-5. Two-tier allocation ensures mutual relationships prioritized
-6. Anti-contributors reduce satisfaction proportional to dissatisfaction
+Entities have **needs** (goals whose realization depends on capacity) and **availabilities** (capacities they can provide). The challenge is multi-provider, multi-recipient need satisfaction under constraints:
+
+$$
+Find \ X \ s.t. \ \forall i, \sum_j X_{ij} \le C_i \land \forall j, \sum_i X_{ij} \le N_j
+$$
+
+*Capacity $C_i$ of provider i, $N_j$ = Need of recipient j.*
+
+#### Provider Constraints
+
+Each provider has finite capacities (each summing to 100%) to distribute among compatible recipients. They prefer to allocate to needs whose contributions they value most highly.
+
+#### Recipient Constraints
+
+Each recipient has specific needs with finite capacity requirements. They prefer to receive from providers they trust/value most highly.
+
+#### Two-Sided Optimization
+
+The system must simultaneously satisfy provider preferences (allocate to valued needs) and recipient preferences (receive from valued providers) while respecting capacity/need limits.
+
+This is a **constrained weighted allocation problem**: finding the allocation matrix that minimizes deviation from both providers' priorities and recipients' source preferences, subject to capacity and need constraints.
+
+$$
+\min_X \sum_{i,j} (\Phi(X_{ij}, P_{ij}) + \Psi(X_{ij}, R_{ji}))
+$$
+
+*where for i, $\Phi,\Psi$ = Cost functions.*
+
+**Key Mechanism:** The protocol finds the allocation matrix that satisfies all capacity and need constraints while remaining as close as possible to the expressed preferences of both providers and recipients. This is the *least biased* solution - it doesn't impose any preference beyond what entities themselves express. The system converges to this solution through iterative constraint satisfaction, where capacity and need limits are enforced while preserving the proportional relationships in the expressed preferences.
+
+$$
+X_{ij} : X_{ik} \approx P_{ij} : P_{ik}
+$$
+
+*(Proportional Preservation).*
+
+The allocation mechanism has several important mathematical properties that emerge from constraint satisfaction:
+
+#### Proportional Preservation
+
+If you express that Need A is twice as aligned as Need B, the system allocates approximately twice as much capacity to A (when feasible given constraints). The proportional relationships you express are preserved in the final allocation.
+
+#### Least Biased Solution
+
+Among all possible allocations that satisfy the constraints, the system selects the one that introduces the least additional bias beyond what entities express. This is the entropy-maximizing (information-theoretically optimal) solution.
+
+#### Constraint Propagation
+
+When constraints bind (e.g., a recipient reaches capacity), the effects propagate through the network. Capacity that cannot flow to a full recipient automatically redistributes to other compatible needs according to expressed preferences.
+
+#### Equilibrium Convergence
+
+The system converges to a stable equilibrium where no entity can improve their allocation quality (measured by preference satisfaction) without degrading someone else's. This is a Pareto-efficient outcome.
+
 
 ═══════════════════════════════════════════════════════════════════════
 ZOD SCHEMA IMPLEMENTATION
@@ -616,9 +1441,9 @@ const BaseNodeSchema = z.object({
   updated_at: TimestampSchema,
 });
 
-// Non-slot contribution node
-const NonSlotNodeSchema = BaseNodeSchema.extend({
-  type: z.literal('NonSlot'),
+// Contribution node
+const ContributionNodeSchema = BaseNodeSchema.extend({
+  type: z.literal('ContributionNode'),
   
   // User inputs
   manual_satisfaction: SatisfactionSchema.optional(),
@@ -629,7 +1454,7 @@ const NonSlotNodeSchema = BaseNodeSchema.extend({
   children: z.array(z.never()).default([]),
 });
 
-type NonSlotNode = z.infer<typeof NonSlotNodeSchema>;
+type ContributionNode = z.infer<typeof ContributionNodeSchema>;
 
 // Goal node (structural decomposition)
 const GoalNodeSchema = BaseNodeSchema.extend({
@@ -644,7 +1469,7 @@ const GoalNodeSchema = BaseNodeSchema.extend({
       z.union([
         GoalNodeSchema,
         CapacitySlotSchema,
-        NonSlotNodeSchema,
+        ContributionNodeSchema,
       ])
     )
   ),
@@ -663,12 +1488,12 @@ const RootNodeSchema = BaseNodeSchema.extend({
   weight: z.literal(1.0),
   share_of_parent: z.literal(1.0),
   
-  // Children can be goals or non-slot nodes
+  // Children can be goals or contribution nodes
   children: z.array(
     z.lazy(() => 
       z.union([
         GoalNodeSchema,
-        NonSlotNodeSchema,
+        ContributionNodeSchema,
       ])
     )
   ),
@@ -694,17 +1519,10 @@ const NetworkSchema = z.record(EntityIdSchema, TreeSchema);
 // Share map: entity_id -> share value [0, 1]
 const ShareMapSchema = z.record(EntityIdSchema, z.number().min(0).max(1));
 
-// Mutual satisfaction map: entity_id -> mutual satisfaction value
-const MutualSatisfactionMapSchema = z.record(
-  EntityIdSchema, 
-  z.number().min(0).max(1)
-);
-
 // Entity's complete state
 const EntityStateSchema = z.object({
   tree: TreeSchema,
   share_map: ShareMapSchema, // Who this entity recognizes
-  mutual_satisfaction_map: MutualSatisfactionMapSchema, // Mutual values with others
   last_updated: TimestampSchema,
 });
 
@@ -724,20 +1542,17 @@ type NetworkState = z.infer<typeof NetworkStateSchema>;
 // ALLOCATION CALCULATION TYPES
 // ═══════════════════════════════════════════════════════════════════════
 
-const TierAllocationSchema = z.object({
+const AllocationShareSchema = z.object({
   recipient_id: EntityIdSchema,
   allocated_quantity: z.number().nonnegative(),
-  tier: z.enum(['mutual', 'unilateral']),
   share: z.number().min(0).max(1),
-  mutual_satisfaction: z.number().min(0).max(1).optional(),
 });
 
 const AllocationResultSchema = z.object({
   capacity_slot_id: z.string(),
   provider_id: EntityIdSchema,
   total_capacity: z.number().nonnegative(),
-  tier1_allocations: z.array(TierAllocationSchema),
-  tier2_allocations: z.array(TierAllocationSchema),
+  allocations: z.array(AllocationShareSchema),
   remaining_capacity: z.number().nonnegative(),
 });
 
@@ -771,7 +1586,7 @@ export {
   CapacitySlotSchema,
   
   // Nodes
-  NonSlotNodeSchema,
+  ContributionNodeSchema,
   GoalNodeSchema,
   RootNodeSchema,
   
@@ -781,12 +1596,11 @@ export {
   // Network
   NetworkSchema,
   ShareMapSchema,
-  MutualSatisfactionMapSchema,
   EntityStateSchema,
   NetworkStateSchema,
   
   // Allocation calculations
-  TierAllocationSchema,
+  AllocationShareSchema,
   AllocationResultSchema,
 };
 
@@ -795,12 +1609,13 @@ export type {
   AllocationRecord,
   NeedSlot,
   CapacitySlot,
-  NonSlotNode,
+  ContributionNode,
   GoalNode,
   RootNode,
   Tree,
   EntityState,
   NetworkState,
+  AllocationShare,
   AllocationResult,
 };
 ```
@@ -928,14 +1743,14 @@ Examples:
 
 **6. Multi-Dimensional Need Types (Per-Type Tracking)**
 
-Current system tracks everything per need_type_id:
+Current system tracks everything per type_id:
 - Damping factors: α_k per type k
 - Convergence: separate for each type
 - Allocations: A_total^k(i, t) per recipient per type
 
 ```typescript
 const PerTypeDampingHistoryEntrySchema = z.object({
-  need_type_id: z.string().min(1),
+  type_id: z.string().min(1),
   overAllocation: z.number(),
   timestamp: z.number().int().positive()
 });
@@ -953,7 +1768,7 @@ const SlotFilterSchema = z.object({
   filter_id: z.string(),
   applies_to: z.enum(['capacity', 'need', 'both']),
   source_pubkeys: z.array(z.string()).optional(),
-  need_type_ids: z.array(z.string()).optional(),
+  type_ids: z.array(z.string()).optional(),
   must_include_me: z.boolean().optional(),
   location_max_distance_km: z.number().optional()
 });
@@ -1116,13 +1931,13 @@ Cycle t+3: ...oscillates forever
 - Decline mechanism lets recipients self-regulate
 - Aggregation smooths individual allocation variance
 
-**POTENTIAL LOOP 2: Mutual Satisfaction Circular Dependency**
+**POTENTIAL LOOP 2: ShareOfGeneralSatisfaction Circular Dependency**
 
 ```
-A's satisfaction with B depends on B's allocations to A
-B's satisfaction with A depends on A's allocations to B
-A's allocations to B depend on Mutual-Satisfaction(A,B)
-B's allocations to A depend on Mutual-Satisfaction(B,A)
+A's satisfaction with B depends on B's allocations/contributions to A
+B's satisfaction with A depends on A's allocations/contributions to B
+A's allocations to B depend on ShareOfGeneralSatisfaction_A→B
+B's allocations to A depend on ShareOfGeneralSatisfaction_B→A
 
 Circular dependency: A→B depends on B→A depends on A→B...
 ```
@@ -1132,33 +1947,23 @@ This is actually a **fixed-point problem**, not an infinite loop.
 
 ```
 Iteration 0: Use initial recognition (bootstrap)
-  MR(A,B) = min(Recognition_A→B, Recognition_B→A)
+  ShareOfGeneralSatisfaction based on initial non-slot contributors
 
 Iteration 1: After first allocation cycle
-  A allocates to B based on MR
-  B allocates to A based on MR
-  Both rate satisfaction
+  A allocates to B based on ShareOfGeneralSatisfaction_A→B
+  B allocates to A based on ShareOfGeneralSatisfaction_B→A
+  Both rate satisfaction on received allocations
   
-Iteration 2: Update mutual satisfaction
-  MS(A,B) = min(Satisfaction_A→B, Satisfaction_B→A)
-  Use this for next allocations
+Iteration 2: Update ShareOfGeneralSatisfaction
+  New satisfaction values flow into trees
+  Recalculate ShareOfGeneralSatisfaction for next cycle
   
 Iteration 3+: Converges to fixed point
-  MS(A,B)* where neither wants to change their satisfaction ratings
+  Satisfaction ratings stabilize as allocations match needs
 ```
 
 **STABILIZERS:**
-1. **Min Function (Conservative):**
-   ```
-   MS(A,B) = min(S_A→B, S_B→A)
-   
-   Taking minimum means:
-   - Can't be gamed by one party inflating ratings
-   - Converges to mutually agreed satisfaction level
-   - Conservative estimate (underestimates rather than overestimates)
-   ```
-
-2. **Satisfaction Is Retrospective (Breaks Simultaneity):**
+1. **Satisfaction Is Retrospective (Breaks Simultaneity):**
    ```
    Cycle t:   Allocations happen (based on cycle t-1 satisfaction)
    Cycle t:   Recipients rate satisfaction (after receiving)
@@ -1167,17 +1972,24 @@ Iteration 3+: Converges to fixed point
    Time delay breaks circular dependency
    ```
 
-3. **Need Fulfillment Reduces Sensitivity:**
+2. **Need Fulfillment Reduces Sensitivity:**
    ```
    As needs get met → satisfaction stabilizes
    When DeclaredNeed ≈ TotalReceived → satisfaction ≈ 1.0
    High satisfaction → stable allocations → high satisfaction (stable loop)
    ```
 
+3. **Independent Calculation:**
+   ```
+   ShareOfGeneralSatisfaction_A→B is computed independently from B→A
+   Each entity maintains their own tree and satisfaction calculations
+   No forced agreement or min function needed
+   ```
+
 **Verdict:** CONVERGES ✓
 - Time delay breaks simultaneity
-- Min function prevents gaming
-- Convergence to mutual satisfaction equilibrium
+- Independent calculations prevent forced constraints
+- Convergence to satisfaction equilibrium
 
 **POTENTIAL LOOP 3: Tree Aggregation Feedback**
 
@@ -1297,21 +2109,7 @@ Strategic behavior: Always rate low to maximize allocation
 This is NOT an infinite loop, but a potential gaming vector.
 
 **PROTECTIONS:**
-1. **Mutual Satisfaction Requirement:**
-   ```
-   MS(A,B) = min(Satisfaction_A→B, Satisfaction_B→A)
-   
-   If B strategically underrates A:
-     - A's allocation to B decreases (works as B intended)
-     - But A sees B's low rating
-     - A can respond by:
-       a) Reducing their satisfaction rating of B
-       b) Reducing recognition of B
-     - MS(A,B) stays low
-     - B doesn't gain advantage
-   ```
-
-2. **Recognition Controls Eligibility:**
+1. **Recognition Controls Eligibility:**
    ```
    Satisfaction affects ALLOCATION WEIGHT among eligible recipients
    Recognition affects WHO IS ELIGIBLE
@@ -1321,7 +2119,7 @@ This is NOT an infinite loop, but a potential gaming vector.
      B gets zero allocation (regardless of satisfaction)
    ```
 
-3. **Network Reputation Effects:**
+2. **Network Reputation Effects:**
    ```
    If B consistently gives dishonest satisfaction ratings:
      - Other providers see this pattern
@@ -1330,7 +2128,7 @@ This is NOT an infinite loop, but a potential gaming vector.
      - Bad strategy long-term
    ```
 
-4. **Self-Harm From Bad Data:**
+3. **Self-Harm From Bad Data:**
    ```
    If B gives dishonest low satisfaction:
      B's own decision-making suffers
@@ -1341,11 +2139,20 @@ This is NOT an infinite loop, but a potential gaming vector.
    Honest reporting = optimal strategy for B's own learning
    ```
 
+4. **Asymmetric Impact:**
+   ```
+   If B underrates A:
+     - B's ShareOfGeneralSatisfaction_B→A might decrease
+     - But this only affects A's allocation to B
+     - Other entities still allocate to B based on their own ShareOfGeneralSatisfaction
+     - B cannot force A to allocate more by gaming satisfaction
+   ```
+
 **Verdict:** GAMING-RESISTANT ✓
-- Mutual satisfaction prevents one-sided manipulation
 - Recognition provides override control
 - Network effects punish dishonesty
 - Self-harm from bad data disincentivizes gaming
+- Asymmetric calculation prevents forced manipulation
 
 **POTENTIAL LOOP 6: Recognition-Satisfaction Conflict**
 
@@ -1420,35 +2227,35 @@ under the following conditions:
   
   Bounded feedback signal.
 
-**C3. Min Function in Mutual Satisfaction:**
-  MS(A,B) = min(S_A→B, S_B→A)
-  
-  Conservative aggregation prevents inflation.
-
-**C4. Temporal Separation:**
+**C3. Temporal Separation:**
   Cycle t:   Allocations computed
   Cycle t:   Satisfaction rated (after allocation)
   Cycle t+1: Next allocations use cycle t satisfaction
   
   Time delay breaks circular dependency.
 
-**C5. Hierarchical Dampening:**
+**C4. Hierarchical Dampening:**
   Each aggregation level averages with weights:
     Satisfaction_parent = Σ(w_i × Satisfaction_child_i) / Σ(w_i)
   
   Propagation dampens with tree depth.
 
-**C6. Per-Type Adaptive Damping:**
+**C5. Per-Type Adaptive Damping:**
   For each resource type k:
     α_k(t) ∈ {0.5, 0.8, 1.0}
   
   If oscillation detected: α_k ← 0.5 (reduce responsiveness)
 
-**C7. Network Effect Penalties:**
+**C6. Network Effect Penalties:**
   Dishonest satisfaction reporting → 
     Reduced recognition from other entities →
       Reduced total allocation →
         Incentive for honest reporting
+
+**C7. Independent Calculation:**
+  ShareOfGeneralSatisfaction_A→B computed independently from B→A
+  No forced agreement or min function
+  Allows asymmetric recognition
 
 **Convergence Property:**
 Under C1-C7, the system converges to a satisfaction equilibrium:
@@ -1463,11 +2270,11 @@ Where satisfaction ratings stabilize at true utility values.
 
 **Proof Sketch:**
 1. Need caps (C1) + Satisfaction bounds (C2) → Bounded state space
-2. Time delay (C4) → No simultaneous circular dependency
-3. Dampening (C5, C6) → Contraction mapping
-4. Min function (C3) → Conservative convergence
+2. Time delay (C3) → No simultaneous circular dependency
+3. Dampening (C4, C5) → Contraction mapping
+4. Independent calculations (C7) → No forced constraints, natural convergence
 5. Bounded state + Contraction → Fixed point exists (Banach fixed-point theorem)
-6. Network penalties (C7) → Unique honest equilibrium is optimal
+6. Network penalties (C6) → Unique honest equilibrium is optimal
 
 ∎
 
@@ -1504,12 +2311,12 @@ IMPLEMENTATION REQUIREMENTS FOR STABILITY
 3. **Adaptive Satisfaction Responsiveness (New):**
    ```typescript
    function calculateAllocationShare(
-     mutualSatisfaction: number,
+     shareOfGeneralSatisfaction: number,
      dampingFactor: number,
      oscillationDetected: boolean
    ): number {
      const responsiveness = oscillationDetected ? 0.5 : 1.0;
-     return mutualSatisfaction * dampingFactor * responsiveness;
+     return shareOfGeneralSatisfaction * dampingFactor * responsiveness;
    }
    ```
 
@@ -1518,7 +2325,7 @@ IMPLEMENTATION REQUIREMENTS FOR STABILITY
    function computeAllocations(
      capacities: CapacitySlot[],
      needs: NeedSlot[],
-     mutualSatisfaction: Map
+     shareMap: Map<EntityId, number>
    ): AllocationResult {
      // Round 1: Initial allocation
      const initialAllocations = computeRawAllocations(...);
@@ -1559,7 +2366,7 @@ The v6 satisfaction-based feedback system is stable because:
 2. **Time delays** break circular dependencies  
 3. **Hierarchical dampening** smooths feedback
 4. **Per-type adaptive damping** prevents oscillation
-5. **Min function** ensures conservative mutual satisfaction
+5. **Independent calculations** allow asymmetric recognition
 6. **Network effects** penalize strategic gaming
 7. **Same-cycle reallocation** prevents cascades
 

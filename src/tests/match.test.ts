@@ -20,8 +20,8 @@ import {
     slotsCompatible,
     convertTimeToUTC,
     daySchedulesOverlap
-} from '../utils/match.js';
-import type { TimeRange, DaySchedule, NeedSlot, AvailabilitySlot } from '../schemas.js';
+} from '../utils/match';
+import type { TimeRange, DaySchedule, NeedSlot, AvailabilitySlot } from '../schemas';
 
 describe('Slot Compatibility Matching', () => {
 
@@ -311,14 +311,14 @@ describe('Slot Compatibility Matching', () => {
 
         it('should match compatible slots with same type', () => {
             const needSlot: Partial<NeedSlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1
             };
 
             const availabilitySlot: Partial<AvailabilitySlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1
@@ -329,14 +329,14 @@ describe('Slot Compatibility Matching', () => {
 
         it('should reject slots with different types', () => {
             const needSlot: Partial<NeedSlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1
             };
 
             const availabilitySlot: Partial<AvailabilitySlot> = {
-                need_type_id: 'tutoring',
+                type_id: 'tutoring',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1
@@ -347,14 +347,14 @@ describe('Slot Compatibility Matching', () => {
 
         it('should reject slots with non-overlapping dates', () => {
             const needSlot: Partial<NeedSlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-20',
                 quantity: 1
             };
 
             const availabilitySlot: Partial<AvailabilitySlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-25',
                 end_date: '2024-01-30',
                 quantity: 1
@@ -365,14 +365,14 @@ describe('Slot Compatibility Matching', () => {
 
         it('should match slots with overlapping date ranges', () => {
             const needSlot: Partial<NeedSlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-25',
                 quantity: 1
             };
 
             const availabilitySlot: Partial<AvailabilitySlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-20',
                 end_date: '2024-01-30',
                 quantity: 1
@@ -384,7 +384,7 @@ describe('Slot Compatibility Matching', () => {
         it('should handle capacity serving both recurring and one-time needs (asymmetric model)', () => {
             // Capacity is unified - can serve any compatible need
             const recurringNeed: Partial<NeedSlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 recurrence: 'RRULE:FREQ=WEEKLY;BYDAY=MO',
@@ -392,7 +392,7 @@ describe('Slot Compatibility Matching', () => {
             };
 
             const onetimeCapacity: Partial<AvailabilitySlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 recurrence: null,
@@ -405,14 +405,14 @@ describe('Slot Compatibility Matching', () => {
 
         it('should match slots with identical dates', () => {
             const needSlot: Partial<NeedSlot> = {
-                need_type_id: 'tutoring',
+                type_id: 'tutoring',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1
             };
 
             const availabilitySlot: Partial<AvailabilitySlot> = {
-                need_type_id: 'tutoring',
+                type_id: 'tutoring',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1
@@ -423,7 +423,7 @@ describe('Slot Compatibility Matching', () => {
 
         it('should handle slots with availability windows', () => {
             const needSlot: Partial<NeedSlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1,
@@ -433,7 +433,7 @@ describe('Slot Compatibility Matching', () => {
             };
 
             const availabilitySlot: Partial<AvailabilitySlot> = {
-                need_type_id: 'childcare',
+                type_id: 'childcare',
                 start_date: '2024-01-15',
                 end_date: '2024-01-15',
                 quantity: 1,

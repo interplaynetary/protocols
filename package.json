@@ -102,6 +102,12 @@
   "homepage": "https://github.com/playnet/free-association#readme",
   "dependencies": {
     "@chainsafe/libp2p-noise": "^17.0.0",
+    "@digitalbazaar/did-io": "^2.0.0",
+    "@digitalbazaar/did-method-key": "^5.3.0",
+    "@digitalbazaar/ed25519-signature-2020": "^5.4.0",
+    "@digitalbazaar/ed25519-verification-key-2020": "^4.2.0",
+    "@digitalbazaar/security-document-loader": "^3.1.0",
+    "@digitalbazaar/vc": "^7.2.0",
     "@fireproof/connect": "^0.17.7",
     "@fireproof/core": "^0.24.7",
     "@fireproof/partykit": "^0.19.118",

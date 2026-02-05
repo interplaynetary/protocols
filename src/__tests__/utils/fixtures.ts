@@ -26,7 +26,7 @@ export function generateId(prefix: string = 'test'): string {
 export function createMockNeedSlot(overrides: Partial<NeedSlot> = {}): NeedSlot {
     return {
         id: generateId('need'),
-        need_type_id: 'food',
+        type_id: 'food',
         quantity: 10,
         unit: 'meals',
         time_range: {
@@ -47,7 +47,7 @@ export function createMockNeedSlot(overrides: Partial<NeedSlot> = {}): NeedSlot 
 export function createMockCapacitySlot(overrides: Partial<AvailabilitySlot> = {}): AvailabilitySlot {
     return {
         id: generateId('capacity'),
-        need_type_id: 'food',
+        type_id: 'food',
         quantity: 100,
         unit: 'meals',
         max_natural_div: 1,
@@ -118,7 +118,7 @@ export function createSimpleScenario() {
         pubkey: providerPubkey,
         capacity_slots: [
             createMockCapacitySlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 100
             })
         ]
@@ -128,7 +128,7 @@ export function createSimpleScenario() {
         pubkey: recipientPubkey,
         need_slots: [
             createMockNeedSlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 50
             })
         ]
@@ -173,7 +173,7 @@ export function createMultiRecipientScenario() {
         pubkey: providerPubkey,
         capacity_slots: [
             createMockCapacitySlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 100
             })
         ]
@@ -191,7 +191,7 @@ export function createMultiRecipientScenario() {
             pubkey: recipient.pubkey,
             need_slots: [
                 createMockNeedSlot({
-                    need_type_id: 'food',
+                    type_id: 'food',
                     quantity: recipient.need
                 })
             ]
@@ -232,7 +232,7 @@ export function createTwoTierScenario() {
         pubkey: providerPubkey,
         capacity_slots: [
             createMockCapacitySlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 100
             })
         ]
@@ -251,7 +251,7 @@ export function createTwoTierScenario() {
             pubkey: recipient.pubkey,
             need_slots: [
                 createMockNeedSlot({
-                    need_type_id: 'food',
+                    type_id: 'food',
                     quantity: recipient.need
                 })
             ]
@@ -267,7 +267,7 @@ export function createTwoTierScenario() {
             pubkey: recipient.pubkey,
             need_slots: [
                 createMockNeedSlot({
-                    need_type_id: 'food',
+                    type_id: 'food',
                     quantity: recipient.need
                 })
             ]
@@ -302,7 +302,7 @@ export function createDivisibilityScenario() {
         pubkey: providerPubkey,
         capacity_slots: [
             createMockCapacitySlot({
-                need_type_id: 'housing',
+                type_id: 'housing',
                 quantity: 5, // 5 rooms
                 unit: 'rooms',
                 max_natural_div: 1, // Can't split rooms
@@ -323,7 +323,7 @@ export function createDivisibilityScenario() {
             pubkey: recipient.pubkey,
             need_slots: [
                 createMockNeedSlot({
-                    need_type_id: 'housing',
+                    type_id: 'housing',
                     quantity: recipient.need,
                     unit: 'rooms'
                 })
@@ -354,7 +354,7 @@ export function createDampingScenario() {
         pubkey: providerPubkey,
         capacity_slots: [
             createMockCapacitySlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 100
             })
         ]
@@ -365,7 +365,7 @@ export function createDampingScenario() {
         pubkey: recipientPubkey,
         need_slots: [
             createMockNeedSlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 50
             })
         ],
@@ -376,9 +376,9 @@ export function createDampingScenario() {
             },
             over_allocation_history: {
                 food: [
-                    { need_type_id: 'food', overAllocation: 5, timestamp: Date.now() - 3000 },
-                    { need_type_id: 'food', overAllocation: 15, timestamp: Date.now() - 2000 },
-                    { need_type_id: 'food', overAllocation: 8, timestamp: Date.now() - 1000 }
+                    { type_id: 'food', overAllocation: 5, timestamp: Date.now() - 3000 },
+                    { type_id: 'food', overAllocation: 15, timestamp: Date.now() - 2000 },
+                    { type_id: 'food', overAllocation: 8, timestamp: Date.now() - 1000 }
                 ]
             }
         })
@@ -419,7 +419,7 @@ export function createZeroCapacityScenario() {
         pubkey: providerPubkey,
         capacity_slots: [
             createMockCapacitySlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 0 // No capacity!
             })
         ]
@@ -429,7 +429,7 @@ export function createZeroCapacityScenario() {
         pubkey: recipientPubkey,
         need_slots: [
             createMockNeedSlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 50
             })
         ]
@@ -470,7 +470,7 @@ export function createTypeMismatchScenario() {
         pubkey: providerPubkey,
         capacity_slots: [
             createMockCapacitySlot({
-                need_type_id: 'food',
+                type_id: 'food',
                 quantity: 100
             })
         ]
@@ -480,7 +480,7 @@ export function createTypeMismatchScenario() {
         pubkey: recipientPubkey,
         need_slots: [
             createMockNeedSlot({
-                need_type_id: 'housing', // Different type!
+                type_id: 'housing', // Different type!
                 quantity: 2
             })
         ]

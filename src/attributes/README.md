@@ -109,7 +109,7 @@ myAttributeRecognitions.update($recognitions => {
     'pubkey_bob',
     'capacity:food',
     [
-      { id: 'slot1', quantity: 100, need_type_id: 'food', unit: 'meals/week' }
+      { id: 'slot1', quantity: 100, type_id: 'food', unit: 'meals/week' }
     ]
   );
 });
@@ -121,7 +121,7 @@ myAttributeRecognitions.update($recognitions => {
     myPubkey, // Our own pubkey
     'need:housing',
     [
-      { id: 'need1', quantity: 1, need_type_id: 'housing', unit: 'apartment' }
+      { id: 'need1', quantity: 1, type_id: 'housing', unit: 'apartment' }
     ]
   );
 });
@@ -178,7 +178,7 @@ const orgMembers = createAttributeStore('org_abc123', 'membership');
   ```typescript
   {
     value: [
-      { id: "slot1", quantity: 100, need_type_id: "food", unit: "meals/week" }
+      { id: "slot1", quantity: 100, type_id: "food", unit: "meals/week" }
     ]
   }
   ```
@@ -190,7 +190,7 @@ const orgMembers = createAttributeStore('org_abc123', 'membership');
   ```typescript
   {
     value: [
-      { id: "need1", quantity: 1, need_type_id: "housing", unit: "apartment" }
+      { id: "need1", quantity: 1, type_id: "housing", unit: "apartment" }
     ]
   }
   ```

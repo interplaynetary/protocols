@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayNet | Communal Production</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-glass: rgba(255, 255, 255, 0.95);
+
+            --primary: #6366f1;
+            --primary-light: #e0e7ff;
+            --primary-dark: #4338ca;
+
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+
+            --border-color: #e2e8f0;
+
+            --success: #10b981;
+            --success-bg: #d1fae5;
+            --warning: #f59e0b;
+            --warning-bg: #fef3c7;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --info: #3b82f6;
+            --info-bg: #dbeafe;
+            --neutral-bg: #f1f5f9;
+
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --radius-md: 0.75rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* RESPONSIVE LAYOUT CONTAINER */
+        .app-container {
+            width: 100%;
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .app-container {
+                padding: 0 1rem;
+            }
+        }
+
+        /* NAVIGATION - Sticky & Glass */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .nav-content {
+            height: 4.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--neutral-bg);
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            /* Allow scroll on very small screens */
+            max-width: 100%;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-btn.active {
+            background: var(--bg-surface);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+            font-weight: 600;
+        }
+
+        /* GRID SYSTEM - AUTO RESPONSIVE */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            /* Smart wrapping */
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .sidebar-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar-layout {
+                grid-template-columns: 1fr;
+            }
+
+            /* Stack on smaller screens */
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            /* Prevent header content smash */
+            gap: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            flex: 1;
+            min-width: 0;
+            /* Fix flex child overflow */
+        }
+
+        .card-body.p-0 {
+            padding: 0;
+        }
+
+        /* HERO STATS */
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-surface);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .stat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1;
+        }
+
+        /* TABLES - SCROLLABLE WRAPPER */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            /* Smooth scroll on iOS */
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.925rem;
+            /* removed white-space: nowrap to allow wrapping */
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 0.875rem 1.25rem;
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* LIST ITEMS (Allocations, Ops) */
+        .list-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-item {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            background: #fff;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Flex Grid for Items - Wraps naturally */
+        .item-row-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .item-col {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .item-col.wide {
+            min-width: 250px;
+            flex: 2;
+        }
+
+        /* BADGES & UTILS */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .badge-success {
+            background: var(--success-bg);
+            color: #059669;
+        }
+
+        .badge-warning {
+            background: var(--warning-bg);
+            color: #d97706;
+        }
+
+        .badge-danger {
+            background: var(--danger-bg);
+            color: #dc2626;
+        }
+
+        .badge-info {
+            background: var(--info-bg);
+            color: #2563eb;
+        }
+
+        .badge-neutral {
+            background: var(--neutral-bg);
+            color: #475569;
+        }
+
+        .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+
+        .val {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .val-lg {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .prog-track {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .prog-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* TABS */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAV -->
+    <nav class="top-nav">
+        <div class="app-container nav-content">
+            <div class="logo">
+                <svg class="icon" style="color:var(--primary)" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg>
+                <span>PlayNet Protocol</span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn active" onclick="showTab('dashboard')">Dashboard</button>
+                <button class="nav-btn" onclick="showTab('stockbook')">Entities</button>
+                <button class="nav-btn" onclick="showTab('ops')">Operations</button>
+                <button class="nav-btn" onclick="showTab('planning')">Planning</button>
+                <button class="nav-btn" onclick="showTab('analysis')">Analysis</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <span class="badge badge-success">Online</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="app-container">
+
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="tab-content active">
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div>
+                            <span class="label">Plan Adherence</span>
+                            <div class="stat-value">98.5%</div>
+                        </div>
+                        <div class="stat-icon" style="background:#d1fae5; color:#059669;"><svg class="icon"
+                                viewBox="0 0 24 24">
+                                <path d="M5 13l4 4L19 7"></path>
+                            </svg></div>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill" style="width:98.5%; background:#059669;"></div>
+                    </div>
+                    <div class="val" style="font-size:0.85rem; margin-top:0.5rem; color:var(--text-muted);">Target
+                        exceeded by 2.3%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div>
+                            <span class="label">Free Time Created</span>
+                            <div class="stat-value">144h</div>
+                        </div>
+                        <div class="stat-icon"><svg class="icon" viewBox="0 0 24 24">
+                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg></div>
+                    </div>
+                    <div class="val" style="font-size:0.85rem; color:var(--text-muted);">43% of Total Social Time
+                        Available</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div>
+                            <span class="label">Constraint Load</span>
+                            <div class="stat-value">12</div>
+                        </div>
+                        <div class="stat-icon" style="background:#fee2e2; color:#dc2626;"><svg class="icon"
+                                viewBox="0 0 24 24">
+                                <path
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                </path>
+                            </svg></div>
+                    </div>
+                    <div class="val" style="font-size:0.85rem; color:var(--text-muted);">Material Limits & Labor
+                        Balancing</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- System Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">System Status</h3>
+                        <span class="badge badge-success">Healthy</span>
+                    </div>
+                    <div class="card-body">
+                        <div
+                            style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:1.5rem;">
+                            <div><span class="label">Current Period</span>
+                                <div class="val">2024-W10</div>
+                            </div>
+                            <div><span class="label">Last Sync</span>
+                                <div class="val" id="dash-last-updated">--</div>
+                            </div>
+                            <div><span class="label">Inventory</span>
+                                <div class="val" id="dash-prod-count">--</div>
+                            </div>
+                            <div><span class="label">Labor Force</span>
+                                <div class="val" id="dash-worker-count">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allocations Overview -->
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">Production Goals</h3>
+                    </div>
+                    <div class="card-body">
+                        <div
+                            style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:2rem;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                    <span class="val">Deductions (D1-D6)</span>
+                                    <span class="badge badge-success">100% Satisfied</span>
+                                </div>
+                                <div class="prog-track">
+                                    <div class="prog-fill" style="width:100%; background:var(--success);"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                    <span class="val">Reserve Levels</span>
+                                    <span class="badge badge-warning">Medicine Low</span>
+                                </div>
+                                <div class="prog-track">
+                                    <div class="prog-fill" style="width:92%; background:var(--warning);"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ENTITIES (STOCKBOOK) -->
+        <section id="stockbook" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">Global Inventory</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Identity</th>
+                                    <th>Quantity</th>
+                                    <th>ALT (Embodied Labor)</th>
+                                    <th>Lifespan</th>
+                                    <th>Usage Status</th>
+                                    <th>Last Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">Active Labor Force</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Individual</th>
+                                    <th>Specialized Roles (Labor Powers)</th>
+                                    <th>Total Capacity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="labor-force-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- OPERATIONS -->
+        <section id="ops" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Operations Log</h3>
+                </div>
+                <div class="card-body p-0" id="ops-list">
+                    <!-- JS Injected -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- PLANNING -->
+        <section id="planning" class="tab-content">
+            <div class="sidebar-layout">
+                <!-- Sidebar -->
+                <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Active Constraints</h3>
+                        </div>
+                        <div class="card-body" id="constraints-list" style="max-height: 400px; overflow-y:auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+                    <!-- DEDUCTIONS TABLE -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Social Deductions (D1-D6)</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Class</th>
+                                        <th>Allocations</th>
+                                        <th>Bounds</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deductions-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- RESERVES TABLE (Detailed View) -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Reserve Strategy & Status</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item / Type</th>
+                                        <th>Allocation Rule</th>
+                                        <th>Levels (Curr / Target)</th>
+                                        <th>Reorder Pt</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reserves-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Product Allocation Plan</h3>
+                            <span class="badge badge-info">Active: 2024-W10</span>
+                        </div>
+                        <div class="card-body p-0" id="allocations-list">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Labor Distribution</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Worker</th>
+                                        <th>Allocation</th>
+                                        <th>Planned</th>
+                                        <th style="width:40%;">Utilization</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="labor-allocations-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ANALYSIS -->
+        <section id="analysis" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Efficiency Metrics (Work Type)</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Work Type</th>
+                                    <th>Efficiency</th>
+                                    <th>Output Rate</th>
+                                    <th>Sample Size</th>
+                                </tr>
+                            </thead>
+                            <tbody id="work-stats-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Optimization Function</h3>
+                    </div>
+                    <div class="card-body">
+                        <div
+                            style="background:#f1f5f9; padding:1rem; border-radius:0.5rem; font-family:monospace; font-size:0.85rem; color:#475569; margin-bottom:1.5rem; overflow-x:auto;">
+                            Max(FreeTime) = T_total - (T_necessary + α*Var + β*Short)
+                        </div>
+                        <div id="analysis-obj-details"></div>
+                    </div>
+                </div>
+
+                <div class="card full-width">
+                    <div class="card-header">
+                        <h3 class="card-title">ALT Computation Breakdown</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="dashboard-grid" id="alt-list"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- DATA & RENDERER -->
+    <script>
+        // MOCK DATA - Full Schema Compliance
+        const sys = {
+            stock: {
+                products: {
+                    wheat: { id: 'wheat', name: 'Wheat', unit: 'kg', alt: 0.08, lifespan: null },
+                    bread: { id: 'bread', name: 'Bread', unit: 'loaf', alt: 0.19, lifespan: 168 },
+                    steel: { id: 'steel', name: 'Steel', unit: 'kg', alt: 0.70, lifespan: null },
+                    tools: { id: 'tools', name: 'Tools', unit: 'unit', alt: 5.2, lifespan: 8760 },
+                    medicine: { id: 'medicine', name: 'Standard Medpack', unit: 'kit', alt: 1.5, lifespan: 4380 }
+                },
+                inv: {
+                    wheat: { q: 450, upd: '2024-03-13T08:00Z', life: null },
+                    bread: { q: 120, upd: '2024-03-13T10:00Z', life: 120 },
+                    steel: { q: 85, upd: '2024-03-12T16:00Z', life: null },
+                    tools: { q: 15, upd: '2024-03-11T09:00Z', life: 7200 },
+                    medicine: { q: 50, upd: '2024-03-10T11:00Z', life: 4000 }
+                },
+                ppl: {
+                    alice: {
+                        id: 'alice', name: 'Alice',
+                        laborPowers: [
+                            { type: 'Baking', hoursPerDay: 4 },
+                            { type: 'Teaching', hoursPerDay: 4 }
+                        ]
+                    },
+                    bob: {
+                        id: 'bob', name: 'Bob',
+                        laborPowers: [
+                            { type: 'Farming', hoursPerDay: 8 }
+                        ]
+                    },
+                    charlie: {
+                        id: 'charlie', name: 'Charlie',
+                        laborPowers: [
+                            { type: 'Metalwork', hoursPerDay: 6 },
+                            { type: 'Repair', hoursPerDay: 2 }
+                        ]
+                    }
+                },
+                ops: [
+                    {
+                        id: 'OP-042', date: '2024-03-10', time: 8, desc: 'Harvesting Sector 7',
+                        in: [{ id: 'bob', role: 'Farming', h: 8 }],
+                        out: [{ id: 'wheat', q: 100 }]
+                    },
+                    {
+                        id: 'OP-043', date: '2024-03-11', time: 6, desc: 'Bread Batch A',
+                        in: [
+                            { id: 'alice', role: 'Baking', h: 6 },
+                            { id: 'wheat', q: 20, alt: 0.08 } // Recorded Input ALT
+                        ],
+                        out: [{ id: 'bread', q: 40 }]
+                    }
+                ],
+                stats: {
+                    baking: { type: 'Baking', eff: 0.85, out: 6.5, n: 15 },
+                    farming: { type: 'Farming', eff: 0.92, out: 12.0, n: 42 }
+                },
+                alts: {
+                    wheat: { v: 0.08, n: 5000, h: 400 },
+                    bread: { v: 0.19, n: 2500, h: 475 },
+                    steel: { v: 0.70, n: 500, h: 350 },
+                    tools: { v: 5.2, n: 100, h: 520 }
+                }
+            },
+            plan: {
+                meta: { id: 'PLAN-2024-W10', s: 'active', created: '2024-03-09' },
+                deductions: [
+                    { type: 'D1_replacement', isConstraint: true, alloc: { wheat: 100, steel: 20 }, min: 120 },
+                    { type: 'D2_expansion', isConstraint: false, alloc: { steel: 50, tools: 5 }, target: 60 },
+                    { type: 'D3_reserves', isConstraint: true, alloc: { medicine: 10, wheat: 50 }, min: 60 },
+                    { type: 'D4_administration', isConstraint: false, alloc: { tools: 2 }, target: 0 },
+                    { type: 'D5_common_needs', isConstraint: false, alloc: { bread: 200 }, target: 250 },
+                    { type: 'D6_support', isConstraint: true, alloc: { bread: 50, medicine: 5 }, min: 55 }
+                ],
+                allocs: [
+                    { id: 'bread', t: 120, min: 110, max: 135, unc: '±5%' },
+                    { id: 'wheat', t: 250, min: 230, max: 280, unc: '±10%' }
+                ],
+                labor: [
+                    { id: 'Alice', role: 'Baking', h: 20 },
+                    { id: 'Alice', role: 'Teaching', h: 20 },
+                    { id: 'Bob', role: 'Farming', h: 42 },
+                    { id: 'Charlie', role: 'Metalwork', h: 30 }
+                ],
+                reserves: [
+                    { id: 'wheat', type: 'Contingency', rule: '15% M-Use', t: 500, c: 450, pt: 200 },
+                    { id: 'medicine', type: 'Epidemic', rule: 'Strategic', t: 100, c: 50, pt: 60 }
+                ],
+                constraints: {
+                    mat: [{ id: 'wheat', min: 200 }],
+                    lab: [
+                        { id: 'Baking', max: 20 },
+                        { id: 'Farming', max: 56 }
+                    ],
+                    risk: [{ id: 'wheat', f: 0.15 }]
+                },
+                variance: [
+                    { id: 'bread', p: 500, a: 480, v: -20, pct: -4.0, r: 'Oven Downtime', adj: 'Shifted Baking to Night Shift' }
+                ],
+                obj: {
+                    alpha: 1.0, beta: 1.5,
+                    varCost: 5.2, shortCost: 2.1
+                }
+            }
+        };
+
+        // RENDER FUNCTIONS
+        function render() {
+            // Dashboard
+            document.getElementById('dash-last-updated').innerText = new Date().toLocaleTimeString();
+            document.getElementById('dash-prod-count').innerText = Object.keys(sys.stock.products).length + ' Items';
+            document.getElementById('dash-worker-count').innerText = Object.keys(sys.stock.ppl).length + ' Workers';
+
+            // Stock Table
+            const stockHtml = Object.entries(sys.stock.inv).map(([k, v]) => {
+                const p = sys.stock.products[k];
+                return `
+                <tr>
+                    <td>
+                        <div style="font-weight:600; color:var(--text-main);">${p.name}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">${p.unit}</div>
+                    </td>
+                    <td class="val">${v.q}</td>
+                    <td class="val">${p.alt}h</td>
+                    <td>${p.lifespan || '∞'}</td>
+                    <td>${v.life ? v.life + 'h' : 'N/A'}</td>
+                    <td style="font-size:0.85rem; color:var(--text-muted);">${new Date(v.upd).toLocaleDateString()}</td>
+                </tr>`;
+            }).join('');
+            document.getElementById('stock-table-body').innerHTML = stockHtml;
+
+            // Labor Force - Multi-skill support
+            document.getElementById('labor-force-body').innerHTML = Object.values(sys.stock.ppl).map(p => {
+                const powers = p.laborPowers.map(lp =>
+                    `<span class="badge badge-neutral" style="margin-right:4px;">${lp.type}: ${lp.hoursPerDay}h</span>`
+                ).join('');
+
+                return `
+                <tr>
+                    <td style="font-weight:600;">${p.name}</td>
+                    <td>${powers}</td>
+                    <td>${p.laborPowers.reduce((s, x) => s + x.hoursPerDay, 0)}h/day</td>
+                    <td><span class="badge badge-success">Active</span></td>
+                </tr>
+            `}).join('');
+
+            // Operations List - With Input ALT
+            document.getElementById('ops-list').innerHTML = sys.stock.ops.map(o => `
+                <div class="list-item">
+                    <div class="item-row-content">
+                        <div class="item-col wide">
+                             <span class="label">Operation</span>
+                             <div style="font-weight:600; font-size:1rem;">${o.desc}</div>
+                             <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">${o.id} • ${o.date}</div>
+                        </div>
+                        <div class="item-col">
+                             <span class="label">Inputs <span style="font-size:0.7em; color:var(--text-muted)">(Rec. ALT)</span></span>
+                             ${o.in.map(i => {
+                const altInfo = i.alt ? `<span style="color:var(--text-muted); font-size:0.85em;">(@${i.alt}h)</span>` : '';
+                return `<div style="font-size:0.9rem;">• ${i.id} (${i.role || 'Item'}): ${i.h || i.q}${i.h ? 'h' : ''} ${altInfo}</div>`
+            }).join('')}
+                        </div>
+                        <div class="item-col">
+                             <span class="label">Outputs</span>
+                             ${o.out.map(i => `<div style="font-size:0.9rem;">• ${i.q} ${i.id}</div>`).join('')}
+                        </div>
+                        <div class="item-col" style="min-width:140px; display:flex; align-items:center;">
+                             <span class="badge badge-success">${o.time}h Social Time</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Constraints - Now with Deduction & Labor Balances
+            const riskCons = sys.plan.constraints.risk.map(c => `Risk: ${c.id} > ${(c.f * 100).toFixed(0)}%`);
+            const matCons = sys.plan.constraints.mat.map(c => `Mat. Bal: ${c.id} > ${c.min}`);
+            const labCons = sys.plan.constraints.lab.map(c => `Lab. Bal: ${c.id} < ${c.max}h`);
+
+            document.getElementById('constraints-list').innerHTML = [...riskCons, ...matCons, ...labCons]
+                .map(t => `<div style="padding:0.6rem; background:var(--neutral-bg); border-radius:0.375rem; font-size:0.85rem; margin-bottom:0.5rem; border:1px solid var(--border-color);">${t}</div>`).join('');
+
+            // Reserves Body - FULL DETAIL
+            document.getElementById('reserves-body').innerHTML = sys.plan.reserves.map(r => `
+                <tr>
+                    <td>
+                        <div style="font-weight:600;">${r.id}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">${r.type}</div>
+                    </td>
+                    <td>${r.rule}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <span style="font-weight:600;">${r.c}</span> 
+                            <span style="color:var(--text-muted); font-size:0.85rem;">/ ${r.t}</span>
+                        </div>
+                        <div class="prog-track" style="margin-top:4px; height:4px; width:80px;">
+                            <div class="prog-fill" style="width:${Math.min(100, (r.c / r.t) * 100)}%; background:${r.c < r.pt ? 'var(--danger)' : 'var(--success)'};"></div>
+                        </div>
+                    </td>
+                    <td>${r.pt ? r.pt : '-'}</td>
+                    <td>${r.c < r.pt ? '<span class="badge badge-danger">Reorder</span>' : '<span class="badge badge-success">OK</span>'}</td>
+                </tr>
+            `).join('');
+
+            // Allocations - With Adjustments being shown
+            document.getElementById('allocations-list').innerHTML = sys.plan.allocs.map(a => {
+                const v = sys.plan.variance.find(x => x.id === a.id);
+                return `
+                <div class="list-item" style="border-left: 4px solid ${v ? 'var(--danger)' : 'var(--success)'};">
+                    <div class="item-row-content">
+                        <div class="item-col">
+                            <span class="label">Product</span>
+                            <div class="val-lg">${a.id}</div>
+                        </div>
+                        <div class="item-col">
+                             <span class="label">Target</span>
+                             <div class="val">${a.t} units</div>
+                        </div>
+                        <div class="item-col">
+                             <span class="label">Bounds</span>
+                             <div class="val">${a.min} - ${a.max}</div>
+                             <div style="font-size:0.75rem; color:var(--text-muted);">Uncertainty: ${a.unc}</div>
+                        </div>
+                        <div class="item-col" style="flex:1.5;">
+                             <span class="label">Status</span>
+                             ${v ?
+                        `<div class="badge badge-danger" style="margin-bottom:0.25rem;">Variance: ${v.v} (${v.pct}%)</div>
+                                 <div style="font-size:0.8rem; color:#dc2626; margin-top:4px;"><strong>R:</strong> ${v.r}</div>
+                                 ${v.adj ? `<div style="font-size:0.8rem; color:var(--text-muted);"><strong>Adj:</strong> ${v.adj}</div>` : ''}
+                                ` :
+                        '<div class="badge badge-success">On Track</div>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+
+            // Labor Allocations
+            document.getElementById('labor-allocations-body').innerHTML = sys.plan.labor.map(l => `
+                <tr>
+                    <td style="font-weight:600;">${l.id}</td>
+                    <td><span class="badge badge-neutral">${l.role}</span></td>
+                    <td>${l.h}h</td>
+                     <td>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div class="prog-track" style="margin:0;"><div class="prog-fill" style="width:${(l.h / 40) * 100}%; background:var(--primary);"></div></div>
+                            <span style="font-size:0.75rem; width:2.5rem;">${Math.round((l.h / 40) * 100)}%</span>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            // New Deductions Section (D1-D6)
+            document.getElementById('deductions-body').innerHTML = sys.plan.deductions.map(d => `
+                <tr>
+                    <td style="font-weight:600; font-size:0.9rem;">${d.type}</td>
+                    <td>${d.isConstraint ? '<span class="badge badge-warning">Constraint</span>' : '<span class="badge badge-info">Objective</span>'}</td>
+                    <td style="font-size:0.85rem;">${Object.entries(d.alloc).map(([k, v]) => `${k}: ${v}`).join(', ')}</td>
+                    <td style="font-size:0.85rem;">${d.min ? '> ' + d.min : 'Target: ' + d.target}</td>
+                    <td><span class="badge badge-success" style="font-size:0.7rem;">Satisfied</span></td>
+                </tr>
+            `).join('');
+
+
+            // Stats
+            document.getElementById('work-stats-body').innerHTML = Object.values(sys.stock.stats).map(s => `
+                <tr>
+                    <td style="font-weight:600;">${s.type}</td>
+                    <td class="val">${s.eff}</td>
+                    <td>${s.out}/hr</td>
+                    <td style="color:var(--text-muted);">${s.n}</td>
+                </tr>
+            `).join('');
+
+            // ALT List - Detailed
+            document.getElementById('alt-list').innerHTML = Object.values(sys.stock.alts).map(a => `
+                <div style="padding:1.25rem; border:1px solid var(--border-color); border-radius:0.5rem; background:#fff;">
+                     <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="label">ALT Value</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted);">samples: ${a.n}</span>
+                     </div>
+                     <div class="val-lg" style="color:var(--primary); margin:0.25rem 0;">${a.v}h</div>
+                     <div style="font-size:0.8rem; color:var(--text-muted); border-top:1px solid #f1f5f9; padding-top:0.5rem; margin-top:0.5rem;">
+                        Total Time: ${a.h}h<br>
+                        Total Qty: ${a.n}
+                     </div>
+                </div>
+            `).join('');
+
+            // Update Analysis Objective
+            const obj = sys.plan.obj;
+            document.getElementById('analysis-obj-details').innerHTML = `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                     <div><span class="label">Total Available</span><div class="val-lg">336h</div></div>
+                     <div><span class="label">Direct Necessary</span><div class="val-lg">180h</div></div>
+                     <div><span class="label">Inefficiency (α=${obj.alpha}, β=${obj.beta})</span><div class="val-lg text-muted">-12h</div></div>
+                     <div><span class="label" style="color:var(--primary);">Net Free Time</span><div class="val-lg" style="color:var(--primary);">144h</div></div>
+                     <div class="full-width" style="margin-top:1rem; font-size:0.85rem; color:var(--text-muted);">
+                        Variance Cost: ${obj.varCost}h • Shortage Cost: ${obj.shortCost}h
+                     </div>
+                 </div>
+            `;
+        }
+
+        // TABS
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        render();
+    </script>
+</body>
+
+</html>

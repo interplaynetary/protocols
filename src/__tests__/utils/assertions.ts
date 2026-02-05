@@ -308,7 +308,7 @@ export function assertRecipientNotReceived(
 export function assertAllocationStructure(result: AllocationResult): void {
     for (const allocation of result.allocations) {
         expect(allocation.quantity).toBeGreaterThan(0);
-        expect(allocation.need_type_id).toBeTruthy();
+        expect(allocation.type_id).toBeTruthy();
         expect(allocation.availability_slot_id).toBeTruthy();
         expect(allocation.recipient_pubkey).toBeTruthy();
         expect(allocation.recipient_need_slot_id).toBeTruthy();

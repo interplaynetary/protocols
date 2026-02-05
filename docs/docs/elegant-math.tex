@@ -1,0 +1,181 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% Elegant formatting
+\geometry{a4paper, margin=1.2in}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+\linespread{1.2}
+
+% Custom section styling
+\titleformat{\section}{\Large\bfseries\sffamily}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\sffamily}{\thesubsection}{1em}{}
+
+\title{\textbf{\sffamily Social Capacity and Alignment Velocity}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{The Logic of Amplification}
+
+All social outcomes arise from how finite human capacities are allocated across shared relations. When capacity flows toward relations that amplify it—through tools, knowledge, coordination, and accumulated systems—individual effort produces effects far beyond its immediate scale.
+
+We formalize this not as a static arrangement, but as a causal chain connecting subjective values to objective results.
+
+\subsection*{1. The Causal Chain}
+
+The progression from intent to reality follows four distinct moments:
+
+\[
+\underset{\text{``What matters''}}{W_i} 
+\quad\xrightarrow{\quad}\quad 
+\underset{\text{``Where capacity goes''}}{X_{ij}} 
+\quad\xrightarrow{\quad}\quad 
+\underset{\text{``How much it multiplies''}}{A_j} 
+\quad\xrightarrow{\quad}\quad 
+\underset{\text{``What actually happens''}}{O_i}
+\]
+
+\begin{itemize}[label=--]
+    \setlength\itemsep{0em}
+    \item $W_{ik}$: Weight agent $i$ assigns to goal $k$ (values)
+    \item $X_{ij}$: Capacity allocated by $i$ to system/relation $j$
+    \item $A_{jm}$: Amplification of outcome $m$ by system $j$
+    \item $O_{im}$: Realized outcome $m$ for agent $i$
+\end{itemize}
+
+\subsection*{2. The Fundamental Connection}
+
+Amplification is not intrinsic; it is the projection of a system's objective outputs onto an agent's subjective values. A system that amplifies outcomes I do not value provides no effective amplification to me.
+
+We start with the agent's utility, defined as weighted goal achievement:
+
+\begin{equation}
+U_i = \sum_k W_{ik} \cdot G_{ik}
+\end{equation}
+
+Let $\beta_{km}$ map objective outcome $m$ to goal $k$. We define \textbf{Effective Amplification} as:
+
+\begin{equation}
+A_j^{(i)} = \sum_{k} \sum_{m} W_{ik} \beta_{km} A_{jm}
+\end{equation}
+
+This leads to the realized utility:
+
+\begin{equation}
+U_i = \sum_{j} X_{ij} \cdot A_j^{(i)}
+\end{equation}
+
+\textit{Insight: Two agents allocating equal capacity to the same system experience different amplification if their values differ.}
+
+\subsection*{3. The Allocation Constraints}
+
+Capacity allocation is bounded by finitude and viability. The static optimum maximizes utility under constraints:
+
+\begin{equation}
+\max \, U_i = \sum_{j} X_{ij} \cdot A_j^{(i)} \quad \text{s.t.} \quad 
+\begin{cases} 
+\sum_j X_{ij} \le C_i & \text{(Finite Capacity)} \\
+X_{ij} = 0 & \text{when system $j$ is inaccessible or unsustainable}
+\end{cases}
+\end{equation}
+
+Misalignment occurs when $X_{ij}$ cannot be viably maintained, regardless of potential $A_j^{(i)}$.
+
+\subsection*{4. Alignment as Velocity}
+
+Freedom is the speed at which misallocation is discovered and corrected. Define \textbf{Correction Velocity} $V_i$ as the rate of utility improvement.
+
+Agents reallocate capacity toward higher effective amplification. Since total capacity is conserved ($\sum_j X_{ij} = C_i$), the update rule is:
+
+\begin{equation}
+\frac{dX_{ij}}{dt} = \eta \left( A_j^{(i)} - \frac{1}{C_i} \sum_{j'} X_{ij'} A_{j'}^{(i)} \right)
+\end{equation}
+
+Capacity flows from below-average to above-average amplification systems. The responsiveness $\eta$ captures transparency, revocability, and low switching costs.
+
+From this, correction velocity becomes:
+
+\begin{equation}
+V_i = \frac{dU_i}{dt} = \sum_j A_j^{(i)} \frac{dX_{ij}}{dt} 
+    = \eta \left[ \sum_j (A_j^{(i)})^2 - \frac{1}{C_i} \left( \sum_j X_{ij} A_j^{(i)} \right)^2 \right]
+\end{equation}
+
+\textit{Interpretation: Velocity is proportional to the variance of effective amplification across systems. Greater amplification inequality enables faster correction.}
+
+\subsection*{5. Historical Accumulation}
+
+Amplification systems are not static; they crystallize from past allocations:
+
+\begin{equation}
+A_j^{(t)} = f\left( \sum_{\tau < t} \sum_i X_{ij}^{(\tau)} \right)
+\end{equation}
+
+Today's tools are yesterday's allocated capacity made material. This creates path dependence: historical allocations shape present amplification possibilities.
+
+\section*{6. Operational Dynamics}
+
+To translate this framework into testable constraints, we define the specific conditions of realization, sustainability, and power.
+
+\subsection*{6.1 Outcome Realization}
+Specific outcomes emerge before goal-weighting. We formalize the objective layer absent from the utility function:
+\begin{equation}
+O_{im} = \sum_j X_{ij} A_{jm}
+\end{equation}
+where $A_{jm}$ is the \textit{objective} amplification of outcome dimension $m$ by system $j$.
+
+\subsection*{6.2 Sustainability Thresholds}
+Systems degrade without sufficient contributions. We define the stability condition:
+\begin{equation}
+\frac{dA_j}{dt} = 
+\begin{cases}
+\alpha \left( \sum_i X_{ij} - \kappa_j \right) & \text{if } \sum_i X_{ij} < \kappa_j \text{ (Decay)} \\
+\beta \left( \sum_i X_{ij} - \kappa_j \right) & \text{if } \sum_i X_{ij} \geq \kappa_j \text{ (Growth)}
+\end{cases}
+\end{equation}
+where $\kappa_j$ is the maintenance threshold. The \textbf{free-rider problem} is formally defined as the state where an agent enjoys $A_j^{(i)} > 0$ while allocating $X_{ij} = 0$, destabilizing the system toward $\sum X < \kappa$.
+
+\subsection*{6.3 Inequality Structure}
+Inequality is effectively a disparity in access to amplification. When capacities are equal ($\sum_j X_{ij} = \sum_j X_{kj}$), the outcome ratio reveals structural privilege:
+\begin{equation}
+\frac{O_i}{O_k} \approx \frac{\max_j A_j^{(i)}}{\max_j A_j^{(k)}}
+\end{equation}
+The most unequal societies are those where high-$A_j$ systems are accessible only to a subset of agents (e.g., via exclusionary pricing or localized capital).
+
+\subsection*{6.4 Power and Control}
+We quantify power not as force, but as the derivative of influence over the allocation landscape:
+\begin{align}
+\text{Allocation Power:} \quad & P_{i \to k} = \sum_j \frac{\partial X_{kj}}{\partial X_{ij}} \\
+\text{Amplification Control:} \quad & C_{i \to j} = \frac{\partial A_j}{\partial X_{ij}}
+\end{align}
+Elite capture is the maintenance of high $C_{i \to j}$ over high-$A_j$ systems, allowing specific agents to dictate the terms of amplification for others.
+
+\subsection*{6.5 Measurement Protocol}
+Empirical estimation requires separating amplification from selection bias (confounding):
+\begin{equation}
+\hat{A}_{jm} = \frac{\mathbb{E}[O_{im} \mid X_{ij}=1, Z] - \mathbb{E}[O_{im} \mid X_{ij}=0, Z]}{\mathbb{E}[O_{im} \mid \text{baseline}]}
+\end{equation}
+where $Z$ represents the vector of control variables.
+
+\section*{Summary}
+
+The dynamics of social capacity allocation reduce to a single identity:
+
+\begin{equation}
+\boxed{\frac{dU_i}{dt} = \sum_j A_j^{(i)} \frac{dX_{ij}}{dt}}
+\end{equation}
+
+\textbf{Alignment is velocity.} A society is free to the degree that capacity ($X_{ij}$) can rapidly reallocate in response to discovered amplification ($A_j^{(i)}$), with velocity constrained only by the material and historical conditions of social existence.
+
+\vspace{1em}
+
+\noindent
+\textit{The framework captures Marx's insight without his metaphysics: social production creates exponential returns that distribute unevenly, and human freedom lies in the capacity to redirect effort toward relations that genuinely amplify flourishing.}
+\end{document}

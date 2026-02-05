@@ -1,0 +1,342 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+% Praxis-oriented formatting
+\geometry{a4paper, margin=1in, bottom=1.5in}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.8em}
+\linespread{1.1}
+
+% Custom section styling
+\titleformat{\section}{\Large\bfseries\sffamily\color{blue!70!black}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\sffamily\color{blue!60!black}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{blue!50!black}}{\thesubsubsection}{1em}{}
+
+% Praxis boxes
+\usepackage{tcolorbox}
+\newtcolorbox{praxisbox}{colback=blue!5!white, colframe=blue!50!black, 
+                         fonttitle=\bfseries, title=For Praxis, breakable}
+
+\title{\textbf{\sffamily\color{blue!70!black} Social Capacity Framework: A Guide to Praxis}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{praxisbox}
+\textbf{Praxis Principle:} Theory must be testable, measurable, and actionable. This document provides the tools to diagnose social systems, measure their health, and design interventions.
+\end{praxisbox}
+
+\section*{I. Core Diagnostic Equations}
+
+\subsection*{1.1 The Fundamental Inequality}
+
+The most important equation for praxis reveals \textbf{where inequality originates}:
+
+\begin{equation}
+\frac{O_i}{O_k} = \frac{\sum_j X_{ij} A_j^{(i)}}{\sum_j X_{kj} A_j^{(k)}}
+\label{eq:inequality}
+\end{equation}
+
+\begin{praxisbox}
+\textbf{To measure:}
+\begin{enumerate}
+\item Select two comparable agents/groups (similar $C_i$, similar effort)
+\item Measure their allocations $X_{ij}$ (time surveys, expenditure data)
+\item Estimate their $A_j^{(i)}$ (see Section III)
+\item Calculate ratio. If $\gg 1$, diagnose \textbf{why}: different access? different goal-weights?
+\end{enumerate}
+\end{praxisbox}
+
+\subsection*{1.2 The Sustainability Equation}
+
+Every system has a maintenance threshold:
+
+\begin{equation}
+\frac{dA_j}{dt} = \alpha \left( \sum_{i \in \text{Users}} X_{ij} - \kappa_j \right) \quad \text{with} \quad \kappa_j = \kappa_j^{\text{min}} + \gamma_j \frac{dA_j}{d(\sum X)}
+\label{eq:sustainability}
+\end{equation}
+
+Where $\kappa_j^{\text{min}}$ prevents decay, $\gamma_j$ enables improvement.
+
+\begin{praxisbox}
+\textbf{To diagnose sustainability:}
+\begin{enumerate}
+\item Estimate $\kappa_j$ for key systems (healthcare, education, infrastructure)
+\item Compare with actual $\sum_i X_{ij}$ (tax contributions, volunteer hours, maintenance effort)
+\item If $\sum X < \kappa_j$: System is degrading. Intervention needed.
+\end{enumerate}
+\end{praxisbox}
+
+\subsection*{1.3 The Velocity Equation (Corrected)}
+
+Freedom as corrective velocity:
+
+\begin{equation}
+V_i = \eta_i \cdot \left[ \sum_j (A_j^{(i)})^2 - \frac{1}{C_i} \left( \sum_j X_{ij} A_j^{(i)} \right)^2 \right]
+\label{eq:velocity}
+\end{equation}
+
+Where $\eta_i = \eta_{\text{transp}} \cdot \eta_{\text{revoc}} \cdot \left(1 - \frac{S_i^{\text{switch}}}{C_i}\right)$
+
+\begin{praxisbox}
+\textbf{To measure institutional freedom:}
+\begin{enumerate}
+\item Measure switching costs $S_i^{\text{switch}}$ for key transitions (job changes, housing moves, education shifts)
+\item Estimate transparency $\eta_{\text{transp}}$ (information access scores)
+\item Estimate revocability $\eta_{\text{revoc}}$ (contract exit ease, return policies)
+\item Low $V_i$ indicates \textbf{institutional friction} - target for reform
+\end{enumerate}
+\end{praxisbox}
+
+\section*{II. Power Analysis Toolkit}
+
+\subsection*{2.1 Amplification Control Index}
+
+Who controls the means of amplification?
+
+\begin{equation}
+C_{ij} = \frac{\partial A_j}{\partial X_{ij}} \cdot \frac{X_{ij}}{\sum_k X_{kj}}
+\label{eq:control}
+\end{equation}
+
+High $C_{ij}$ means agent $i$ disproportionately influences system $j$'s amplification.
+
+\subsection*{2.2 Dependency Matrix}
+
+How much does group $G$ depend on system $j$?
+
+\begin{equation}
+D_{Gj} = \frac{\sum_{i \in G} X_{ij} A_j^{(i)}}{\sum_{i \in G} O_i}
+\label{eq:dependency}
+\end{equation}
+
+High $D_{Gj}$ means vulnerability if system $j$ degrades.
+
+\begin{praxisbox}
+\textbf{Power mapping exercise:}
+\begin{enumerate}
+\item List key amplification systems in your community
+\item For each, identify high $C_{ij}$ actors (who controls them?)
+\item For vulnerable groups, calculate $D_{Gj}$ for essential systems
+\item Target: Reduce high $D_{Gj}$ without equivalent $C_{ij}$
+\end{enumerate}
+\end{praxisbox}
+
+\section*{III. Measurement Protocol}
+
+\subsection*{3.1 Estimating $A_{jm}$ (Objective Amplification)}
+
+\begin{equation}
+\hat{A}_{jm} = \frac{\mathbb{E}[O_{im} | X_{ij}=1, Z] - \mathbb{E}[O_{im} | X_{ij}=0, Z]}{\mathbb{E}[O_{im} | \text{Baseline}]}
+\label{eq:measure_A}
+\end{equation}
+
+Where $Z$ includes: income, education, location, etc.
+
+\begin{praxisbox}
+\textbf{Practical measurement:}
+\begin{enumerate}
+\item \textbf{Natural experiments:} Find policy changes affecting access
+\item \textbf{Matched pairs:} Similar people with/without system access  
+\item \textbf{Before/after:} System introduction/removal
+\item \textbf{RCTs when ethical:} Randomize access, measure outcomes
+\end{enumerate}
+
+\textbf{Example:} To measure $A_{\text{internet}}$ for education outcomes:
+\begin{itemize}
+\item Compare similar students with/without home internet
+\item Control for income, parental education, school quality
+\item Measure: Test scores, graduation rates, college admission
+\end{itemize}
+\end{praxisbox}
+
+\subsection*{3.2 Revealed $W_{ik}$ (Goal Weights)}
+
+From observed allocations, we can infer values:
+
+\begin{equation}
+\hat{W}_{ik} \propto \frac{\sum_j X_{ij}^* \cdot \frac{\partial A_j^{(i)}}{\partial G_{ik}}}{\sum_j X_{ij}^*}
+\label{eq:revealed_weights}
+\end{equation}
+
+Where $X_{ij}^*$ are observed optimal allocations.
+
+\begin{praxisbox}
+\textbf{Value inference exercise:}
+\begin{enumerate}
+\item Track how people allocate time/money across systems
+\item For each system, determine which goals it serves ($\partial A_j^{(i)}/\partial G_{ik}$)
+\item Solve for weights that best explain observed allocations
+\item Compare stated vs. revealed preferences
+\end{enumerate}
+\end{praxisbox}
+
+\section*{IV. Intervention Design}
+
+\subsection*{4.1 The Amplification Access Score}
+
+For any population $P$, measure access inequality:
+
+\begin{equation}
+\text{AccessScore}_j(P) = 1 - \frac{\text{Gini}(\{A_j^{(i)} : i \in P\})}{\text{Gini}(\{\text{MaxPossible}_j^{(i)}\})}
+\label{eq:access_score}
+\end{equation}
+
+Low score indicates exclusion from high-amplification systems.
+
+\subsection*{4.2 The Transition Matrix}
+
+Probability of moving from system $j$ to $j'$:
+
+\begin{equation}
+T_{jj'}^{(i)} = \frac{\exp(\beta \cdot (A_{j'}^{(i)} - A_j^{(i)} - S_{jj'}))}{1 + \exp(\beta \cdot (A_{j'}^{(i)} - A_j^{(i)} - S_{jj'}))}
+\label{eq:transition}
+\end{equation}
+
+Where $S_{jj'}$ = switching cost.
+
+\begin{praxisbox}
+\textbf{Intervention targets:}
+\begin{enumerate}
+\item \textbf{For low AccessScore:} Subsidize access, remove barriers
+\item \textbf{For high $S_{jj'}$:} Reduce switching costs (portable benefits, recognition of prior learning)
+\item \textbf{For low $\eta_{\text{transp}}$:} Make $A_j^{(i)}$ visible (transparent outcomes data)
+\item \textbf{For low $\eta_{\text{revoc}}$:} Mandate exit options, cooling-off periods
+\end{enumerate}
+\end{praxisbox}
+
+\subsection*{4.3 The Tipping Point Equation}
+
+When will a system collapse or transform?
+
+\begin{equation}
+t_{\text{tip}} = \frac{\log\left(\frac{A_j(t_0) - A_j^{\text{crit}}}{A_j^{\text{crit}}}\right)}{\alpha(\kappa_j - \sum_i X_{ij})}
+\label{eq:tipping}
+\end{equation}
+
+Where $A_j^{\text{crit}}$ = critical amplification level below which system becomes non-viable.
+
+\begin{praxisbox}
+\textbf{Early warning system:}
+\begin{enumerate}
+\item Monitor $\sum_i X_{ij}$ vs. $\kappa_j$ for critical systems
+\item When $\sum X < \kappa_j$, calculate $t_{\text{tip}}$
+\item If $t_{\text{tip}} < \text{policy horizon}$, intervene immediately
+\end{enumerate}
+\end{praxisbox}
+
+\section*{V. Case Study Framework}
+
+\subsection*{5.1 Diagnostic Worksheet}
+
+For any social issue, ask:
+
+\begin{enumerate}
+\item \textbf{What are the key amplification systems involved?}
+\item \textbf{Who has high $C_{ij}$ (control)? Who has high $D_{Gj}$ (dependency)?}
+\item \textbf{What is $\sum_i X_{ij}$ vs. $\kappa_j$? Is it sustainable?}
+\item \textbf{What is $V_i$ for affected groups? What reduces it?}
+\item \textbf{What is $\frac{O_i}{O_k}$ ratio between affected and privileged?}
+\end{enumerate}
+
+\subsection*{5.2 Intervention Impact Calculator}
+
+For proposed policy $P$, estimate:
+
+\begin{equation}
+\Delta U = \sum_i \left[ \Delta X_{ij} \cdot A_j^{(i)} + X_{ij} \cdot \Delta A_j^{(i)} \right] + \Delta V \cdot t
+\label{eq:impact}
+\end{equation}
+
+Where $\Delta V$ = change in correction velocity (long-term benefit).
+
+\section*{VI. Building Movements}
+
+\subsection*{6.1 The Collective Amplification Equation}
+
+When groups coordinate:
+
+\begin{equation}
+A_J^{\text{(collective)}} = \prod_{j \in J} A_j \cdot \left(1 + \beta \cdot \frac{\sum_{i \in \text{Group}} X_{ij}}{\sum_{i} X_{ij}}\right)
+\label{eq:collective}
+\end{equation}
+
+Coordinated action multiplies amplification.
+
+\subsection*{6.2 The Strategy Matrix}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{0.25\textwidth}p{0.35\textwidth}p{0.3\textwidth}}
+\toprule
+\textbf{Leverage Point} & \textbf{What to Measure} & \textbf{Possible Actions} \\
+\midrule
+\textbf{Amplification ($A_j$)} & $\hat{A}_{jm}$, distribution & Build new systems, improve existing ones \\
+\textbf{Access ($X_{ij}$ constraints)} & AccessScore, $S_{jj'}$ & Remove barriers, subsidize access \\
+\textbf{Allocation freedom ($\eta$)} & $V_i$, switching costs & Increase transparency, reduce lock-in \\
+\textbf{Sustainability ($\kappa_j$)} & $\sum X$ vs. $\kappa_j$, $t_{\text{tip}}$ & Increase contributions, reduce $\kappa_j$ \\
+\textbf{Control ($C_{ij}$)} & Control index, dependency & Democratize governance, redistribute control \\
+\bottomrule
+\end{tabular}
+\caption{Praxis Strategy Matrix}
+\end{table}
+
+\section*{VII. Implementation Checklist}
+
+\begin{praxisbox}
+\textbf{Step 1: Map the Terrain}
+\begin{itemize}
+\item Identify 3-5 key amplification systems affecting your issue
+\item For each: Who controls? Who depends? What's $\kappa_j$?
+\item Measure $O_i/O_k$ for key inequality dimensions
+\end{itemize}
+
+\textbf{Step 2: Diagnose Constraints}
+\begin{itemize}
+\item Calculate $V_i$ for affected groups
+\item Identify biggest contributors to low $V$: transparency? switching costs? revocability?
+\item Check sustainability: Are critical systems maintained?
+\end{itemize}
+
+\textbf{Step 3: Design Interventions}
+\begin{itemize}
+\item Target highest-leverage point from Strategy Matrix
+\item Calculate expected $\Delta U$ using Impact Calculator
+\item Plan for unintended consequences (systems are interconnected)
+\end{itemize}
+
+\textbf{Step 4: Build Monitoring}
+\begin{itemize}
+\item Set up regular measurement of key metrics
+\item Establish early warning system for $t_{\text{tip}}$
+\item Create feedback loops: learn, adjust, repeat
+\end{itemize}
+\end{praxisbox}
+
+\section*{Conclusion}
+
+This framework transforms abstract social theory into \textbf{tools for action}. The equations are not just for understanding but for:
+
+1. \textbf{Measuring} what matters
+2. \textbf{Diagnosing} where systems fail
+3. \textbf{Prioritizing} interventions
+4. \textbf{Evaluating} impact
+
+The test of praxis is not elegance but \textbf{usefulness}. These equations should get dirty with data, debate, and iteration.
+
+\begin{center}
+\fbox{\parbox{0.9\textwidth}{\centering
+\textbf{The ultimate equation for praxis:}\\
+\textit{Understanding × Measurement × Action × Learning = Transformation}
+}}
+\end{center}
+
+\end{document}

@@ -1,0 +1,430 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\geometry{margin=1in}
+
+\title{\textbf{Commons Production}\\
+\large A System for Transparent Labor-Time Accounting}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a complete system for communal production based on transparent labor-time accounting. Beginning from the foundational premise that the social character of production is presupposed, we develop the theoretical framework, implement transparent accounting through the Stock-Book, and show how planned allocation realizes the first economic law. Finally, we demonstrate that distribution of means of consumption is a necessary consequence of the organization of production itself.
+\end{abstract}
+
+\section{The Foundational Premise}
+
+\subsection{Social Character Presupposed}
+
+In communal production, the social character of labor is \textit{presupposed} from the outset—not achieved through exchange.\footnote{``Within the co-operative society based on common ownership of the means of production, the producers do not exchange their products; just as little does the labor employed on the products appear here as the \textit{value} of these products.'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{equation}
+\text{Individual Labor} = \text{Social Labor (from outset)}
+\end{equation}
+
+Products are communal and general from their creation. They never become commodities; they never acquire exchange value.
+\subsection{Total Social Product}
+
+The combined labor power of the community, applied consciously, produces the total social product:\footnote{``Before division among the individuals, there has to be deducted from it: First, cover for replacement of the means of production used up. Second, additional portion for expansion of production. Third, reserve or insurance funds...'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{equation}
+\text{Total Social Product} = \sum(\text{All Products of Labor})
+\end{equation}
+
+This must be decomposed before individual distribution.
+
+\subsection{The Six Deductions}
+
+\subsubsection{Production-Related (Economic Necessity)}
+
+\begin{align}
+D_1 &= \text{Replacement of means of production used up} \\
+D_2 &= \text{Additional portion for expansion of production} \\
+D_3 &= \text{Reserve/insurance funds (accidents, calamities)}
+\end{align}
+
+These are determined by available means and probability calculations, \textit{not by equity}:
+
+\begin{equation}
+\text{Magnitude}(D_1, D_2, D_3) = f(\text{Available Means}, \text{Probabilities})
+\end{equation}
+
+\subsubsection{Social/Administrative (Development-Dependent)}
+
+From the remainder—the means of consumption—we deduct:\footnote{``costs of administration not belonging to production... that which is intended to serve the common satisfaction of needs, such as schools, health services, etc.'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{align}
+D_4 &= \text{General administration (not production)} \\
+D_5 &= \text{Common needs (schools, health, etc.)} \\
+D_6 &= \text{Funds for those unable to work}
+\end{align}
+
+These exhibit reciprocal dynamics with social development:
+
+\begin{align}
+\Delta(D_4) &\propto -\Delta(\text{Development}) \quad \text{(admin shrinks)} \\
+\Delta(D_5) &\propto +\Delta(\text{Development}) \quad \text{(common needs grow)}
+\end{align}
+
+\subsubsection{Distribution Pool}
+
+\begin{equation}
+\text{Distribution Pool} = \text{Total Product} - \sum_{i=1}^{6} D_i
+\end{equation}
+
+\section{Economy of Time: The First Economic Law}
+
+\subsection{The Fundamental Principle}
+
+All economy resolves to economy of time:\footnote{``Economy of time, to this all economy ultimately reduces itself.'' --- Marx, \textit{Grundrisse}}
+
+\begin{equation}
+\boxed{\text{All Economy} = \text{Economy of Time}}
+\end{equation}
+
+Wealth is proportional to free time:\footnote{``Real economy — saving — consists of the saving of labour time.'' --- Marx, \textit{Grundrisse}}
+
+\begin{equation}
+T_{\text{free}} = T_{\text{total}} - T_{\text{necessary}}
+\end{equation}
+
+More wealth means less necessary labor time:
+
+\begin{equation}
+\Delta(\text{Wealth}) \propto -\Delta(T_{\text{necessary}})
+\end{equation}
+
+\subsection{Distributing Time Across Branches}
+
+Society must consciously distribute its time across different kinds of work:\footnote{``Economy of time and planned distribution of labour time among the various branches of production... [this] becomes the first economic law on the basis of communal production.'' --- Marx, \textit{Grundrisse}}
+
+\begin{equation}
+\sum_{i} t_i = T_{\text{total social time}}
+\end{equation}
+
+Where allocation depends on difficulty, importance, and available time:
+
+\begin{equation}
+t_i = f(\text{difficulty}_i, \text{importance}_i, T_{\text{available}})
+\end{equation}
+
+\section{The Stock-Book: Making Production Transparent}
+
+\subsection{Simple and Intelligible Relations}
+
+The Stock-Book makes social relations transparent:\footnote{``The social relations of the individual producers, with regard both to their labor and to its products, are in production as well as in distribution \textit{simple and intelligible}.'' --- Marx, \textit{Capital, Vol. I}}
+
+\begin{equation}
+\text{Stock-Book Records} = \{\text{Products, Operations, Average Labor-Time}\}
+\end{equation}
+
+Every operation records inputs (products and labor) and effects (state changes):
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lllll}
+\hline
+Op ID & Total Time & Inputs (Products) & Inputs (Labor) & Effects \\
+\hline
+OP056 & 8h & Wood:10kg, Saw:8h & I001(6h), I002(2h) & Chairs:+2 \\
+OP057 & 4h & Classroom:4h & I003(4h) & LP\_engineer:+20h \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Average Labor-Time (ALT)}
+
+Every product has an average labor-time embodied in it:
+
+\begin{equation}
+\text{ALT} = \frac{\sum(\text{Total Labor-Time})}{\sum(\text{Quantity Produced})}
+\end{equation}
+
+\subsection{Using-Up: The Universal Formula}
+
+Labor-time transfers from products to operations:
+
+\begin{equation}
+LT_{\text{transferred}} = \frac{\text{Usage}}{\text{Lifespan}(P)} \times \text{ALT}(P)
+\end{equation}
+
+\subsection{Labor Power: The Dual System}
+
+Labor power requires two orthogonal accounting systems:
+
+\textbf{System 1: Daily Energy} - Time scale: Daily (24h cycles)
+
+\textbf{System 2: Skill Depreciation} - Time scale: Years/Decades
+
+These systems are mathematically independent.
+
+\subsection{Multi-Product Allocation}
+
+When operations produce multiple products:
+
+\begin{align}
+\text{Total Input LT} &= \sum(\text{Product Inputs}) + \sum(\text{Labor Inputs}) \\
+\text{ALT}_A &= \frac{a_A \times \text{Total Input LT}}{\text{qty}_A}
+\end{align}
+
+Allocation weights $a_A$ are social choices.
+
+\subsection{Rolling Averages}
+
+New production updates existing ALT:
+
+\begin{equation}
+\text{New ALT}(P) = \frac{Q_{\text{old}} \times \text{ALT}_{\text{old}} + LT_{\text{allocated}}}{Q_{\text{old}} + q_{\text{new}}}
+\end{equation}
+
+\subsection{Consumption as Production}
+
+Every consumption operation produces restored labor-power:
+
+\begin{equation}
+\text{Products} + \text{Time} \rightarrow \text{Restored LP} \rightarrow \text{Labor} \rightarrow \text{Products}
+\end{equation}
+
+\subsection{Conservation}
+
+\begin{equation}
+\sum(\text{Input LT}) = \sum(\text{Output LT}) + \text{Waste LT}
+\end{equation}
+
+Every hour of social labor is traceable.
+
+\section{The Allocation System: Planning Production}
+
+\subsection{Allocation Records}
+
+The Stock-Book records reality; the Allocation system plans the future:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llllll}
+\hline
+Period & Product & Planned & Actual & Variance & Status \\
+\hline
+2024-W10 & P001 & 100kg & 98kg & -2\% & Completed \\
+2024-W10 & LP\_base & 40h & 42h & +5\% & Overused \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Buffers and Reserves}
+
+\begin{equation}
+\text{Planned Allocation} = \text{Expected Need} \times (1 + \text{buffer})
+\end{equation}
+
+\subsection{The Planning Hierarchy}
+
+\begin{enumerate}
+\item \textbf{Annual}: Set deduction targets ($D_1$ through $D_6$)
+\item \textbf{Monthly}: Allocate products to operations with buffers
+\item \textbf{Weekly}: Execute, record in Stock-Book, track variance
+\end{enumerate}
+
+\subsection{The Complete Planning Problem}
+
+\textbf{Objective}: Maximize free time
+
+\begin{equation}
+\text{Maximize:} \quad \sum_t \left( T_{\text{total},t} - T_{\text{necessary},t} \right)
+\end{equation}
+
+\textbf{Constraints}: Stock balance, deduction requirements, labor balance
+
+\textbf{Result}: Good planning reduces variance and shortages, increasing free time.
+
+\subsection{Dynamic Learning}
+
+\begin{equation}
+\text{Plan} \rightarrow \text{Execute} \rightarrow \text{Record} \rightarrow \text{Analyze} \rightarrow \text{Adjust} \rightarrow \text{Replan}
+\end{equation}
+
+When variance exceeds threshold:
+
+\begin{align}
+\text{Expected Need}_{\text{new}} &= \text{Rolling Avg}(\text{Actual}) \\
+\text{Buffer}_{\text{new}} &= f(\text{New Variance})
+\end{align}
+
+\section{Distribution as Consequence of Production Relations}
+
+\subsection{The General Principle}
+
+Mode of distribution varies based on productive organization and historical development:\footnote{``The mode of distribution of the means of consumption is only a consequence of the distribution of the conditions of production themselves. The latter distribution, however, is a feature of the mode of production itself.'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{equation}
+\text{Mode of Distribution} = f(\text{Productive Organization}, \text{Historical Development})
+\end{equation}
+
+\subsection{The Fundamental Relation}
+
+\begin{align}
+\text{Distribution of Consumption} &= \text{Consequence of Distribution of Production Conditions} \\
+\text{Distribution of Production Conditions} &= \text{Feature of Mode of Production}
+\end{align}
+
+Thus:
+
+\begin{equation}
+\text{Mode of Production} \rightarrow \text{Distribution of Conditions} \rightarrow \text{Distribution of Consumption}
+\end{equation}
+
+\textbf{Capitalist Mode}: Material conditions in hands of non-workers (capital + land) $\rightarrow$ masses own only labor power $\rightarrow$ present-day consumption distribution results automatically.
+
+\textbf{Co-operative Mode}: Material conditions = co-operative property of workers $\rightarrow$ different consumption distribution results.
+
+\begin{equation}
+\text{Co-operative Ownership} \rightarrow \text{Different Distribution}
+\end{equation}
+
+\subsection{Labor Time: The Dual Role}
+
+Labor time plays two distinct roles:
+
+\subsubsection{First Role: Planning and Apportionment}
+
+Labor time apportionment in accordance with a definite social plan maintains proper proportion between different kinds of work and the various wants of the community:
+
+\begin{equation}
+\text{Apportionment ensures: } \sum(\text{labor time}_i) \text{ achieves production adequate for } \sum(\text{want}_i)
+\end{equation}
+
+\subsubsection{Second Role: Measuring Contribution}
+
+Labor time measures individual contribution:
+
+\begin{align}
+\text{Individual's Portion} &= \frac{\text{Individual Labor Time}}{\text{Total Labor Time}} \\
+\text{Individual's Share of Individual Consumption Pool} &\propto \text{Individual's Labor Time}
+\end{align}
+
+\subsection{Labor Certificates and Equal Exchange}
+
+\subsubsection{The Exchange Principle}
+
+Individual producer receives back from society exactly what is given (after deductions):\footnote{``The individual producer receives back from society — after the deductions have been made — exactly what he gives to it... He receives a certificate from society that he has furnished such-and-such an amount of labor.'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{align}
+\text{Social Working Day} &= \sum_i \text{Individual Hours}_i \\
+\text{Individual's Share} &= \frac{\text{Individual Labor Time}}{\text{Social Working Day}}
+\end{align}
+
+\subsubsection{Labor Certificates Mechanism}
+
+Individual receives certificate showing labor furnished (after deductions for common funds). With this certificate, draws from social stock of means of consumption an amount equal to labor cost.
+
+\begin{equation}
+\text{Labor Given (one form)} = \text{Labor Received (another form)}
+\end{equation}
+
+\subsubsection{Principle of Equal Values}
+
+Same principle as exchange of commodities (exchange of equal values), but content and form changed:
+
+\begin{itemize}
+\item No one can give anything except labor
+\item Nothing can pass to individuals except individual means of consumption
+\item Given amount of labor in one form = exchanged for equal amount in another form
+\end{itemize}
+
+\textbf{Equal right in principle = bourgeois right}, but principle and practice no longer at loggerheads. Exchange of equivalents exists in individual case (not just on average).
+
+\subsection{Measurement of Labor: Standards and Inequality}
+
+\subsubsection{The Equal Standard}
+
+Right of producers is proportional to labor supplied:\footnote{``The right of the producers is \textit{proportional} to the labor they supply; the equality consists in the fact that measurement is made with an \textit{equal standard}, labor.'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{equation}
+\text{Equality} = \text{Measurement with Equal Standard (Labor)}
+\end{equation}
+
+Labor as measure must be defined by duration or intensity. Without this definition, labor ceases to be a standard.
+
+\subsubsection{Qualitative vs Quantitative Differences}
+
+Labor differs quantitatively \textit{and} qualitatively. Different kinds of labor are direct social functions (immediately social) within a spontaneously developed division of labor.
+
+Quantitative comparison requires qualitative equivalence. Measuring labor quantitatively assumes the identity of their quality.
+
+\subsubsection{Unequal Individuals, Equal Standard}
+
+Equal right = unequal right for unequal labor:\footnote{``But one man is superior to another physically, or mentally, and supplies more labor in the same time, or can labor for a longer time... This \textit{equal} right is an \textit{unequal} right for \textit{unequal} labor.'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{itemize}
+\item Recognizes no class differences (everyone is only a worker)
+\item Tacitly recognizes unequal individual endowment + productive capacity as natural privilege
+\item Right = right of inequality (in its content)
+\item Unequal individuals measurable by equal standard only when brought under equal point of view
+\item Individuals regarded only as workers (everything else ignored)
+\end{itemize}
+
+\subsubsection{Inequality in Outcomes}
+
+Equal performance of labor + equal share in social consumption fund $\rightarrow$ unequal actual receipt.
+
+One worker married, another not; one has more children, etc. With equal labor performance: one receives more than another, one richer than another.
+
+To avoid these defects, right would have to be unequal (instead of equal).
+
+\subsubsection{Constraints of First Phase}
+
+These defects are inevitable in the first phase of communist society:\footnote{``Right can never be higher than the economic structure of society and its cultural development conditioned thereby.'' --- Marx, \textit{Critique of the Gotha Programme}}
+
+\begin{equation}
+\text{Right} \leq f(\text{Economic Structure}, \text{Cultural Development})
+\end{equation}
+
+\subsection{Higher Phase of Communist Society}
+
+\subsubsection{Conditions for Higher Phase}
+
+\begin{itemize}
+\item Enslaving subordination to division of labor has vanished
+\item Antithesis between mental and physical labor has vanished
+\item Labor has become: not only means of life, but life's prime want
+\item Productive forces increased with all-around development of individual
+\item Springs of co-operative wealth flow more abundantly
+\end{itemize}
+
+\subsubsection{The Principle}
+
+Then the narrow horizon of bourgeois right is crossed in its entirety and society may inscribe on its banner:
+
+\begin{equation}
+\boxed{\text{From each according to ability, to each according to needs}}
+\end{equation}
+
+\section{Conclusion}
+
+We have presented a complete system that realizes Marx's vision:
+
+\begin{enumerate}
+\item The social character of production is \textit{presupposed}
+\item Economy of time plus planned distribution = the first economic law
+\item The Stock-Book makes all labor-time transparent and traceable
+\item Planned allocation organizes production to maximize free time
+\item Distribution of consumption is a \textit{consequence} of organizing production co-operatively
+\end{enumerate}
+
+The key insight: once we organize the \textit{conditions of production} co-operatively (Stock-Book + Allocation), the distribution of \textit{means of consumption} follows necessarily. Distribution is not an independent problem to be solved—it is the automatic result of how production itself is organized.
+
+In the first phase, labor time plays its dual role: planning production and measuring contribution. In the higher phase, when productive forces have developed sufficiently, society can transcend bourgeois right entirely and realize: from each according to ability, to each according to needs.
+
+\end{document}
