@@ -1,0 +1,4 @@
+type Unit {
+  revision(revisionId: ID!): Unit
+  meta: RecordMeta!
+}

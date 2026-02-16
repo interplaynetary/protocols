@@ -1,0 +1,14 @@
+input ProcessCommitmentFilterParams {
+  searchString: String
+  providerId: [ID!]
+  receiverId: [ID!]
+  resourceClassifiedAs: [URI!]
+  action: [ID!]
+  startDate: DateTime
+  endDate: DateTime
+}
+
+type Process {
+  committedInputs(filter: ProcessCommitmentFilterParams): [Commitment!]
+  committedOutputs(filter: ProcessCommitmentFilterParams): [Commitment!]
+}

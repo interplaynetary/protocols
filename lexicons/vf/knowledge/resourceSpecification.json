@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "vf.knowledge.resourceSpecification",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Specification of a kind of resource. Could define a material item, service, digital item, currency account, etc.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "An informal or formal textual identifier for a type of resource",
+            "maxLength": 500
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "The URI to an image relevant to the entity"
+          },
+          "resourceClassifiedAs": {
+            "type": "array",
+            "description": "References concepts in a common taxonomy for categorization",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "maxLength": 100
+          },
+          "defaultUnitOfResource": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Reference to the default Unit used for the resource itself"
+          },
+          "defaultUnitOfEffort": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Reference to the default Unit used for use or work"
+          },
+          "substitutable": {
+            "type": "boolean",
+            "description": "Defines if any resource of that type can be freely substituted for any other",
+            "default": false
+          },
+          "note": {
+            "type": "string",
+            "description": "A textual description or comment",
+            "maxGraphemes": 3000,
+            "maxLength": 10000
+          }
+        }
+      }
+    }
+  }
+}

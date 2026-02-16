@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "vf.agreement.agreement",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Any type of agreement among economic agents",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "An informal or formal textual identifier for an agreement",
+            "maxLength": 500
+          },
+          "created": {
+            "type": "string",
+            "format": "datetime",
+            "description": "The date and time the agreement was created"
+          },
+          "note": {
+            "type": "string",
+            "description": "A textual description or comment",
+            "maxGraphemes": 3000,
+            "maxLength": 10000
+          }
+        }
+      }
+    }
+  }
+}

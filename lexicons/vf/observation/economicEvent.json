@@ -1,0 +1,135 @@
+{
+  "lexicon": 1,
+  "id": "vf.observation.economicEvent",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An observed economic flow, as opposed to a flow planned to happen in the future. This could reflect a change in the quantity of an economic resource.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "ref",
+            "ref": "vf.observation.defs#action",
+            "description": "Relates an economic event to a verb, such as consume, produce, work, improve, etc."
+          },
+          "provider": {
+            "type": "string",
+            "format": "did",
+            "description": "The economic agent from whom the actual economic event is initiated"
+          },
+          "receiver": {
+            "type": "string",
+            "format": "did",
+            "description": "The economic agent whom the actual economic event is for"
+          },
+          "resourceInventoriedAs": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Economic resource involved in the economic event"
+          },
+          "toResourceInventoriedAs": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Additional economic resource on the receiving side for transfers or moves"
+          },
+          "resourceClassifiedAs": {
+            "type": "array",
+            "description": "References concepts in a common taxonomy for categorization",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "maxLength": 100
+          },
+          "resourceQuantity": {
+            "type": "ref",
+            "ref": "vf.observation.defs#measure",
+            "description": "The amount and unit of the economic resource counted or inventoried"
+          },
+          "effortQuantity": {
+            "type": "ref",
+            "ref": "vf.observation.defs#measure",
+            "description": "The amount and unit of the work or use or citation effort-based action"
+          },
+          "hasBeginning": {
+            "type": "string",
+            "format": "datetime",
+            "description": "The beginning of the economic event"
+          },
+          "hasEnd": {
+            "type": "string",
+            "format": "datetime",
+            "description": "The end of the economic event"
+          },
+          "hasPointInTime": {
+            "type": "string",
+            "format": "datetime",
+            "description": "The date/time at which the economic event occurred"
+          },
+          "inputOf": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Defines the process for which this event is an input"
+          },
+          "outputOf": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Defines the process for which this event is an output"
+          },
+          "agreedIn": {
+            "type": "string",
+            "format": "uri",
+            "description": "Reference to an agreement between agents which specifies the rules governing this event"
+          },
+          "triggeredBy": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "References another economic event that implied this economic event"
+          },
+          "resourceConformsTo": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The primary resource specification or definition of an existing or potential economic resource"
+          },
+          "atLocation": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The place where an economic event occurs. Usually mappable."
+          },
+          "toLocation": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The new location of the receiver resource for transfers or moves"
+          },
+          "inScopeOf": {
+            "type": "array",
+            "description": "Grouping around something to create a boundary or context, used for documenting, accounting, planning",
+            "items": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "maxLength": 50
+          },
+          "resourceQuantityHas": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Reference to ProductBatch for lot/batch tracking"
+          },
+          "deletable": {
+            "type": "boolean",
+            "description": "The economic event can be safely deleted, has no dependent information"
+          },
+          "note": {
+            "type": "string",
+            "description": "A textual description or comment",
+            "maxGraphemes": 3000,
+            "maxLength": 10000
+          }
+        }
+      }
+    }
+  }
+}

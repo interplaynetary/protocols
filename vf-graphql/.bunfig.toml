@@ -1,0 +1,15 @@
+# Bun configuration for vf-graphql monorepo
+
+[install]
+# Use workspaces
+workspaces = true
+
+# Prefer offline mode for faster installs
+prefer.offline = true
+
+[install.scopes]
+# Trust all scopes
+"@valueflows" = { url = "https://registry.npmjs.org/" }
+"@graphql-tools" = { url = "https://registry.npmjs.org/" }
+"@apollo" = { url = "https://registry.npmjs.org/" }
+"@modelcontextprotocol" = { url = "https://registry.npmjs.org/" }

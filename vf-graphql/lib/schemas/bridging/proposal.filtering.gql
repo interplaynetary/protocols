@@ -1,0 +1,10 @@
+input ProposalFilterParams {
+  active: Boolean
+  inScopeOf: [ID!]
+  isOffer: Boolean
+  isRequest: Boolean
+}
+
+type Query {
+  proposals(filter: ProposalFilterParams): ProposalConnection!
+}

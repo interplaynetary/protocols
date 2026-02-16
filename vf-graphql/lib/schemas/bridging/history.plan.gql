@@ -1,0 +1,4 @@
+type Plan {
+  revision(revisionId: ID!): Plan
+  meta: RecordMeta!
+}
