@@ -1,0 +1,56 @@
+{
+  "lexicon": 1,
+  "id": "ngsi.core.geoProperty",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Generated from https://uri.etsi.org/ngsi-ld/GeoProperty",
+      "key": "id",
+      "record": {
+        "type": "object",
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri",
+            "description": "Entity id"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type property"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value property"
+          },
+          "observedAt": {
+            "type": "string",
+            "description": "The observedAt property",
+            "format": "datetime"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "The createdAt property"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "description": "The modifiedAt property"
+          },
+          "datasetId": {
+            "type": "string",
+            "description": "The datasetId property",
+            "format": "uri"
+          },
+          "instanceId": {
+            "type": "string",
+            "description": "The instanceId property",
+            "format": "uri"
+          }
+        }
+      }
+    }
+  }
+}

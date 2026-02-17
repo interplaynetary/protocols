@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "ngsi.core.subscription",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Generated from https://uri.etsi.org/ngsi-ld/Subscription",
+      "key": "id",
+      "record": {
+        "type": "object",
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id property",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type property"
+          },
+          "notification": {
+            "type": "unknown",
+            "description": "The notification property"
+          },
+          "status": {
+            "type": "string",
+            "description": "The status property"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "The createdAt property"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "description": "The modifiedAt property"
+          }
+        }
+      }
+    }
+  }
+}

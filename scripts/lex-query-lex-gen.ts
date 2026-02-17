@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-/**
- * Derives and generates AT Protocol query lexicons from VF record lexicons.
+// Derives and generates AT Protocol query lexicons from record lexicons.
+//
+/*
  *
  * Core insight: every reference property (at-uri, did) on a record type
  * naturally becomes a filter parameter on that record's list query. This
@@ -23,10 +24,11 @@
  *   - Aggregations (plan.startDate)
  *   - Reciprocal queries (reciprocalEvents)
  *
- * Usage:
- *   bun /scripts/lex-query-lex-gen.ts            # generate query lexicons
- *   bun /scripts/lex-query-lex-gen.ts --dry-run   # preview without writing
- */
+*/
+// Usage:
+//   bun scripts/lex-query-lex-gen.ts "lexicons/vf/**/*.json"
+//   bun scripts/lex-query-lex-gen.ts --dry-run
+//   bun scripts/lex-query-lex-gen.ts --output docs/lexicons
 
 import { join, dirname } from "path";
 import { mkdirSync } from "fs";
@@ -70,14 +72,27 @@ interface FilterParam {
 
 // ─── setup ──────────────────────────────────────────────────────────────────
 
-const ROOT: string = join(import.meta.dir, "..", "..");
+const ROOT: string = join(import.meta.dir, "..");
 const DRY_RUN: boolean = Bun.argv.includes("--dry-run");
+
+// Simple argument parser
+function getArg(name: string): string | null {
+  const idx = Bun.argv.indexOf(name);
+  if (idx !== -1 && idx + 1 < Bun.argv.length) {
+    return Bun.argv[idx + 1];
+  }
+  return null;
+}
+
+ const argGlob = Bun.argv.slice(2).find(arg => !arg.startsWith("-") && !arg.endsWith(".ts"));
+const INPUT_GLOB: string = argGlob || "lexicons/vf/**/*.json";
+const OUTPUT_BASE: string = getArg("--output") || "lexicons";
 
 // ─── load record lexicons ───────────────────────────────────────────────────
 
 async function loadRecordLexicons(): Promise<RecordLexicon[]> {
   const lexicons: RecordLexicon[] = [];
-  const glob = new Glob("lexicons/vf/**/*.json");
+  const glob = new Glob(INPUT_GLOB);
 
   for await (const filePath of glob.scan(ROOT)) {
     const data = await Bun.file(join(ROOT, filePath)).json();
@@ -92,9 +107,6 @@ async function loadRecordLexicons(): Promise<RecordLexicon[]> {
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function pluralize(name: string): string {
-  // Handles all VF class names correctly:
-  //   process → processes, recipeProcess → recipeProcesses,
-  //   economicEvent → economicEvents, person → persons, etc.
   if (
     name.endsWith("s") || name.endsWith("sh") ||
     name.endsWith("ch") || name.endsWith("x") || name.endsWith("z")
@@ -113,11 +125,11 @@ function nsidGroup(nsid: string): string {
 }
 
 function nsidName(nsid: string): string {
-  return nsid.split(".").pop()!;
+  return nsid.split(".").pop() || "";
 }
 
 function nsidToPath(nsid: string): string {
-  return join("lexicons", ...nsid.split(".")) + ".json";
+  return join(OUTPUT_BASE, ...nsid.split(".")) + ".json";
 }
 
 // ─── derive filter parameters from record properties ────────────────────────
@@ -126,7 +138,6 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
   const filters: FilterParam[] = [];
 
   for (const [name, prop] of Object.entries(properties)) {
-    // Direct at-uri reference → record/resource filter
     if (prop.type === "string" && prop.format === "at-uri") {
       filters.push({
         name,
@@ -135,7 +146,6 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         description: `Filter by ${name} (AT-URI of referenced record).`,
       });
     }
-    // Direct did reference → agent filter
     else if (prop.type === "string" && prop.format === "did") {
       filters.push({
         name,
@@ -144,7 +154,6 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         description: `Filter by ${name} (DID of referenced agent).`,
       });
     }
-    // Array of at-uri → "contains" filter
     else if (prop.type === "array" && prop.items?.type === "string" && prop.items.format === "at-uri") {
       filters.push({
         name,
@@ -154,7 +163,6 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         arrayContains: true,
       });
     }
-    // Array of did → "contains" filter
     else if (prop.type === "array" && prop.items?.type === "string" && prop.items.format === "did") {
       filters.push({
         name,
@@ -164,7 +172,6 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         arrayContains: true,
       });
     }
-    // knownValues string → enum filter
     else if (prop.type === "string" && prop.knownValues && prop.knownValues.length > 0) {
       filters.push({
         name,
@@ -172,7 +179,6 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         description: `Filter by ${name} value.`,
       });
     }
-    // boolean → flag filter
     else if (prop.type === "boolean") {
       filters.push({
         name,
@@ -195,7 +201,6 @@ function buildListQuery(record: RecordLexicon): { nsid: string; lexicon: object 
 
   const filters = deriveFilters(record.defs.main.record.properties);
 
-  // Assemble params: uri lookup + derived filters + pagination
   const paramProps: Record<string, any> = {};
 
   paramProps.uri = {
@@ -223,7 +228,6 @@ function buildListQuery(record: RecordLexicon): { nsid: string; lexicon: object 
     description: "Pagination cursor from a previous response.",
   };
 
-  // Build description
   const filterNames = filters.map(f => f.name);
   const baseDesc = `List ${plural}.`;
   const filterDesc = filterNames.length > 0
@@ -285,8 +289,11 @@ function buildListQuery(record: RecordLexicon): { nsid: string; lexicon: object 
 const records = await loadRecordLexicons();
 
 console.log("╔══════════════════════════════════════════════════════════════════╗");
-console.log("║             VF QUERY LEXICON DERIVATION                        ║");
+console.log("║             QUERY LEXICON DERIVATION                           ║");
 console.log("╚══════════════════════════════════════════════════════════════════╝\n");
+
+console.log(`  Source: ${INPUT_GLOB}`);
+console.log(`  Target: ${OUTPUT_BASE}\n`);
 
 let totalQueries = 0;
 let totalFilters = 0;
@@ -303,60 +310,54 @@ for (const record of records) {
       const note = f.arrayContains ? " [contains]" : "";
       console.log(`    ${f.name} (${tag})${note}`);
     }
-  } else {
-    console.log("    (pagination only, no derived filters)");
   }
 
   if (!DRY_RUN) {
     const outPath = join(ROOT, nsidToPath(nsid));
     mkdirSync(dirname(outPath), { recursive: true });
     await Bun.write(outPath, JSON.stringify(lexicon, null, 2) + "\n");
-    console.log(`    → ${nsidToPath(nsid)}`);
   }
 
-  console.log();
   totalQueries++;
   totalFilters += filters.length;
 }
 
-// ─── summary ────────────────────────────────────────────────────────────────
-
-console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 console.log(`  Queries derived: ${totalQueries}`);
 console.log(`  Total filter params: ${totalFilters}`);
-console.log(`  Mode: ${DRY_RUN ? "dry run (no files written)" : "files written"}`);
+console.log(`  Mode: ${DRY_RUN ? "dry run" : "files written"}`);
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-// ─── VF spec coverage mapping ───────────────────────────────────────────────
-
-console.log("VF query spec coverage (inverse queries → filter params):\n");
-console.log("  Agent inverse queries:");
-console.log("    commitmentsAsProvider     → listCommitments?provider=<did>");
-console.log("    commitmentsAsReceiver     → listCommitments?receiver=<did>");
-console.log("    economicEventsAsProvider  → listEconomicEvents?provider=<did>");
-console.log("    economicEventsAsReceiver  → listEconomicEvents?receiver=<did>");
-console.log("    intentsAsProvider         → listIntents?provider=<did>");
-console.log("    intentsAsReceiver         → listIntents?receiver=<did>");
-console.log("    claimsAsProvider          → listClaims?provider=<did>");
-console.log("    claimsAsReceiver          → listClaims?receiver=<did>");
-console.log("    inventoriedResources      → listEconomicResources?primaryAccountable=<did>");
-console.log("    processes (inScopeOf)     → listProcesses?inScopeOf=<did>");
-console.log();
-console.log("  Process inverse queries:");
-console.log("    economicEvents (input)    → listEconomicEvents?inputOf=<at-uri>");
-console.log("    economicEvents (output)   → listEconomicEvents?outputOf=<at-uri>");
-console.log("    commitments (input)       → listCommitments?inputOf=<at-uri>");
-console.log("    commitments (output)      → listCommitments?outputOf=<at-uri>");
-console.log("    intents (input)           → listIntents?inputOf=<at-uri>");
-console.log("    intents (output)          → listIntents?outputOf=<at-uri>");
-console.log();
-console.log("  ResourceSpecification inverse queries:");
-console.log("    conformingResources       → listEconomicResources?conformsTo=<at-uri>");
-console.log("    conformingEvents          → listEconomicEvents?resourceConformsTo=<at-uri>");
-console.log("    conformingCommitments     → listCommitments?resourceConformsTo=<at-uri>");
-console.log("    conformingIntents         → listIntents?resourceConformsTo=<at-uri>");
-console.log();
-console.log("  Filtered main queries:");
-console.log("    offers                    → listProposals?purpose=offer");
-console.log("    requests                  → listProposals?purpose=request");
-console.log();
+if (INPUT_GLOB.includes("/vf/")) {
+  console.log("VF query spec coverage (inverse queries → filter params):\n");
+  console.log("  Agent inverse queries:");
+  console.log("    commitmentsAsProvider     → listCommitments?provider=<did>");
+  console.log("    commitmentsAsReceiver     → listCommitments?receiver=<did>");
+  console.log("    economicEventsAsProvider  → listEconomicEvents?provider=<did>");
+  console.log("    economicEventsAsReceiver  → listEconomicEvents?receiver=<did>");
+  console.log("    intentsAsProvider         → listIntents?provider=<did>");
+  console.log("    intentsAsReceiver         → listIntents?receiver=<did>");
+  console.log("    claimsAsProvider          → listClaims?provider=<did>");
+  console.log("    claimsAsReceiver          → listClaims?receiver=<did>");
+  console.log("    inventoriedResources      → listEconomicResources?primaryAccountable=<did>");
+  console.log("    processes (inScopeOf)     → listProcesses?inScopeOf=<did>");
+  console.log();
+  console.log("  Process inverse queries:");
+  console.log("    economicEvents (input)    → listEconomicEvents?inputOf=<at-uri>");
+  console.log("    economicEvents (output)   → listEconomicEvents?outputOf=<at-uri>");
+  console.log("    commitments (input)       → listCommitments?inputOf=<at-uri>");
+  console.log("    commitments (output)      → listCommitments?outputOf=<at-uri>");
+  console.log("    intents (input)           → listIntents?inputOf=<at-uri>");
+  console.log("    intents (output)          → listIntents?outputOf=<at-uri>");
+  console.log();
+  console.log("  ResourceSpecification inverse queries:");
+  console.log("    conformingResources       → listEconomicResources?conformsTo=<at-uri>");
+  console.log("    conformingEvents          → listEconomicEvents?resourceConformsTo=<at-uri>");
+  console.log("    conformingCommitments     → listCommitments?resourceConformsTo=<at-uri>");
+  console.log("    conformingIntents         → listIntents?resourceConformsTo=<at-uri>");
+  console.log();
+  console.log("  Filtered main queries:");
+  console.log("    offers                    → listProposals?purpose=offer");
+  console.log("    requests                  → listProposals?purpose=request");
+  console.log();
+}

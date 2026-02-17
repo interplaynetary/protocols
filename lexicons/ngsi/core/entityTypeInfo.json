@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "ngsi.core.entityTypeInfo",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Generated from https://uri.etsi.org/ngsi-ld/EntityTypeInfo",
+      "key": "id",
+      "record": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri",
+            "description": "Entity id"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type"
+          }
+        }
+      }
+    }
+  }
+}

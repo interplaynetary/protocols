@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "ngsi.geo.featureCollection",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Generated from https://purl.org/geojson/vocab#FeatureCollection",
+      "key": "id",
+      "record": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri",
+            "description": "Entity id"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "ngsi.core.languageProperty",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Generated from https://uri.etsi.org/ngsi-ld/LanguageProperty",
+      "key": "id",
+      "record": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri",
+            "description": "Entity id"
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity type"
+          }
+        }
+      }
+    }
+  }
+}

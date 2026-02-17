@@ -15,7 +15,7 @@ import jsonLogic from 'json-logic-js';
 import type { Resource, MatchRecord, Score } from './process';
 import type { AvailabilityWindow, TimeRange, DayOfWeek, DaySchedule, WeekSchedule, MonthSchedule } from './time';
 import { cellsCompatible, DEFAULT_SEARCH_RADIUS_KM, haversineDistance } from './spatial';
-import type { FilterContext, EligibilityFilter, Contact } from './types';
+import type { Contact } from './types';
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN ENTRY POINTS
@@ -704,76 +704,6 @@ function getDateStringForDayOfWeek(targetDay: DayOfWeek, referenceDate: string):
     return `${y}-${m}-${d}`;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// FILTER TYPES & MIGRATION
-// ═══════════════════════════════════════════════════════════════════
-
-export type FilterRule =
-    | { type: 'trust'; min_mutual_recognition?: number; only_mutual?: boolean }
-    | { type: 'location'; allowed_cities?: string[]; allowed_countries?: string[] }
-    | { type: 'attribute'; required?: string[]; forbidden?: string[] }
-    | { type: 'certification'; required?: string[]; min_level?: number }
-    | { type: 'resource_type'; allowed_types?: string[]; forbidden_types?: string[] }
-    | { type: 'custom'; fn: string }
-    | { type: 'allow_all' }
-    | { type: 'deny_all' }
-    | any;
-
-function convertLegacyFilter(filter: FilterRule): EligibilityFilter {
-    if (typeof filter === 'boolean') return filter;
-    if (!filter || typeof filter !== 'object') return true;
-    if (!('type' in filter)) return filter as EligibilityFilter;
-
-    switch (filter.type) {
-        case 'allow_all': return true;
-        case 'deny_all': return false;
-        case 'trust': {
-            const c: EligibilityFilter[] = [];
-            if (filter.only_mutual) c.push({ ">": [{ "var": "mutualRecognition" }, 0] });
-            if (filter.min_mutual_recognition !== undefined) c.push({ ">=": [{ "var": "mutualRecognition" }, filter.min_mutual_recognition] });
-            return c.length === 0 ? true : c.length === 1 ? c[0] : { "and": c };
-        }
-        case 'location': {
-            const c: EligibilityFilter[] = [];
-            if (filter.allowed_cities?.length) c.push({ "in": [{ "var": "commitment.city" }, filter.allowed_cities] });
-            if (filter.allowed_countries?.length) c.push({ "in": [{ "var": "commitment.country" }, filter.allowed_countries] });
-            return c.length === 0 ? true : c.length === 1 ? c[0] : { "and": c };
-        }
-        // ... other conversions ... (simplified for this specific task)
-        default: return true;
-    }
-}
-
-export function evaluateEligibilityFilter(filter: EligibilityFilter, context: FilterContext): boolean {
-    if (typeof filter === 'boolean') return filter;
-    try {
-        return !!jsonLogic.apply(filter, context);
-    } catch (e) {
-        console.warn('Filter evaluation failed:', e);
-        return false;
-    }
-}
-
-export function evaluateFilter(filter: FilterRule | EligibilityFilter | null | undefined, context: FilterContext): boolean {
-    if (!filter) return true;
-    const eligibilityFilter = convertLegacyFilter(filter as FilterRule);
-    return evaluateEligibilityFilter(eligibilityFilter, context);
-}
-
-export function passesSlotFilters(
-    needSlot: Resource,
-    capacitySlot: Resource,
-    providerContext: FilterContext,
-    recipientContext: FilterContext
-): boolean {
-    if (capacitySlot.filter_rule) {
-        if (!evaluateFilter(capacitySlot.filter_rule, recipientContext)) return false;
-    }
-    if (needSlot.filter_rule) {
-        if (!evaluateFilter(needSlot.filter_rule, providerContext)) return false;
-    }
-    return true;
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // SPACE-TIME GROUPING

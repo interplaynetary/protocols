@@ -2,19 +2,21 @@
 // HappyView Admin CLI
 //
 // Usage:
-//   bun hv.ts login                     # OAuth login (opens browser, saves creds to .env)
-//   bun hv.ts lexicons                  # List all registered lexicons
-//   bun hv.ts lexicons upload           # Upload all query/procedure lexicons from lexicons/
-//   bun hv.ts lexicons delete <nsid>    # Delete a lexicon
-//   bun hv.ts stats                     # Record counts
-//   bun hv.ts admins                    # List admins
-//   bun hv.ts admins add <did>          # Add an admin
-//   bun hv.ts admins remove <id>        # Remove an admin
-//   bun hv.ts backfill                  # Backfill job status
-//   bun hv.ts backfill start [coll]     # Start a backfill job
-//   bun hv.ts query <nsid> [--did X]    # Query records via XRPC
-//   bun hv.ts query-all                 # Hit every query endpoint
-//   bun hv.ts whoami                    # Check your auth + identity
+//   bun hv.ts login                            # OAuth login (opens browser, saves creds to .env)
+//   bun hv.ts whoami                           # Check your auth + identity
+//   bun hv.ts lexicons                         # List all registered lexicons
+//   bun hv.ts lexicons upload [--backfill]     # Upload all lexicons from lexicons/
+//   bun hv.ts lexicons delete <nsid>           # Delete a specific lexicon
+//   bun hv.ts lexicons delete-all              # Delete all registered lexicons
+//   bun hv.ts lexicons sync [--backfill]       # Delete all, then upload fresh from lexicons/
+//   bun hv.ts stats                            # Record counts
+//   bun hv.ts admins                           # List admins
+//   bun hv.ts admins add <did>                 # Add an admin
+//   bun hv.ts admins remove <id>               # Remove an admin
+//   bun hv.ts backfill                         # Backfill job status
+//   bun hv.ts backfill start [coll]            # Start a backfill job
+//   bun hv.ts query <nsid> [--did X]           # Query records via XRPC
+//   bun hv.ts query-all                        # Hit every query endpoint
 //
 // Reads config from .env (Bun auto-loads it).
 
@@ -148,14 +150,12 @@ async function updateEnvFile(token: string, jwk: any) {
 
   const jwkStr = JSON.stringify(jwk);
 
-  // Update or append AIP_TOKEN
   if (content.includes("AIP_TOKEN=")) {
     content = content.replace(/^AIP_TOKEN=.*$/m, `AIP_TOKEN=${token}`);
   } else {
     content += `\nAIP_TOKEN=${token}`;
   }
 
-  // Update or append DPOP_JWK
   if (content.includes("DPOP_JWK=")) {
     content = content.replace(/^DPOP_JWK=.*$/m, `DPOP_JWK=${jwkStr}`);
   } else {
@@ -187,7 +187,7 @@ async function login() {
   const state = generateRandomString(16);
 
   // 3. Start local callback server
-  const callbackPort = 19284; // arbitrary high port
+  const callbackPort = 19284;
   const redirectUri = `http://127.0.0.1:${callbackPort}/callback`;
 
   let resolveCode: (code: string) => void;
@@ -273,7 +273,6 @@ async function login() {
   console.log(`\nOpening browser for authorization...\n`);
   console.log(`If the browser doesn't open, visit:\n${authUrl}\n`);
 
-  // Try to open the browser
   const opener =
     process.platform === "darwin"
       ? "open"
@@ -289,7 +288,6 @@ async function login() {
   console.log("Authorization code received!");
 
   // 7. Exchange code for token (with DPoP proof)
-  // Generate DPoP proof for token endpoint
   const tokenUrl = `${AIP_URL}/oauth/token`;
   let dpopForToken = await new SignJWT({
     htm: "POST",
@@ -408,64 +406,75 @@ async function login() {
   console.log(`  bun hv.ts stats`);
 }
 
-// --- Lexicon mappings ---
+// --- Lexicon helpers ---
 
-const lexiconMappings: Record<string, string> = {
-  "vf.agent.persons": "vf.agent.person",
-  "vf.agent.createPerson": "vf.agent.person",
-  "vf.agent.organizations": "vf.agent.organization",
-  "vf.agent.createOrganization": "vf.agent.organization",
-  "vf.agent.ecologicalAgents": "vf.agent.ecologicalAgent",
-  "vf.agent.createEcologicalAgent": "vf.agent.ecologicalAgent",
-  "vf.agreement.agreements": "vf.agreement.agreement",
-  "vf.agreement.createAgreement": "vf.agreement.agreement",
-  "vf.agreement.agreementBundles": "vf.agreement.agreementBundle",
-  "vf.agreement.createAgreementBundle": "vf.agreement.agreementBundle",
-  "vf.geo.spatialThings": "vf.geo.spatialThing",
-  "vf.geo.createSpatialThing": "vf.geo.spatialThing",
-  "vf.knowledge.actions": "vf.knowledge.action",
-  "vf.knowledge.createAction": "vf.knowledge.action",
-  "vf.knowledge.processSpecifications": "vf.knowledge.processSpecification",
-  "vf.knowledge.createProcessSpecification":
-    "vf.knowledge.processSpecification",
-  "vf.knowledge.resourceSpecifications": "vf.knowledge.resourceSpecification",
-  "vf.knowledge.createResourceSpecification":
-    "vf.knowledge.resourceSpecification",
-  "vf.knowledge.units": "vf.knowledge.unit",
-  "vf.knowledge.createUnit": "vf.knowledge.unit",
-  "vf.observation.economicEvents": "vf.observation.economicEvent",
-  "vf.observation.createEconomicEvent": "vf.observation.economicEvent",
-  "vf.observation.economicResources": "vf.observation.economicResource",
-  "vf.observation.createEconomicResource": "vf.observation.economicResource",
-  "vf.planning.claims": "vf.planning.claim",
-  "vf.planning.createClaim": "vf.planning.claim",
-  "vf.planning.commitments": "vf.planning.commitment",
-  "vf.planning.createCommitment": "vf.planning.commitment",
-  "vf.planning.intents": "vf.planning.intent",
-  "vf.planning.createIntent": "vf.planning.intent",
-  "vf.planning.plans": "vf.planning.plan",
-  "vf.planning.createPlan": "vf.planning.plan",
-  "vf.planning.processes": "vf.planning.process",
-  "vf.planning.createProcess": "vf.planning.process",
-  "vf.proposal.proposals": "vf.proposal.proposal",
-  "vf.proposal.createProposal": "vf.proposal.proposal",
-  "vf.proposal.proposalLists": "vf.proposal.proposalList",
-  "vf.proposal.createProposalList": "vf.proposal.proposalList",
-  "vf.recipe.recipes": "vf.recipe.recipe",
-  "vf.recipe.createRecipe": "vf.recipe.recipe",
-  "vf.recipe.recipeExchanges": "vf.recipe.recipeExchange",
-  "vf.recipe.createRecipeExchange": "vf.recipe.recipeExchange",
-  "vf.recipe.recipeFlows": "vf.recipe.recipeFlow",
-  "vf.recipe.createRecipeFlow": "vf.recipe.recipeFlow",
-  "vf.recipe.recipeProcesses": "vf.recipe.recipeProcess",
-  "vf.recipe.createRecipeProcess": "vf.recipe.recipeProcess",
-  "vf.resource.batchLotRecords": "vf.resource.batchLotRecord",
-  "vf.resource.createBatchLotRecord": "vf.resource.batchLotRecord",
+type LexiconEntry = {
+  file: string;
+  content: any;
+  id: string;
+  type: string;
 };
 
-const queryEndpoints = Object.keys(lexiconMappings).filter(
-  (k) => !k.includes("create") && !k.includes("Create")
-);
+async function loadAllLexicons(namespace?: string): Promise<LexiconEntry[]> {
+  const pattern = namespace ? `lexicons/${namespace}/**/*.json` : "lexicons/**/*.json";
+  const glob = new Glob(pattern);
+  const entries: LexiconEntry[] = [];
+  for await (const file of glob.scan(".")) {
+    try {
+      const content = await Bun.file(file).json();
+      const id = content.id as string;
+      const type = content.defs?.main?.type as string;
+      if (id && type) entries.push({ file, content, id, type });
+    } catch {
+      console.warn(`  WARN skipping ${file} — invalid JSON`);
+    }
+  }
+  return entries.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * For a query or procedure NSID, infer which record collection it targets.
+ *
+ * Strategy: strip a verb prefix (list/create/update/delete/get/put/patch)
+ * at a camelCase boundary, then try singularization variants against the
+ * known set of record NSIDs in the same namespace.
+ *
+ * Examples:
+ *   vf.observation.listPersons  → vf.observation.person
+ *   vf.observation.listProcesses → vf.observation.process  (via "ses" → "")
+ *   vf.planning.createIntent    → vf.planning.intent
+ */
+function inferTargetCollection(nsid: string, recordNsids: Set<string>): string | null {
+  const parts = nsid.split(".");
+  const lastName = parts[parts.length - 1];
+  const namespace = parts.slice(0, -1).join(".");
+
+  // Strip verb prefix only at a camelCase boundary (next char must be uppercase)
+  const verbPrefixes = ["list", "create", "update", "delete", "get", "put", "patch"];
+  let baseName = lastName;
+  for (const prefix of verbPrefixes) {
+    if (baseName.startsWith(prefix) && baseName.length > prefix.length) {
+      const after = baseName.slice(prefix.length);
+      if (after[0] >= "A" && after[0] <= "Z") {
+        baseName = after.charAt(0).toLowerCase() + after.slice(1);
+        break;
+      }
+    }
+  }
+
+  // Try singularization variants in order of specificity
+  const candidates: string[] = [baseName];
+  if (baseName.endsWith("ies")) candidates.push(baseName.slice(0, -3) + "y"); // agencies → agency
+  if (baseName.endsWith("ses")) candidates.push(baseName.slice(0, -2));        // processes → process
+  if (baseName.endsWith("s"))   candidates.push(baseName.slice(0, -1));        // persons → person
+
+  for (const candidate of candidates) {
+    const target = `${namespace}.${candidate}`;
+    if (recordNsids.has(target)) return target;
+  }
+
+  return null;
+}
 
 // --- Commands ---
 
@@ -519,9 +528,8 @@ async function cmdLexicons() {
 
   const records = lexicons.filter((l: any) => l.lexicon_type === "record");
   const queries = lexicons.filter((l: any) => l.lexicon_type === "query");
-  const procedures = lexicons.filter(
-    (l: any) => l.lexicon_type === "procedure"
-  );
+  const procedures = lexicons.filter((l: any) => l.lexicon_type === "procedure");
+  const definitions = lexicons.filter((l: any) => l.lexicon_type === "definitions");
 
   console.log(`Records (${records.length}):`);
   for (const l of records) console.log(`  ${l.id}`);
@@ -532,61 +540,111 @@ async function cmdLexicons() {
   console.log(`\nProcedures (${procedures.length}):`);
   for (const l of procedures) console.log(`  POST /xrpc/${l.id}`);
 
+  if (definitions.length) {
+    console.log(`\nDefinitions (${definitions.length}):`);
+    for (const l of definitions) console.log(`  ${l.id}`);
+  }
+
   console.log(`\nTotal: ${lexicons.length} lexicons`);
 }
 
-async function cmdLexiconsUpload() {
+async function cmdLexiconsUpload(opts: { backfill?: boolean; only?: string } = {}) {
   await requireAuth();
 
-  const glob = new Glob("lexicons/vf/**/*.json");
-  const files: string[] = [];
-  for await (const path of glob.scan(".")) {
-    files.push(path);
-  }
+  const all = await loadAllLexicons(opts.only);
+  const records = all.filter((e) => e.type === "record");
+  const nonRecords = all.filter((e) => e.type !== "record");
+  const recordNsids = new Set(records.map((e) => e.id));
 
-  let uploaded = 0;
-  let skipped = 0;
-  let failed = 0;
+  let uploaded = 0, skipped = 0, failed = 0;
 
-  for (const file of files.sort()) {
-    const content = await Bun.file(file).json();
-    const id = content.id as string;
-    const type = content.defs?.main?.type as string;
-
-    if (type !== "query" && type !== "procedure") continue;
-
-    const targetCollection = lexiconMappings[id];
-    if (!targetCollection) {
-      console.log(`  SKIP ${id} — no target_collection mapping`);
-      skipped++;
-      continue;
-    }
+  const uploadOne = async (entry: LexiconEntry, targetCollection?: string | null) => {
+    const body: any = {
+      lexicon_json: entry.content,
+      backfill: opts.backfill ?? false,
+    };
+    if (targetCollection) body.target_collection = targetCollection;
 
     const res = await authFetch(`${HAPPYVIEW_URL}/admin/lexicons`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        lexicon_json: content,
-        target_collection: targetCollection,
-        backfill: false,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (res.ok) {
       const data = await res.json();
-      console.log(
-        `  OK ${id} (${type}) -> ${targetCollection} [rev ${data.revision}]`
-      );
+      const suffix = targetCollection ? ` -> ${targetCollection}` : "";
+      console.log(`  OK   ${entry.id} (${entry.type})${suffix} [rev ${data.revision}]`);
       uploaded++;
     } else {
-      console.log(`  FAIL ${id} — ${res.status}: ${await res.text()}`);
+      console.log(`  FAIL ${entry.id} — ${res.status}: ${await res.text()}`);
+      failed++;
+    }
+  };
+
+  // Upload records first (they create the Jetstream subscriptions)
+  console.log(`\nUploading ${records.length} record lexicons...`);
+  for (const entry of records) {
+    await uploadOne(entry);
+  }
+
+  // Upload queries, procedures, and definitions
+  console.log(`\nUploading ${nonRecords.length} query/procedure/definition lexicons...`);
+  for (const entry of nonRecords) {
+    if (entry.type === "query" || entry.type === "procedure") {
+      const target = inferTargetCollection(entry.id, recordNsids);
+      if (!target) {
+        console.log(`  SKIP ${entry.id} (${entry.type}) — could not infer target_collection`);
+        skipped++;
+        continue;
+      }
+      await uploadOne(entry, target);
+    } else {
+      // definitions and anything else — no target_collection needed
+      await uploadOne(entry);
+    }
+  }
+
+  console.log(`\nDone: ${uploaded} uploaded, ${skipped} skipped, ${failed} failed`);
+}
+
+async function cmdLexiconsDeleteAll() {
+  await requireAuth();
+
+  const res = await authFetch(`${HAPPYVIEW_URL}/admin/lexicons`);
+  if (!res.ok) return console.error(`Error listing lexicons: ${res.status} ${await res.text()}`);
+
+  const lexicons = (await res.json()) as Array<{ id: string }>;
+  if (lexicons.length === 0) {
+    console.log("No lexicons to delete.");
+    return;
+  }
+
+  console.log(`Deleting ${lexicons.length} lexicons...`);
+  let deleted = 0, failed = 0;
+
+  for (const { id } of lexicons) {
+    const delRes = await authFetch(`${HAPPYVIEW_URL}/admin/lexicons/${id}`, {
+      method: "DELETE",
+    });
+    if (delRes.status === 204) {
+      console.log(`  DEL  ${id}`);
+      deleted++;
+    } else {
+      console.log(`  FAIL ${id} — ${delRes.status}: ${await delRes.text()}`);
       failed++;
     }
   }
 
-  console.log(
-    `\nDone: ${uploaded} uploaded, ${skipped} skipped, ${failed} failed`
-  );
+  console.log(`\nDone: ${deleted} deleted, ${failed} failed`);
+}
+
+async function cmdLexiconsSync(opts: { backfill?: boolean; only?: string } = {}) {
+  await requireAuth();
+  console.log("=== Sync: delete all existing lexicons, then upload fresh ===\n");
+  await cmdLexiconsDeleteAll();
+  console.log();
+  await cmdLexiconsUpload(opts);
 }
 
 async function cmdLexiconDelete(nsid: string) {
@@ -700,16 +758,29 @@ async function cmdQuery(nsid: string, opts: { did?: string; limit?: number }) {
 }
 
 async function cmdQueryAll() {
-  console.log("Querying all XRPC endpoints...\n");
-  for (const nsid of queryEndpoints) {
-    const res = await fetch(`${HAPPYVIEW_URL}/xrpc/${nsid}?limit=1`);
-    if (res.ok) {
-      const data = await res.json();
+  await requireAuth();
+  console.log("Querying all XRPC query endpoints...\n");
+
+  const res = await authFetch(`${HAPPYVIEW_URL}/admin/lexicons`);
+  if (!res.ok) return console.error(`Error listing lexicons: ${res.status}`);
+
+  const lexicons = (await res.json()) as Array<{ id: string; lexicon_type: string }>;
+  const queries = lexicons.filter((l) => l.lexicon_type === "query");
+
+  if (queries.length === 0) {
+    console.log("No query lexicons registered.");
+    return;
+  }
+
+  for (const { id } of queries) {
+    const qres = await fetch(`${HAPPYVIEW_URL}/xrpc/${id}?limit=1`);
+    if (qres.ok) {
+      const data = await qres.json();
       const count = data.records?.length ?? 0;
       const more = data.cursor ? " (more)" : "";
-      console.log(`  ${nsid}: ${count} record(s)${more}`);
+      console.log(`  ${id}: ${count} record(s)${more}`);
     } else {
-      console.log(`  ${nsid}: ${res.status} ${await res.text()}`);
+      console.log(`  ${id}: ${qres.status} ${await qres.text()}`);
     }
   }
 }
@@ -724,19 +795,26 @@ function usage() {
 Usage: bun hv.ts <command> [options]
 
 Commands:
-  login                     OAuth login (opens browser, saves creds to .env)
-  whoami                    Check your auth and identity
-  lexicons                  List all registered lexicons
-  lexicons upload           Upload all query/procedure lexicons
-  lexicons delete <nsid>    Delete a lexicon
-  stats                     Record counts by collection
-  admins                    List admins
-  admins add <did>          Add an admin
-  admins remove <id>        Remove an admin by UUID
-  backfill                  Backfill job status
-  backfill start [coll]     Start backfill (optionally for one collection)
-  query <nsid> [--did X]    Query records (unauthenticated)
-  query-all                 Hit every query endpoint
+  login                              OAuth login (opens browser, saves creds to .env)
+  whoami                             Check your auth and identity
+
+  lexicons                           List all registered lexicons
+  lexicons upload [--backfill]       Upload all lexicons from lexicons/
+  lexicons delete <nsid>             Delete a specific lexicon
+  lexicons delete-all                Delete all registered lexicons
+  lexicons sync [--backfill]         Delete all, then upload fresh from lexicons/
+
+  stats                              Record counts by collection
+  admins                             List admins
+  admins add <did>                   Add an admin
+  admins remove <id>                 Remove an admin by UUID
+  backfill                           Backfill job status
+  backfill start [coll]              Start backfill (optionally for one collection)
+  query <nsid> [--did X] [--limit N] Query records (unauthenticated)
+  query-all                          Hit every registered query endpoint
+
+Flags:
+  --backfill   Trigger historical backfill when uploading record lexicons
 
 Config:
   Reads from .env (auto-loaded by Bun). Run 'bun hv.ts login' to populate.
@@ -754,10 +832,19 @@ switch (cmd) {
     await cmdStats();
     break;
   case "lexicons":
-    if (subcmd === "upload") await cmdLexiconsUpload();
-    else if (subcmd === "delete" && rest[0]) await cmdLexiconDelete(rest[0]);
-    else if (!subcmd) await cmdLexicons();
-    else {
+    if (!subcmd) {
+      await cmdLexicons();
+    } else if (subcmd === "upload") {
+      const onlyIdx = rest.indexOf("--only");
+      await cmdLexiconsUpload({ backfill: rest.includes("--backfill"), only: onlyIdx >= 0 ? rest[onlyIdx + 1] : undefined });
+    } else if (subcmd === "delete" && rest[0]) {
+      await cmdLexiconDelete(rest[0]);
+    } else if (subcmd === "delete-all") {
+      await cmdLexiconsDeleteAll();
+    } else if (subcmd === "sync") {
+      const onlyIdx = rest.indexOf("--only");
+      await cmdLexiconsSync({ backfill: rest.includes("--backfill"), only: onlyIdx >= 0 ? rest[onlyIdx + 1] : undefined });
+    } else {
       console.error(`Unknown: lexicons ${subcmd}`);
       usage();
     }
@@ -775,7 +862,7 @@ switch (cmd) {
     if (subcmd === "start") await cmdBackfillStart(rest[0]);
     else if (!subcmd) await cmdBackfill();
     else {
-      console.error(`Unknown: backfill ${subcmd}`);
+      console.error(`Unknown: backfill ${subcmd}`)
       usage();
     }
     break;

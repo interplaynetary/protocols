@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "ngsi.geo.polygon",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Generated from https://purl.org/geojson/vocab#Polygon",
+      "key": "id",
+      "record": {
+        "type": "object",
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri",
+            "description": "Entity id"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type property"
+          },
+          "coordinates": {
+            "type": "string",
+            "description": "The coordinates property"
+          }
+        }
+      }
+    }
+  }
+}
