@@ -92,3 +92,14 @@ cd value-flows/lexicons
 - [ ] Implement GraphQL API layer (perhaps in (HappyView))
 - [ ] Deploy App-views to Kubernetes cluster
 - [ ] Document extension patterns for custom VF schemas
+
+---
+
+## Auto-Generate & Deploy Docs to Github Pages
+
+- Enable GitHub Pages (One-Time)
+- In your repo:
+  **Settings → Pages**
+  - Source: Deploy from a branch
+  - Branch: gh-pages
+  - Folder: / (root)

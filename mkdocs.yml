@@ -1,0 +1,33 @@
+site_name: Value Flows
+
+# MkDocs supports environment variables via !ENV
+# Linters often don't
+site_url: !ENV SITE_URL
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API:
+      - Overview: api/overview.md
+      - Authentication: api/auth.md

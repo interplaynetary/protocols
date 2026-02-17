@@ -1,0 +1,36 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install deps
+        run: bun install
+
+      - name: Set environment variables
+        run: |
+          echo "GITHUB_ORG=${{ github.repository_owner }}" >> $GITHUB_ENV
+          echo "GITHUB_REPO=${{ github.event.repository.name }}" >> $GITHUB_ENV
+
+      - name: Build docs
+        run: bun run docs:build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/.vitepress/dist
