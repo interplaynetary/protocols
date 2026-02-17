@@ -1,0 +1,20 @@
+{
+  "lexicon": 1,
+  "id": "playnet.knowledge.temporalThing",
+  "defs": {
+    "main": {
+      "type": "object",
+      "description": "Temporal data placeholder.",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "end": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

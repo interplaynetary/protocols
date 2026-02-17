@@ -19,7 +19,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "fs";
 import { join, dirname } from "path";
-import classToNsid from "../../specs/vf/class-to-nsid.json";
+import classToNsid from "../specs/vf/class-to-nsid.json";
 
 // ─── interfaces ──────────────────────────────────────────────────────────────
 

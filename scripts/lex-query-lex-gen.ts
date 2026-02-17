@@ -24,8 +24,8 @@
  *   - Reciprocal queries (reciprocalEvents)
  *
  * Usage:
- *   bun scripts/generate/query-lex-gen.ts            # generate query lexicons
- *   bun scripts/generate/query-lex-gen.ts --dry-run   # preview without writing
+ *   bun /scripts/lex-query-lex-gen.ts            # generate query lexicons
+ *   bun /scripts/lex-query-lex-gen.ts --dry-run   # preview without writing
  */
 
 import { join, dirname } from "path";

@@ -33,6 +33,7 @@ hREA provides a comprehensive API through GraphQL interfaces that enable interac
 ### Core Types
 
 #### EconomicEvent
+
 ```graphql
 type EconomicEvent {
   id: ID!
@@ -62,6 +63,7 @@ type EconomicEvent {
 ```
 
 #### EconomicResource
+
 ```graphql
 type EconomicResource {
   id: ID!
@@ -84,6 +86,7 @@ type EconomicResource {
 ```
 
 #### Agent
+
 ```graphql
 type Agent {
   id: ID!
@@ -101,6 +104,7 @@ type Agent {
 ```
 
 #### Process
+
 ```graphql
 type Process {
   id: ID!
@@ -124,6 +128,7 @@ type Process {
 ```
 
 #### Commitment
+
 ```graphql
 type Commitment {
   id: ID!
@@ -155,6 +160,7 @@ type Commitment {
 ### Basic Queries
 
 #### Get Economic Event
+
 ```graphql
 query GetEconomicEvent($id: ID!) {
   reaEconomicEvent(id: $id) {
@@ -187,6 +193,7 @@ query GetEconomicEvent($id: ID!) {
 ```
 
 #### Get Agent
+
 ```graphql
 query GetAgent($id: ID!) {
   reaAgent(id: $id) {
@@ -231,6 +238,7 @@ query GetAgent($id: ID!) {
 ```
 
 #### Get Economic Resource
+
 ```graphql
 query GetEconomicResource($id: ID!) {
   reaEconomicResource(id: $id) {
@@ -272,6 +280,7 @@ query GetEconomicResource($id: ID!) {
 ### Advanced Queries
 
 #### Filtered Economic Events
+
 ```graphql
 query GetFilteredEconomicEvents(
   $action: String
@@ -289,10 +298,7 @@ query GetFilteredEconomicEvents(
       provider: $provider
       receiver: $receiver
       resourceClassifiedAs: $resourceClassifiedAs
-      dateRange: {
-        start: $dateRangeStart
-        end: $dateRangeEnd
-      }
+      dateRange: { start: $dateRangeStart, end: $dateRangeEnd }
     }
     first: $first
     after: $after
@@ -331,6 +337,7 @@ query GetFilteredEconomicEvents(
 ```
 
 #### Agent Economic Summary
+
 ```graphql
 query GetAgentEconomicSummary($agentId: ID!) {
   reaAgent(id: $agentId) {
@@ -400,6 +407,7 @@ query GetAgentEconomicSummary($agentId: ID!) {
 ```
 
 #### Process Flow Query
+
 ```graphql
 query GetProcessFlow($processId: ID!) {
   reaProcess(id: $processId) {
@@ -515,6 +523,7 @@ query GetProcessFlow($processId: ID!) {
 ### Economic Event Mutations
 
 #### Create Economic Event
+
 ```graphql
 mutation CreateEconomicEvent($event: EconomicEventCreateParams!) {
   createEconomicEvent(event: $event) {
@@ -544,6 +553,7 @@ mutation CreateEconomicEvent($event: EconomicEventCreateParams!) {
 ```
 
 **Example Variables:**
+
 ```json
 {
   "event": {
@@ -564,15 +574,13 @@ mutation CreateEconomicEvent($event: EconomicEventCreateParams!) {
 ```
 
 #### Update Economic Event
+
 ```graphql
 mutation UpdateEconomicEvent(
   $revisionId: ID!
   $event: EconomicEventUpdateParams!
 ) {
-  updateEconomicEvent(
-    revisionId: $revisionId
-    event: $event
-  ) {
+  updateEconomicEvent(revisionId: $revisionId, event: $event) {
     economicEvent {
       id
       action
@@ -589,6 +597,7 @@ mutation UpdateEconomicEvent(
 ```
 
 #### Delete Economic Event
+
 ```graphql
 mutation DeleteEconomicEvent($revisionId: ID!) {
   deleteEconomicEvent(revisionId: $revisionId) {
@@ -600,6 +609,7 @@ mutation DeleteEconomicEvent($revisionId: ID!) {
 ### Agent Mutations
 
 #### Create Agent
+
 ```graphql
 mutation CreateAgent($agent: ReaAgentCreateParams!) {
   createReaAgent(agent: $agent) {
@@ -616,6 +626,7 @@ mutation CreateAgent($agent: ReaAgentCreateParams!) {
 ```
 
 **Example Variables:**
+
 ```json
 {
   "agent": {
@@ -629,15 +640,10 @@ mutation CreateAgent($agent: ReaAgentCreateParams!) {
 ```
 
 #### Update Agent
+
 ```graphql
-mutation UpdateAgent(
-  $revisionId: ID!
-  $agent: ReaAgentUpdateParams!
-) {
-  updateReaAgent(
-    revisionId: $revisionId
-    agent: $agent
-  ) {
+mutation UpdateAgent($revisionId: ID!, $agent: ReaAgentUpdateParams!) {
+  updateReaAgent(revisionId: $revisionId, agent: $agent) {
     reaAgent {
       id
       name
@@ -652,6 +658,7 @@ mutation UpdateAgent(
 ### Resource Mutations
 
 #### Create Economic Resource
+
 ```graphql
 mutation CreateEconomicResource($resource: EconomicResourceCreateParams!) {
   createEconomicResource(resource: $resource) {
@@ -684,6 +691,7 @@ mutation CreateEconomicResource($resource: EconomicResourceCreateParams!) {
 ```
 
 **Example Variables:**
+
 ```json
 {
   "resource": {
@@ -701,15 +709,13 @@ mutation CreateEconomicResource($resource: EconomicResourceCreateParams!) {
 ```
 
 #### Update Economic Resource
+
 ```graphql
 mutation UpdateEconomicResource(
   $revisionId: ID!
   $resource: EconomicResourceUpdateParams!
 ) {
-  updateEconomicResource(
-    revisionId: $revisionId
-    resource: $resource
-  ) {
+  updateEconomicResource(revisionId: $revisionId, resource: $resource) {
     economicResource {
       id
       currentQuantity {
@@ -727,6 +733,7 @@ mutation UpdateEconomicResource(
 ### Process Mutations
 
 #### Create Process
+
 ```graphql
 mutation CreateProcess($process: ProcessCreateParams!) {
   createProcess(process: $process) {
@@ -747,6 +754,7 @@ mutation CreateProcess($process: ProcessCreateParams!) {
 ```
 
 **Example Variables:**
+
 ```json
 {
   "process": {
@@ -760,15 +768,10 @@ mutation CreateProcess($process: ProcessCreateParams!) {
 ```
 
 #### Update Process
+
 ```graphql
-mutation UpdateProcess(
-  $revisionId: ID!
-  $process: ProcessUpdateParams!
-) {
-  updateProcess(
-    revisionId: $revisionId
-    process: $process
-  ) {
+mutation UpdateProcess($revisionId: ID!, $process: ProcessUpdateParams!) {
+  updateProcess(revisionId: $revisionId, process: $process) {
     process {
       id
       name
@@ -783,6 +786,7 @@ mutation UpdateProcess(
 ### Commitment Mutations
 
 #### Create Commitment
+
 ```graphql
 mutation CreateCommitment($commitment: CommitmentCreateParams!) {
   createCommitment(commitment: $commitment) {
@@ -812,6 +816,7 @@ mutation CreateCommitment($commitment: CommitmentCreateParams!) {
 ```
 
 **Example Variables:**
+
 ```json
 {
   "commitment": {
@@ -835,6 +840,7 @@ mutation CreateCommitment($commitment: CommitmentCreateParams!) {
 ### Real-time Event Monitoring
 
 #### Subscribe to Economic Events
+
 ```graphql
 subscription SubscribeToEconomicEvents($filters: EconomicEventFilters) {
   reaEconomicEvents(filters: $filters) {
@@ -862,6 +868,7 @@ subscription SubscribeToEconomicEvents($filters: EconomicEventFilters) {
 ```
 
 #### Subscribe to Agent Activity
+
 ```graphql
 subscription SubscribeToAgentActivity($agentId: ID!) {
   reaAgentActivity(agentId: $agentId) {
@@ -919,14 +926,14 @@ subscription SubscribeToAgentActivity($agentId: ID!) {
 
 ### Common Error Codes
 
-| Code | Description | Resolution |
-|------|-------------|------------|
-| `VALIDATION_ERROR` | Input validation failed | Check required fields and data formats |
-| `NOT_FOUND` | Referenced entity doesn't exist | Verify entity IDs exist |
-| `PERMISSION_DENIED` | Insufficient permissions | Check agent authorization |
-| `CONFLICT` | Data conflict detected | Resolve conflicting data state |
-| `RATE_LIMITED` | Too many requests | Reduce request frequency |
-| `INTERNAL_ERROR` | System error | Retry or contact support |
+| Code                | Description                     | Resolution                             |
+| ------------------- | ------------------------------- | -------------------------------------- |
+| `VALIDATION_ERROR`  | Input validation failed         | Check required fields and data formats |
+| `NOT_FOUND`         | Referenced entity doesn't exist | Verify entity IDs exist                |
+| `PERMISSION_DENIED` | Insufficient permissions        | Check agent authorization              |
+| `CONFLICT`          | Data conflict detected          | Resolve conflicting data state         |
+| `RATE_LIMITED`      | Too many requests               | Reduce request frequency               |
+| `INTERNAL_ERROR`    | System error                    | Retry or contact support               |
 
 ## Pagination
 
@@ -981,10 +988,7 @@ query ComplexFiltering {
     filters: {
       reaAction: "transfer"
       resourceClassifiedAs: ["organic", "vegetables"]
-      dateRange: {
-        start: "2024-01-01T00:00:00Z"
-        end: "2024-12-31T23:59:59Z"
-      }
+      dateRange: { start: "2024-01-01T00:00:00Z", end: "2024-12-31T23:59:59Z" }
       location: "California"
       agents: ["farm-1", "distributor-2"]
       minValue: 100
@@ -1183,37 +1187,37 @@ npm install @valueflows/vf-graphql-holochain
 ### Basic Usage
 
 ```typescript
-import { VFGraphQLHolochain } from '@valueflows/vf-graphql-holochain';
+import { VFGraphQLHolochain } from "@valueflows/vf-graphql-holochain";
 
 // Initialize client
 const client = new VFGraphQLHolochain({
   holochainClient: holochainClient,
   dnaConfig: {
     hrea: {
-      zome_name: 'hrea'
-    }
-  }
+      zome_name: "hrea",
+    },
+  },
 });
 
 // Create economic event
 const result = await client.mutations.createEconomicEvent({
   event: {
-    action: 'transfer',
-    provider: 'provider-id',
-    receiver: 'receiver-id',
+    action: "transfer",
+    provider: "provider-id",
+    receiver: "receiver-id",
     resourceQuantity: {
       hasNumericalValue: 100,
-      hasUnit: 'kg'
+      hasUnit: "kg",
     },
-    hasPointInTime: new Date().toISOString()
-  }
+    hasPointInTime: new Date().toISOString(),
+  },
 });
 
 // Query economic events
 const events = await client.queries.reaEconomicEvents({
   filters: {
-    action: 'transfer'
-  }
+    action: "transfer",
+  },
 });
 ```
 
@@ -1248,7 +1252,7 @@ interface QuantityValue {
 ### Unit Testing Queries
 
 ```javascript
-import { gql } from 'apollo-server-express';
+import { gql } from "apollo-server-express";
 
 const GET_ECONOMIC_EVENT = gql`
   query GetEconomicEvent($id: ID!) {
@@ -1273,24 +1277,24 @@ const GET_ECONOMIC_EVENT = gql`
   }
 `;
 
-test('should fetch economic event by ID', async () => {
+test("should fetch economic event by ID", async () => {
   const result = await server.executeOperation({
     query: GET_ECONOMIC_EVENT,
-    variables: { id: 'test-event-id' }
+    variables: { id: "test-event-id" },
   });
 
   expect(result.errors).toBeUndefined();
   expect(result.data.reaEconomicEvent).toBeDefined();
-  expect(result.data.reaEconomicEvent.id).toBe('test-event-id');
+  expect(result.data.reaEconomicEvent.id).toBe("test-event-id");
 });
 ```
 
 ### Integration Testing
 
 ```javascript
-const { VFGraphQLHolochain } = require('@valueflows/vf-graphql-holochain');
+const { VFGraphQLHolochain } = require("@valueflows/vf-graphql-holochain");
 
-describe('Economic Event Integration', () => {
+describe("Economic Event Integration", () => {
   let client;
 
   beforeEach(async () => {
@@ -1298,26 +1302,26 @@ describe('Economic Event Integration', () => {
     await client.connect();
   });
 
-  test('should create and retrieve economic event', async () => {
+  test("should create and retrieve economic event", async () => {
     // Create event
     const createResult = await client.mutations.createEconomicEvent({
       event: {
-        action: 'transfer',
-        provider: 'test-provider',
-        receiver: 'test-receiver',
+        action: "transfer",
+        provider: "test-provider",
+        receiver: "test-receiver",
         resourceQuantity: {
           hasNumericalValue: 10,
-          hasUnit: 'units'
-        }
-      }
+          hasUnit: "units",
+        },
+      },
     });
 
     // Retrieve event
     const getResult = await client.queries.reaEconomicEvent({
-      id: createResult.economicEvent.id
+      id: createResult.economicEvent.id,
     });
 
-    expect(getResult.economicEvent.action).toBe('transfer');
+    expect(getResult.economicEvent.action).toBe("transfer");
     expect(getResult.economicEvent.resourceQuantity.hasNumericalValue).toBe(10);
   });
 });
@@ -1358,7 +1362,7 @@ Breaking changes will be versioned. Backwards-compatible changes add new fields 
 
 ### Migration Guide
 
-See the [Migration Guide](./11-migration.md) for detailed information on upgrading between API versions.
+See the Migration Guide for detailed information on upgrading between API versions.
 
 ## Troubleshooting
 
@@ -1377,7 +1381,7 @@ Enable debug logging for development:
 ```javascript
 const client = new VFGraphQLHolochain({
   debug: true,
-  logLevel: 'debug'
+  logLevel: "debug",
 });
 ```
 
@@ -1390,6 +1394,7 @@ GET /health
 ```
 
 Response:
+
 ```json
 {
   "status": "healthy",

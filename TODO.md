@@ -1,12 +1,4 @@
-Ok so now we have a working HappyView instance running on Railway.
-
-Now we want to improve our pipeline:
-TTL -> JSON-LD -> Records/Definition Lexicons -> Query/Procedure Lexicons
 -> Delete all existing Lexicons from our Admin API then upload new ones
-
-From our finished Lexicons -> auto generate markdown docs, part script, part AI
-
-Our Gh Pages will auto update with our docs detailing how to use XRPC endpoints
 
 Lets add claude skills for creating MCP server
 Create MCP Server
@@ -32,3 +24,7 @@ Add to Docs:
 ---
 
 Explore NGSI-LD
+
+---
+
+Create a lexicon version of ai-pipe.ts

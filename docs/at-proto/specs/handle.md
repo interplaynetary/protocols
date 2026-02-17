@@ -23,7 +23,9 @@ IP addresses are not valid syntax: IPv4 addresses have a final segment starting 
 
 A reference regular expression (regex) for the handle syntax is:
 
+```regexp
 /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/
+```
 
 Additional Non-Syntax Restrictions
 "Reserved" top-level domains should not fail syntax validation (eg, in atproto Lexicon validation), but they must immediately fail any attempt at registration, resolution, etc. See also: https://en.wikipedia.org/wiki/Top-level_domain#Reserved_domains
