@@ -16,7 +16,8 @@
           },
           "name": {
             "type": "string",
-            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness."
+            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness.",
+            "maxGraphemes": 640
           },
           "note": {
             "type": "string",

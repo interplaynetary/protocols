@@ -40,6 +40,35 @@ const CLASS_TO_NSID = {
   'vf:BatchLotRecord': 'vf.resource.batchLotRecord',
 };
 
+// Known property name mappings (vf property name -> lexicon property name)
+const PROP_NAME_MAP = {
+  'vf:hasNumericalValue': 'hasNumericalValue', // in Measure def
+  'vf:hasUnit': 'hasUnit',                     // in Measure def
+};
+
+// ─── Parse vf.json ───
+const vfData = JSON.parse(fs.readFileSync(VF_JSON, 'utf8'));
+const graph = vfData['@graph'];
+
+// Extract classes
+const classes = {};
+const properties = {};
+const namedIndividuals = {};
+
+// Pre-index: named domain/range union classes (e.g., vf:ActionDomain -> [vf:EconomicEvent, ...])
+const namedUnionClasses = {};
+for (const node of graph) {
+  const typeRaw = node['@type'];
+  const types = Array.isArray(typeRaw) ? typeRaw : [typeRaw];
+  if (types.includes('owl:Class') && node['@id']?.startsWith('vf:') && node['owl:unionOf']) {
+    let union = node['owl:unionOf'];
+    if (union['@list']) union = union['@list'];
+    if (Array.isArray(union)) {
+      namedUnionClasses[node['@id']] = union.map(u => u['@id']).filter(Boolean);
+    }
+  }
+}
+
 // Classes we intentionally skip (abstract/structural, not records)
 const SKIP_CLASSES = new Set([
   'vf:Agent',           // abstract superclass - split into Person/Organization/EcologicalAgent
@@ -58,22 +87,9 @@ const SKIP_CLASSES = new Set([
   'vf:StageEffect',
   'vf:StateEffect',
   'vf:ProposalPurpose', // represented as knownValues on Proposal.purpose
+  // Named domain/range union classes (structural helpers, not records)
+  ...Object.keys(namedUnionClasses),
 ]);
-
-// Known property name mappings (vf property name -> lexicon property name)
-const PROP_NAME_MAP = {
-  'vf:hasNumericalValue': 'hasNumericalValue', // in Measure def
-  'vf:hasUnit': 'hasUnit',                     // in Measure def
-};
-
-// ─── Parse vf.json ───
-const vfData = JSON.parse(fs.readFileSync(VF_JSON, 'utf8'));
-const graph = vfData['@graph'];
-
-// Extract classes
-const classes = {};
-const properties = {};
-const namedIndividuals = {};
 
 for (const node of graph) {
   const typeRaw = node['@type'];
@@ -118,7 +134,11 @@ for (const node of graph) {
 function extractClasses(node) {
   if (!node) return [];
   if (typeof node === 'string') return [node];
-  if (node['@id']) return [node['@id']];
+  if (node['@id']) {
+    // Resolve named union classes (e.g., vf:ActionDomain -> [vf:EconomicEvent, ...])
+    if (namedUnionClasses[node['@id']]) return namedUnionClasses[node['@id']];
+    return [node['@id']];
+  }
   if (node['owl:unionOf']) {
     let union = node['owl:unionOf'];
     // JSON-LD @list wrapper
@@ -133,7 +153,13 @@ function extractClasses(node) {
 function extractRangeType(node) {
   if (!node) return 'unknown';
   if (typeof node === 'string') return node;
-  if (node['@id']) return node['@id'];
+  if (node['@id']) {
+    // Resolve named union range classes
+    if (namedUnionClasses[node['@id']]) {
+      return namedUnionClasses[node['@id']].join(' | ');
+    }
+    return node['@id'];
+  }
   if (node['owl:unionOf']) {
     let union = node['owl:unionOf'];
     if (union['@list']) union = union['@list'];

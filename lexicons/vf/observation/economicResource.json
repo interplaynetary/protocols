@@ -60,13 +60,17 @@
             "description": "The uri to an image relevant to the entity, such as a logo, avatar, photo, diagram, etc."
           },
           "imageList": {
-            "type": "string",
-            "format": "uri",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
             "description": "A comma separated list of uri addresses to images relevant to the resource."
           },
           "name": {
             "type": "string",
-            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness."
+            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness.",
+            "maxGraphemes": 640
           },
           "note": {
             "type": "string",

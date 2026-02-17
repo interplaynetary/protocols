@@ -37,10 +37,31 @@ function stripVf(id) {
   return id.replace(/^vf:/, "");
 }
 
+// Pre-index: named domain/range union classes (e.g., vf:ActionDomain → [EconomicEvent, Commitment, ...])
+const namedUnionClasses = {};
+for (const n of graph) {
+  const id = stripVf(n["@id"]);
+  const types = Array.isArray(n["@type"]) ? n["@type"] : [n["@type"]];
+  if (types.includes("owl:Class") && n["owl:unionOf"]) {
+    let union = n["owl:unionOf"];
+    if (union["@list"]) union = union["@list"];
+    if (Array.isArray(union)) {
+      namedUnionClasses[id] = union.map((u) => stripVf(u["@id"])).filter(Boolean);
+    }
+  }
+}
+
+function resolveUnion(ref) {
+  // If the ref is a named union class, return its members; otherwise return [ref]
+  const name = stripVf(ref);
+  if (namedUnionClasses[name]) return namedUnionClasses[name];
+  return [name];
+}
+
 function getDomainClasses(node) {
   const dom = node["rdfs:domain"];
   if (!dom) return [];
-  if (dom["@id"]) return [stripVf(dom["@id"])];
+  if (dom["@id"]) return resolveUnion(dom["@id"]);
   let union = dom["owl:unionOf"];
   if (!union) return [];
   if (union["@list"]) union = union["@list"];
@@ -51,8 +72,13 @@ function getDomainClasses(node) {
 function getRangeId(node) {
   const r = node["rdfs:range"];
   if (!r) return null;
-  if (r["@id"]) return stripVf(r["@id"]);
-  // Union range: return all classes
+  if (r["@id"]) {
+    const name = stripVf(r["@id"]);
+    // If it's a named union range class, return array of constituent classes
+    if (namedUnionClasses[name]) return namedUnionClasses[name];
+    return name;
+  }
+  // Inline union range
   let union = r["owl:unionOf"];
   if (union) {
     if (union["@list"]) union = union["@list"];
@@ -104,19 +130,16 @@ const ENUM_CLASS_NAMES = new Set([
   "StageEffect",
   "StateEffect",
   "ProposalPurpose",
-  "PairsWith",
 ]);
 
 // Classes to skip (not mapped to records)
 const SKIP_CLASSES = new Set([
   "Agent", // abstract, split into subtypes
   "Measure", // shared def object
-  "ExternalLink", // not a VF type
   ...ENUM_CLASS_NAMES,
+  // Named domain/range union classes (structural, not records)
+  ...Object.keys(namedUnionClasses),
 ]);
-
-// Typo fix map
-const TYPO_FIX = { Agreenent: "Agreement" };
 
 for (const node of graph) {
   const id = stripVf(node["@id"]);
@@ -142,14 +165,12 @@ for (const node of graph) {
     types.includes("owl:DatatypeProperty") ||
     types.includes("owl:DataTypeProperty")
   ) {
-    const domains = getDomainClasses(node).map((d) => TYPO_FIX[d] || d);
+    const domains = getDomainClasses(node);
     // Expand Agent domain to subtypes
     const expandedDomains = [];
     for (const d of domains) {
       if (d === "Agent") {
         expandedDomains.push("Person", "Organization", "EcologicalAgent");
-      } else if (d === "ExternalLink") {
-        // skip
       } else {
         expandedDomains.push(d);
       }
@@ -251,7 +272,15 @@ function rangeToLexiconType(propName, range, propType, maxCard) {
   const effectiveRange = Array.isArray(range) ? range[0] : range;
   const isUnionRange = Array.isArray(range);
 
-  // Classification arrays: stay as plain strings
+  // ── Special-case properties ──
+
+  // imageList: ontology says xsd:anyURI (singular) but description says "comma separated list"
+  // In AT Protocol, model as a proper array of URIs
+  if (propName === "imageList") {
+    return { type: "array", items: { type: "string", format: "uri" } };
+  }
+
+  // Classification arrays: stay as plain strings (mixed URIs and tags)
   if (
     propName === "classifiedAs" ||
     propName === "resourceClassifiedAs" ||
@@ -314,11 +343,12 @@ function rangeToLexiconType(propName, range, propType, maxCard) {
     if (r === "xsd:anyURI") return { type: "string", format: "uri" };
     if (r === "xsd:string") return { type: "string" };
     if (r === "xsd:integer" || r === "xsd:int") return { type: "integer" };
-    if (r === "dtype:numericUnion") return { type: "string", description: "Numeric value as string (AT Protocol does not support floats)" };
+    // Coordinates (lat/long/alt) — string representation since AT Protocol has no float
+    if (r === "dtype:numericUnion") return { type: "string", description: "Decimal number as string (AT Protocol does not support floats)" };
     return { type: "string" };
   }
 
-  // geosparql:Geometry → skip (testing, no AT equivalent)
+  // geosparql:Geometry → string serialization (testing, no AT Protocol equivalent)
   if (effectiveRange === "geosparql:Geometry") {
     return { type: "string", description: "GeoSPARQL geometry serialization" };
   }
@@ -367,9 +397,10 @@ function buildRecordLexicon(className) {
     );
     const propDef = { ...lexType };
     if (prop.comment) propDef.description = prop.comment;
-    // maxLength for strings
+    // String constraints
     if (propDef.type === "string" && !propDef.format && !propDef.knownValues && !propDef.ref) {
       if (propName === "note") propDef.maxGraphemes = 10000;
+      if (propName === "name") propDef.maxGraphemes = 640;
     }
     classProps[propName] = propDef;
   }

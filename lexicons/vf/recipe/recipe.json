@@ -12,7 +12,7 @@
           "primaryOutput": {
             "type": "string",
             "format": "at-uri",
-            "description": "The main output the recipe is intended to produce or deliver."
+            "description": "The main type of resource the recipe is intended to produce or deliver."
           },
           "recipeIncludes": {
             "type": "array",
@@ -24,7 +24,8 @@
           },
           "name": {
             "type": "string",
-            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness."
+            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness.",
+            "maxGraphemes": 640
           },
           "note": {
             "type": "string",

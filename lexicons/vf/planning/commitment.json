@@ -102,7 +102,7 @@
           },
           "finished": {
             "type": "boolean",
-            "description": "The commitment or intent or process is complete or not.  This is irrespective of if the original goal has been met, and indicates that no more will be done.  Default false."
+            "description": "The commitment or intent or process is complete or not.  This is irrespective of if the original goal has been met, and indicates simply that no more will be done.  Default false."
           },
           "resourceClassifiedAs": {
             "type": "array",

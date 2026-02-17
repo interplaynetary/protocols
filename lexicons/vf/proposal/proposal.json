@@ -21,7 +21,7 @@
           },
           "unitBased": {
             "type": "boolean",
-            "description": "This group of commitments contains unit based quantities, which can be multipied to create commitments; commonly seen in a price list or e-commerce. Default false."
+            "description": "This group of intents contains unit based quantities, which can be multipied to create commitments; commonly seen in a price list or e-commerce. Default false."
           },
           "purpose": {
             "type": "string",
@@ -43,7 +43,8 @@
           },
           "name": {
             "type": "string",
-            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness."
+            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness.",
+            "maxGraphemes": 640
           },
           "note": {
             "type": "string",
