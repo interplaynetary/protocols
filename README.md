@@ -78,7 +78,7 @@ We can also define Kubernetes deployment with Guix for reproducible infrastructu
 
 ## Getting Involved
 
-We are moving fast and experiment openly. If you are interested in protocol design, decentralized economics, or the future of digital organization, join us.
+If you are interested in protocol design, decentralized economics, or the future of digital organization, join us.
 
 **Contact**: [ruzgarimski.bsky.social](https://bsky.app/profile/ruzgarimski.bsky.social)
 
@@ -102,16 +102,3 @@ https://interplaynetary.github.io/protocols
 - [ ] Implement GraphQL API layer (perhaps in (HappyView))
 - [ ] Deploy App-views to Kubernetes cluster
 - [/] Document extension patterns for custom schemas
-
----
-
-## Auto-Generate & Deploy Docs to GitHub Pages
-
-Documentation is automatically managed via GitHub Actions.
-
-- Enable GitHub Pages (One-Time)
-- In your repo:
-  **Settings → Pages**
-  - Source: Deploy from a branch
-  - Branch: gh-pages
-  - Folder: / (root)
