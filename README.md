@@ -17,21 +17,24 @@ AT Protocol offers several key advantages for decentralized economic networks:
 
 ## Current Status
 
-We've completed the initial translation of Value Flows GraphQL schemas to AT Protocol lexicons. The next phase involves:
+We've completed the initial translation of Value Flows TTL schemas to AT Protocol lexicons. The next phase involves:
 
 1. **Deploying an App View** - Indexes and aggregates Value Flows data on AT Protocol
-2. **Serving a GraphQL API** - Provides client access to the indexed data
+2. **Serving a GraphQL API adapter to XRPC** - Provides client access to the indexed data
 3. **Automating schema-to-network deployment** - Leveraging community tooling for rapid iteration
 
 ## Leveraging Community Tools
 
 The AT Protocol community is developing tools that make this integration particularly elegant:
 
-- **Quickslice / HappyView** - Generate app views directly from schemas
+- **HappyView** - Generate app views directly from schemas
 - **Benefits**:
   - Close the loop between schema definition and full network deployment
   - Enable custom VF extensions simply by forking and extending schemas
-  - Auto-generate GraphQL APIs from uploaded schemas
+  - Auto-generate XRPC endpoints from uploaded schemas
+
+- **GraphQL API Adapter** - Generate GraphQL API from XRPC endpoints
+- Perhaps by directly contributing to the HappyView repository.
 
 ## Infrastructure Strategy
 
@@ -84,8 +87,8 @@ cd value-flows/lexicons
 
 ## Current Tasks
 
-- [ ] Translate GraphQL schemas to AT Protocol lexicons
-- [ ] Deploy initial app view (Quickslice/HappyView)
-- [ ] Implement GraphQL API layer (perhaps in (Quickslice/HappyView))
+- [ ] Translate TTL -> JSON-LD schemas to AT Protocol lexicons
+- [ ] Deploy initial app view (HappyView)
+- [ ] Implement GraphQL API layer (perhaps in (HappyView))
 - [ ] Deploy App-views to Kubernetes cluster
 - [ ] Document extension patterns for custom VF schemas

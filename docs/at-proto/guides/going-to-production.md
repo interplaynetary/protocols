@@ -1,0 +1,54 @@
+Going to production
+The Atmosphere is built to be distributed, which means anyone can and should feel free to host their own AT Protocol infrastructure. If you are self-hosting at scale, i.e. offering a service for many thousands of users, you will likely need to perform some additional “hardening” of your hosted service, and make more complication decisions about provisioning your infrastructure.
+
+The code to power a fully distributed Atmosphere is constantly improving. Here's a guide with some lessons and best practices for managing your own services.
+
+PDS
+We provide a PDS install script that is designed to get you up and running with your own PDS on a modestly resourced VPS. This will enable you to host your own data repositories, create and manage accounts, and serve your self-hosted data in the wider Atmosphere network or any other Atmosphere app. This section of the docs will help you take that PDS to production.
+
+Domain names
+If you are running a non-Bluesky app in addition to a PDS deployment, you will need separate domain names for your PDS hosting and your app. This is because image and video blobs would otherwise be served from the same domain name as the OAuth and session management pages. This could lead to security issues such as credential theft, and means that using subdomains isn't a practical solution.
+
+In other words, if you have an app at https://greensky.app, you should not use https://pds.greensky.app as a PDS hostname, you should use something like https://greensky-pds.net. If you used https://pds.greensky.social (which would make sense), it might rule out an OAuth client app at https://chat.greensky.social in the future. But you could do something like https://chat.greensky.app.
+
+The PDS has restrictive CORS headers by default.
+
+It is difficult to change a PDS hostname once it has active accounts — every account needs to be migrated individually. This is absolutely possible using PLC rotation keys, but migrating is not turnkey. Also note that the PDS is the domain that users will enter their passwords on (and therefore remembered in password managers).
+
+Backups and Recovery
+Our official PDS install script configures SQLite as a database backend. Specifically, it uses one SQLite DB for each user's data repository, and a few others for PDS-wide data. This may be surprising, since SQLite doesn't have any mechanism for handling backups or replications out of the box, but SQLite has increasingly been found to scale very well with some additional tooling.
+
+The secret sauce here is Litestream, which does exactly that — Backups and Recovery for SQLite. To get a recoverable, scalable PDS SQLite deployment with Litestream, we recommend:
+
+Setting PDS_SQLITE_DISABLE_WAL_AUTO_CHECKPOINT = true . This is in the environment variable config for your PDS. What this does is force the PDS SQLite client to keep write-ahead logging open and leave the actual checkpointing to Litestream.
+Use Litestream with systemd or another scheduler to find the most recently updated DBs and back them up. By default, individual user databases are located in /pds/actors/. Litestream will clean the write-ahead log and checkpoint automatically, so there's no risk of WAL growing out of control.
+If needed, ensure that this script also runs on SIGTERM when cleaning up containers or pods from your deployment.
+In a disaster recovery scenario, you'd pull down all the most recent account database files (which might be missing a few hours of data) and the PDS-wide database files (which should be roughly complete). Then, run a recovery script which applies any repo operations from the PDS-level firehose output. This includes identity and account updates. Then, start the PDS back up.
+
+PLC key management
+It's important to secure the extra PLC identity rotation key for hosted accounts — e.g., in a Key Management System or Hardware Security Module. Pay attention to these two environment variables:
+
+PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX: used by the PDS service to perform operations on the PLC including recovering user accounts. If you are using AWS, this is configurable with the AWS Key Management Service, using PDS_PLC_ROTATION_KEY_KMS_KEY_ID.
+PDS_RECOVERY_DID_KEY: a public key that is added to the users DID. The corresponding private key must be stored in a safe place and can be used to recover user accounts in case of a catastrophic loss of data including the PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX.
+Working with images, video and other blobs
+By default, the PDS install script configures local disk storage for blobs (images, video, etc). This is fine for small deployments, but not recommended for production deployments.
+
+Storage needs will vary, but we strongly recommend using S3-compatible storage (e.g. Minio or a block storage offering from a VPS provider) instead of storing images and video on local disk.
+
+Rate limits
+The PDS implementation includes repo operation limits by default.
+
+If you remove those limits, then the entire PDS might get limited at the Relay (which itself has default event rate-limits for each PDS host), so be mindful of this if you are not also running your own Relay.
+
+By default, our PDS install script will set up a single Node application process. These are stateless backend applications that run on top of SQLite. If you scale horizontally to run multiple Node processes, you'll also need to use Redis to allow them to share state. There are two environment variables used to configure Redis:
+
+PDS_REDIS_SCRATCH_ADDRESS — your Redis instance (e.g. localhost:6379)
+PDS_REDIS_SCRATCH_PASSWORD — your Redis credentials.
+This allows your rate limiting to scale gracefully.
+
+Moderation
+Moderation is almost always performed at the PDS level. However, if you are also running a Relay, you should be aware that the Relay admin web interface has forms for performing account-level and PDS-level actions if needed. There are also some moderation-related PDS endpoints not exposed via XRPC, which our goat CLI tool can interact with. Refer to goat/pds_admin.go for examples.
+
+Ozone is our labeling service and moderation interface. If you are building your own AppView, AppViews can use the Ozone subscribeLabel "firehose" to receive updates. Ozone can also be granted permission to read additional PDS-level private information, such as the account email. This is helpful for things like account recovery.
+
+You should generally run separate Ozone instances for moderating the PDS (since they can see private account info) and standalone AppViews, unless there is actually a single administrative org doing the moderation for both.
