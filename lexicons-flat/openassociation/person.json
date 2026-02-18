@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "org.openassociation.observation.agent",
+  "id": "org.openassociation.person",
   "defs": {
     "main": {
       "type": "record",
@@ -9,15 +9,6 @@
       "record": {
         "type": "object",
         "properties": {
-          "type": {
-            "type": "string",
-            "description": "The type of agent.",
-            "enum": [
-              "person",
-              "organization",
-              "ecologicalAgent"
-            ]
-          },
           "primaryLocation": {
             "type": "string",
             "format": "at-uri",
@@ -37,13 +28,6 @@
             "type": "string",
             "description": "Any useful textual information related to the item.",
             "maxGraphemes": 10000
-          },
-          "classifiedAs": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "References one or more uri's for a concept in a common taxonomy or other classification scheme for purposes of categorization or grouping; or it can be one or more string classifications such as tags."
           }
         }
       }

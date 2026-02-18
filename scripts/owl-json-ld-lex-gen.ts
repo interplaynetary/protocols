@@ -615,7 +615,8 @@ if (AUDIT_MODE) {
  function writeLexicons(): void {
   // Write defs if they were generated
   if (allLexicons[`${NS}.defs`]) {
-    const defsPath = join(ROOT, OUTPUT_BASE, "defs.json");
+    const defsParts = `${NS}.defs`.split(".");
+    const defsPath = join(ROOT, OUTPUT_BASE, ...defsParts.slice(1, -1), defsParts[defsParts.length - 1] + ".json");
     mkdirSync(dirname(defsPath), { recursive: true });
     writeFileSync(defsPath, JSON.stringify(allLexicons[`${NS}.defs`], null, 2) + "\n");
     console.log(`✓ ${defsPath}`);
@@ -676,8 +677,12 @@ function expectedLexiconType(rangeType: string | null, owlType: string | string[
   if (rangeType === "xsd:boolean") return { type: "boolean" };
   if (rangeType === "xsd:dateTimeStamp") return { type: "string", format: "datetime" };
   if (rangeType === "xsd:anyURI") return { type: "string", format: "uri" };
-  if (rangeType === "xsd:decimal" || rangeType === "xsd:float" || rangeType === "dtype:numericUnion") {
+  if (rangeType === "xsd:decimal" || rangeType === "xsd:float") {
     return { type: "ref", ref: `${NS}.defs#measure` };
+  }
+  if (rangeType === "dtype:numericUnion") {
+    // AT Protocol has no float — generator stores these as strings (e.g. lat/long/alt)
+    return { type: "string", note: "decimal as string (AT Protocol has no float)" };
   }
   if (rangeType === "xsd:integer" || rangeType === "xsd:int") return { type: "integer" };
 
