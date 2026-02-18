@@ -9,6 +9,11 @@
       "record": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness.",
+            "maxGraphemes": 640
+          },
           "long": {
             "type": "string",
             "description": "The WGS84 longitude of a spatial thing (decimal degrees)."
@@ -28,11 +33,6 @@
           "hasDetailedGeometry": {
             "type": "string",
             "description": "A spatial geometry of any complexity and tooling supported by geosparql."
-          },
-          "name": {
-            "type": "string",
-            "description": "An informal or formal textual identifier for an object. Does not imply uniqueness.",
-            "maxGraphemes": 640
           },
           "note": {
             "type": "string",

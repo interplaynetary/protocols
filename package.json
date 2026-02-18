@@ -3,6 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "template-app"
+  ],
   "devDependencies": {
     "@types/bun": "latest",
     "vitepress": "^1.6.4"
