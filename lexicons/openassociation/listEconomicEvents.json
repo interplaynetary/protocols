@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "List economicEvents. Filterable by: action, inputOf, outputOf, resourceInventoriedAs, toResourceInventoriedAs, provider, receiver, corrects, settles, fulfills, satisfies, realizationOf, reciprocalRealizationOf.",
+      "description": "List economicEvents. Filterable by: action, inputOf, outputOf, resourceInventoriedAs, toResourceInventoriedAs, provider, receiver, corrects, settles, toLocation, fulfills, satisfies, resourceConformsTo, realizationOf, reciprocalRealizationOf.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -15,7 +15,8 @@
           },
           "action": {
             "type": "string",
-            "description": "Filter by action value."
+            "description": "Filter by action (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "inputOf": {
             "type": "string",
@@ -57,6 +58,11 @@
             "description": "Filter where settles array contains this AT-URI.",
             "format": "at-uri"
           },
+          "toLocation": {
+            "type": "string",
+            "description": "Filter by toLocation (AT-URI of referenced record).",
+            "format": "at-uri"
+          },
           "fulfills": {
             "type": "string",
             "description": "Filter where fulfills array contains this AT-URI.",
@@ -65,6 +71,11 @@
           "satisfies": {
             "type": "string",
             "description": "Filter where satisfies array contains this AT-URI.",
+            "format": "at-uri"
+          },
+          "resourceConformsTo": {
+            "type": "string",
+            "description": "Filter by resourceConformsTo (AT-URI of referenced record).",
             "format": "at-uri"
           },
           "realizationOf": {

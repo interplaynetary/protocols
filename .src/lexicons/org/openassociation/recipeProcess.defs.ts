@@ -3,6 +3,7 @@
  */
 
 import { l } from '@atproto/lex'
+import * as OpenassociationDefs from './defs.defs.js'
 
 const $nsid = 'org.openassociation.recipeProcess'
 
@@ -25,7 +26,7 @@ type Main = {
   /**
    * The temporal extent of the process.
    */
-  hasDuration?: Measure
+  hasDuration?: OpenassociationDefs.Measure
 
   /**
    * The uri to an image relevant to the entity, such as a logo, avatar, photo, diagram, etc.
@@ -62,7 +63,11 @@ const main = l.record<'tid', Main>(
   l.object({
     hasRecipeInput: l.optional(l.array(l.string({ format: 'at-uri' }))),
     hasRecipeOutput: l.optional(l.array(l.string({ format: 'at-uri' }))),
-    hasDuration: l.optional(l.ref<Measure>((() => measure) as any)),
+    hasDuration: l.optional(
+      l.ref<OpenassociationDefs.Measure>(
+        (() => OpenassociationDefs.measure) as any,
+      ),
+    ),
     image: l.optional(l.string({ format: 'uri' })),
     name: l.optional(l.string({ maxGraphemes: 640 })),
     note: l.optional(l.string({ maxGraphemes: 10000 })),
@@ -85,44 +90,3 @@ export const $assert = /*#__PURE__*/ main.assert.bind(main),
   $safeParse = /*#__PURE__*/ main.safeParse.bind(main),
   $validate = /*#__PURE__*/ main.validate.bind(main),
   $safeValidate = /*#__PURE__*/ main.safeValidate.bind(main)
-
-/** A quantity expressed as a numeric value with a unit of measure. AT Protocol does not support floats, so the value is represented as numerator/denominator integers. */
-type Measure = {
-  $type?: 'org.openassociation.recipeProcess#measure'
-
-  /**
-   * The numeric value (numerator).
-   */
-  hasNumericalValue: number
-
-  /**
-   * The denominator for fractional values. Default 1 if omitted.
-   */
-  hasDenominator?: number
-
-  /**
-   * The display label of the unit of measure (e.g. 'kilogram', 'hour').
-   */
-  unitLabel?: string
-
-  /**
-   * The display symbol of the unit of measure (e.g. 'kg', 'h').
-   */
-  unitSymbol?: string
-}
-
-export type { Measure }
-
-/** A quantity expressed as a numeric value with a unit of measure. AT Protocol does not support floats, so the value is represented as numerator/denominator integers. */
-const measure = l.typedObject<Measure>(
-  $nsid,
-  'measure',
-  l.object({
-    hasNumericalValue: l.integer(),
-    hasDenominator: l.optional(l.integer()),
-    unitLabel: l.optional(l.string()),
-    unitSymbol: l.optional(l.string()),
-  }),
-)
-
-export { measure }

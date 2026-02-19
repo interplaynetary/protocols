@@ -8,16 +8,17 @@ const $nsid = 'org.openassociation.listClaims'
 
 export { $nsid }
 
-/** List claims. Filterable by: action, provider, receiver, triggeredBy, finished. */
+/** List claims. Filterable by: action, provider, receiver, triggeredBy, finished, resourceConformsTo. */
 const main = l.query(
   $nsid,
   l.params({
     uri: l.optional(l.string({ format: 'at-uri' })),
-    action: l.optional(l.string()),
+    action: l.optional(l.string({ format: 'at-uri' })),
     provider: l.optional(l.string({ format: 'did' })),
     receiver: l.optional(l.string({ format: 'did' })),
     triggeredBy: l.optional(l.string({ format: 'at-uri' })),
     finished: l.optional(l.boolean()),
+    resourceConformsTo: l.optional(l.string({ format: 'at-uri' })),
     limit: l.optional(
       l.withDefault(l.integer({ minimum: 1, maximum: 100 }), 50),
     ),

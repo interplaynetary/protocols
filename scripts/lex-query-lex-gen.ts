@@ -82,7 +82,7 @@ function getArg(name: string): string | null {
   return idx !== -1 && idx + 1 < Bun.argv.length ? Bun.argv[idx + 1] : null;
 }
 
-const INPUT_GLOB = getArg("--input") ?? "lexicons-expanded/openassociation/*.json";
+const INPUT_GLOB = getArg("--input") ?? "lexicons/openassociation/*.json";
 const OUTPUT_DIR = getArg("--output") ?? "lexicons/openassociation";
 
 // ─── load record lexicons ────────────────────────────────────────────────────

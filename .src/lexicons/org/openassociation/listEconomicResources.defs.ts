@@ -8,7 +8,7 @@ const $nsid = 'org.openassociation.listEconomicResources'
 
 export { $nsid }
 
-/** List economicResources. Filterable by: containedIn, contains, primaryAccountable, stage. */
+/** List economicResources. Filterable by: containedIn, contains, primaryAccountable, currentLocation, ofBatchLot, unitOfEffort, conformsTo, stage. */
 const main = l.query(
   $nsid,
   l.params({
@@ -16,6 +16,10 @@ const main = l.query(
     containedIn: l.optional(l.string({ format: 'at-uri' })),
     contains: l.optional(l.string({ format: 'at-uri' })),
     primaryAccountable: l.optional(l.string({ format: 'did' })),
+    currentLocation: l.optional(l.string({ format: 'at-uri' })),
+    ofBatchLot: l.optional(l.string({ format: 'at-uri' })),
+    unitOfEffort: l.optional(l.string({ format: 'at-uri' })),
+    conformsTo: l.optional(l.string({ format: 'at-uri' })),
     stage: l.optional(l.string({ format: 'at-uri' })),
     limit: l.optional(
       l.withDefault(l.integer({ minimum: 1, maximum: 100 }), 50),

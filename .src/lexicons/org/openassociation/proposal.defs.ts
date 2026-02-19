@@ -40,7 +40,7 @@ type Main = {
   /**
    * Location or area where the proposal is valid.
    */
-  eligibleLocation?: Location
+  eligibleLocation?: l.AtUriString
 
   /**
    * An informal or formal textual identifier for an object. Does not imply uniqueness.
@@ -85,7 +85,7 @@ const main = l.record<'tid', Main>(
     unitBased: l.optional(l.boolean()),
     purpose: l.optional(l.string()),
     created: l.optional(l.string({ format: 'datetime' })),
-    eligibleLocation: l.optional(l.ref<Location>((() => location) as any)),
+    eligibleLocation: l.optional(l.string({ format: 'at-uri' })),
     name: l.optional(l.string({ maxGraphemes: 640 })),
     note: l.optional(l.string({ maxGraphemes: 10000 })),
     publishes: l.optional(l.array(l.string({ format: 'at-uri' }))),
@@ -109,48 +109,3 @@ export const $assert = /*#__PURE__*/ main.assert.bind(main),
   $safeParse = /*#__PURE__*/ main.safeParse.bind(main),
   $validate = /*#__PURE__*/ main.validate.bind(main),
   $safeValidate = /*#__PURE__*/ main.safeValidate.bind(main)
-
-type Location = {
-  $type?: 'org.openassociation.proposal#location'
-
-  /**
-   * WGS84 latitude (decimal degrees).
-   */
-  lat?: string
-
-  /**
-   * WGS84 longitude (decimal degrees).
-   */
-  long?: string
-
-  /**
-   * WGS84 altitude (decimal meters above the local reference ellipsoid).
-   */
-  alt?: string
-
-  /**
-   * A textual address that can be mapped using mapping software.
-   */
-  mappableAddress?: string
-
-  /**
-   * An informal or formal textual identifier for the location.
-   */
-  name?: string
-}
-
-export type { Location }
-
-const location = l.typedObject<Location>(
-  $nsid,
-  'location',
-  l.object({
-    lat: l.optional(l.string()),
-    long: l.optional(l.string()),
-    alt: l.optional(l.string()),
-    mappableAddress: l.optional(l.string()),
-    name: l.optional(l.string()),
-  }),
-)
-
-export { location }

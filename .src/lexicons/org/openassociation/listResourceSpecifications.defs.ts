@@ -8,13 +8,15 @@ const $nsid = 'org.openassociation.listResourceSpecifications'
 
 export { $nsid }
 
-/** List resourceSpecifications. Filterable by: mediumOfExchange, substitutable. */
+/** List resourceSpecifications. Filterable by: mediumOfExchange, substitutable, defaultUnitOfEffort, defaultUnitOfResource. */
 const main = l.query(
   $nsid,
   l.params({
     uri: l.optional(l.string({ format: 'at-uri' })),
     mediumOfExchange: l.optional(l.boolean()),
     substitutable: l.optional(l.boolean()),
+    defaultUnitOfEffort: l.optional(l.string({ format: 'at-uri' })),
+    defaultUnitOfResource: l.optional(l.string({ format: 'at-uri' })),
     limit: l.optional(
       l.withDefault(l.integer({ minimum: 1, maximum: 100 }), 50),
     ),

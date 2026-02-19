@@ -8,13 +8,14 @@ const $nsid = 'org.openassociation.listProposals'
 
 export { $nsid }
 
-/** List proposals. Filterable by: unitBased, purpose, publishes, reciprocal, proposedTo, listedIn. */
+/** List proposals. Filterable by: unitBased, purpose, eligibleLocation, publishes, reciprocal, proposedTo, listedIn. */
 const main = l.query(
   $nsid,
   l.params({
     uri: l.optional(l.string({ format: 'at-uri' })),
     unitBased: l.optional(l.boolean()),
     purpose: l.optional(l.string()),
+    eligibleLocation: l.optional(l.string({ format: 'at-uri' })),
     publishes: l.optional(l.string({ format: 'at-uri' })),
     reciprocal: l.optional(l.string({ format: 'at-uri' })),
     proposedTo: l.optional(l.string({ format: 'did' })),

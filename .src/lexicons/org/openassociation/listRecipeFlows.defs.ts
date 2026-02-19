@@ -8,16 +8,17 @@ const $nsid = 'org.openassociation.listRecipeFlows'
 
 export { $nsid }
 
-/** List recipeFlows. Filterable by: action, recipeInputOf, recipeOutputOf, recipeClauseOf, recipeReciprocalClauseOf, stage. */
+/** List recipeFlows. Filterable by: action, recipeInputOf, recipeOutputOf, recipeClauseOf, recipeReciprocalClauseOf, resourceConformsTo, stage. */
 const main = l.query(
   $nsid,
   l.params({
     uri: l.optional(l.string({ format: 'at-uri' })),
-    action: l.optional(l.string()),
+    action: l.optional(l.string({ format: 'at-uri' })),
     recipeInputOf: l.optional(l.string({ format: 'at-uri' })),
     recipeOutputOf: l.optional(l.string({ format: 'at-uri' })),
     recipeClauseOf: l.optional(l.string({ format: 'at-uri' })),
     recipeReciprocalClauseOf: l.optional(l.string({ format: 'at-uri' })),
+    resourceConformsTo: l.optional(l.string({ format: 'at-uri' })),
     stage: l.optional(l.string({ format: 'at-uri' })),
     limit: l.optional(
       l.withDefault(l.integer({ minimum: 1, maximum: 100 }), 50),

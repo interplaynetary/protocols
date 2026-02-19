@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "List economicResources. Filterable by: containedIn, contains, primaryAccountable, stage.",
+      "description": "List economicResources. Filterable by: containedIn, contains, primaryAccountable, currentLocation, ofBatchLot, unitOfEffort, conformsTo, stage.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -27,6 +27,26 @@
             "type": "string",
             "description": "Filter by primaryAccountable (DID of referenced agent).",
             "format": "did"
+          },
+          "currentLocation": {
+            "type": "string",
+            "description": "Filter by currentLocation (AT-URI of referenced record).",
+            "format": "at-uri"
+          },
+          "ofBatchLot": {
+            "type": "string",
+            "description": "Filter by ofBatchLot (AT-URI of referenced record).",
+            "format": "at-uri"
+          },
+          "unitOfEffort": {
+            "type": "string",
+            "description": "Filter by unitOfEffort (AT-URI of referenced record).",
+            "format": "at-uri"
+          },
+          "conformsTo": {
+            "type": "string",
+            "description": "Filter by conformsTo (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "stage": {
             "type": "string",

@@ -14,28 +14,8 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "Defines the kind of flow, such as consume, produce, work, transfer, etc.",
-            "knownValues": [
-              "accept",
-              "cite",
-              "combine",
-              "consume",
-              "copy",
-              "deliverService",
-              "dropoff",
-              "lower",
-              "modify",
-              "move",
-              "pickup",
-              "produce",
-              "raise",
-              "separate",
-              "transfer",
-              "transferAllRights",
-              "transferCustody",
-              "use",
-              "work"
-            ]
+            "format": "at-uri",
+            "description": "Defines the kind of flow, such as consume, produce, work, transfer, etc."
           },
           "inputOf": {
             "type": "string",
@@ -97,12 +77,12 @@
           },
           "resourceQuantity": {
             "type": "ref",
-            "ref": "#measure",
+            "ref": "org.openassociation.defs#measure",
             "description": "The amount and unit of the economic resource counted or inventoried."
           },
           "effortQuantity": {
             "type": "ref",
-            "ref": "#measure",
+            "ref": "org.openassociation.defs#measure",
             "description": "The amount and unit of the work or use or citation effort-based action. This is often expressed with a time unit, but also could be cycle counts or other measures of effort or usefulness."
           },
           "created": {
@@ -111,8 +91,8 @@
             "description": "The date, and time if desired, the information was agreed to or recorded."
           },
           "toLocation": {
-            "type": "ref",
-            "ref": "#location",
+            "type": "string",
+            "format": "at-uri",
             "description": "The new location of the receiver resource."
           },
           "image": {
@@ -149,8 +129,8 @@
             "description": "References one or more uri's for a concept in a common taxonomy or other classification scheme for purposes of categorization or grouping; or can be one or more string classifications such as tags."
           },
           "resourceConformsTo": {
-            "type": "ref",
-            "ref": "#resourceSpecification",
+            "type": "string",
+            "format": "at-uri",
             "description": "The lowest level resource specification or definition of an existing or potential economic resource, whether one will ever be instantiated or not."
           },
           "state": {
@@ -167,55 +147,6 @@
             "format": "at-uri",
             "description": "This reciprocal economic event occurs as part of this agreement."
           }
-        }
-      }
-    },
-    "measure": {
-      "type": "object",
-      "description": "A quantity expressed as a numeric value with a unit of measure. AT Protocol does not support floats, so the value is represented as numerator/denominator integers.",
-      "required": [
-        "hasNumericalValue"
-      ],
-      "properties": {
-        "hasNumericalValue": {
-          "type": "integer",
-          "description": "The numeric value (numerator)."
-        },
-        "hasDenominator": {
-          "type": "integer",
-          "description": "The denominator for fractional values. Default 1 if omitted."
-        },
-        "unitLabel": {
-          "type": "string",
-          "description": "The display label of the unit of measure (e.g. 'kilogram', 'hour')."
-        },
-        "unitSymbol": {
-          "type": "string",
-          "description": "The display symbol of the unit of measure (e.g. 'kg', 'h')."
-        }
-      }
-    },
-    "location": {
-      "type": "object",
-      "properties": {
-        "lat": { "type": "string", "description": "WGS84 latitude (decimal degrees)." },
-        "long": { "type": "string", "description": "WGS84 longitude (decimal degrees)." },
-        "alt": { "type": "string", "description": "WGS84 altitude (decimal meters above the local reference ellipsoid)." },
-        "mappableAddress": { "type": "string", "description": "A textual address that can be mapped using mapping software." },
-        "name": { "type": "string", "description": "An informal or formal textual identifier for the location." }
-      }
-    },
-    "resourceSpecification": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Display name of the resource specification."
-        },
-        "uri": {
-          "type": "string",
-          "format": "at-uri",
-          "description": "AT-URI link to the ResourceSpecification record."
         }
       }
     }

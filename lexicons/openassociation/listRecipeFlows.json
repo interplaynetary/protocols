@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "List recipeFlows. Filterable by: action, recipeInputOf, recipeOutputOf, recipeClauseOf, recipeReciprocalClauseOf, stage.",
+      "description": "List recipeFlows. Filterable by: action, recipeInputOf, recipeOutputOf, recipeClauseOf, recipeReciprocalClauseOf, resourceConformsTo, stage.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -15,7 +15,8 @@
           },
           "action": {
             "type": "string",
-            "description": "Filter by action value."
+            "description": "Filter by action (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "recipeInputOf": {
             "type": "string",
@@ -35,6 +36,11 @@
           "recipeReciprocalClauseOf": {
             "type": "string",
             "description": "Filter by recipeReciprocalClauseOf (AT-URI of referenced record).",
+            "format": "at-uri"
+          },
+          "resourceConformsTo": {
+            "type": "string",
+            "description": "Filter by resourceConformsTo (AT-URI of referenced record).",
             "format": "at-uri"
           },
           "stage": {

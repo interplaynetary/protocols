@@ -473,11 +473,19 @@ Reference fields in records are AT-URIs pointing to other records. Use `$derived
 {/await}
 ```
 
-For multiple related fields, chain them:
+For multiple related fields, chain them. `action`, `resourceInventoriedAs`, and `inputOf` are all AT-URIs — resolve each one independently:
 
 ```svelte
 <script lang="ts">
   let { event }: { event: any } = $props();
+
+  const action = $derived.by(() =>
+    event.value?.action
+      ? query<{ record: any }>("org.openassociation.listActions", {
+          uri: event.value.action,
+        }).then((d) => d.record)
+      : Promise.resolve(null)
+  );
 
   const resource = $derived.by(() =>
     event.value?.resourceInventoriedAs
@@ -495,6 +503,10 @@ For multiple related fields, chain them:
       : Promise.resolve(null)
   );
 </script>
+
+{#await action then a}
+  <span>Action: {a?.value?.label}</span>
+{/await}
 
 {#await resource then r}
   <span>Resource: {r?.value?.name}</span>
@@ -520,6 +532,23 @@ Last page:      { records: [...5] }          ← no cursor = end of results
 ```
 
 Keep all other params identical between pages. The `XrpcList.loadMore()` method handles this automatically.
+
+**Filtering by action**: `action` is a linked record (at-uri), not an enum string. Pass the full AT-URI of the action record:
+
+```
+GET /xrpc/org.openassociation.listEconomicEvents?action=at://did:plc:xxx/org.openassociation.action/consume
+```
+
+To get an action's AT-URI, fetch it by `actionId`:
+
+```ts
+const { records } = await query<{ records: any[] }>("org.openassociation.listActions", {
+  // use uri filter if you already have the at-uri, or browse all actions
+  limit: 50,
+});
+const consume = records.find((r) => r.value?.actionId === "consume");
+// consume.uri is the AT-URI to use in action filters
+```
 
 ---
 

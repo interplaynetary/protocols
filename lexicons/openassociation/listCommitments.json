@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "List commitments. Filterable by: action, inputOf, outputOf, plannedWithin, independentDemandOf, resourceInventoriedAs, provider, receiver, satisfies, finished, stage, clauseOf, reciprocalClauseOf.",
+      "description": "List commitments. Filterable by: action, inputOf, outputOf, plannedWithin, independentDemandOf, resourceInventoriedAs, provider, receiver, satisfies, finished, resourceConformsTo, stage, clauseOf, reciprocalClauseOf.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -15,7 +15,8 @@
           },
           "action": {
             "type": "string",
-            "description": "Filter by action value."
+            "description": "Filter by action (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "inputOf": {
             "type": "string",
@@ -60,6 +61,11 @@
           "finished": {
             "type": "boolean",
             "description": "Filter by finished."
+          },
+          "resourceConformsTo": {
+            "type": "string",
+            "description": "Filter by resourceConformsTo (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "stage": {
             "type": "string",

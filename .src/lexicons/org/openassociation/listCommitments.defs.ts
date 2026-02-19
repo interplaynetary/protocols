@@ -8,12 +8,12 @@ const $nsid = 'org.openassociation.listCommitments'
 
 export { $nsid }
 
-/** List commitments. Filterable by: action, inputOf, outputOf, plannedWithin, independentDemandOf, resourceInventoriedAs, provider, receiver, satisfies, finished, stage, clauseOf, reciprocalClauseOf. */
+/** List commitments. Filterable by: action, inputOf, outputOf, plannedWithin, independentDemandOf, resourceInventoriedAs, provider, receiver, satisfies, finished, resourceConformsTo, stage, clauseOf, reciprocalClauseOf. */
 const main = l.query(
   $nsid,
   l.params({
     uri: l.optional(l.string({ format: 'at-uri' })),
-    action: l.optional(l.string()),
+    action: l.optional(l.string({ format: 'at-uri' })),
     inputOf: l.optional(l.string({ format: 'at-uri' })),
     outputOf: l.optional(l.string({ format: 'at-uri' })),
     plannedWithin: l.optional(l.string({ format: 'at-uri' })),
@@ -23,6 +23,7 @@ const main = l.query(
     receiver: l.optional(l.string({ format: 'did' })),
     satisfies: l.optional(l.string({ format: 'at-uri' })),
     finished: l.optional(l.boolean()),
+    resourceConformsTo: l.optional(l.string({ format: 'at-uri' })),
     stage: l.optional(l.string({ format: 'at-uri' })),
     clauseOf: l.optional(l.string({ format: 'at-uri' })),
     reciprocalClauseOf: l.optional(l.string({ format: 'at-uri' })),

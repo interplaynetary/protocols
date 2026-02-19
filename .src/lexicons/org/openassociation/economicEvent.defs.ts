@@ -3,6 +3,7 @@
  */
 
 import { l } from '@atproto/lex'
+import * as OpenassociationDefs from './defs.defs.js'
 
 const $nsid = 'org.openassociation.economicEvent'
 
@@ -15,27 +16,7 @@ type Main = {
   /**
    * Defines the kind of flow, such as consume, produce, work, transfer, etc.
    */
-  action:
-    | 'accept'
-    | 'cite'
-    | 'combine'
-    | 'consume'
-    | 'copy'
-    | 'deliverService'
-    | 'dropoff'
-    | 'lower'
-    | 'modify'
-    | 'move'
-    | 'pickup'
-    | 'produce'
-    | 'raise'
-    | 'separate'
-    | 'transfer'
-    | 'transferAllRights'
-    | 'transferCustody'
-    | 'use'
-    | 'work'
-    | l.UnknownString
+  action: l.AtUriString
 
   /**
    * Relates an input flow to its process.
@@ -95,12 +76,12 @@ type Main = {
   /**
    * The amount and unit of the economic resource counted or inventoried.
    */
-  resourceQuantity?: Measure
+  resourceQuantity?: OpenassociationDefs.Measure
 
   /**
    * The amount and unit of the work or use or citation effort-based action. This is often expressed with a time unit, but also could be cycle counts or other measures of effort or usefulness.
    */
-  effortQuantity?: Measure
+  effortQuantity?: OpenassociationDefs.Measure
 
   /**
    * The date, and time if desired, the information was agreed to or recorded.
@@ -110,7 +91,7 @@ type Main = {
   /**
    * The new location of the receiver resource.
    */
-  toLocation?: Location
+  toLocation?: l.AtUriString
 
   /**
    * The uri to an image relevant to the entity, such as a logo, avatar, photo, diagram, etc.
@@ -140,7 +121,7 @@ type Main = {
   /**
    * The lowest level resource specification or definition of an existing or potential economic resource, whether one will ever be instantiated or not.
    */
-  resourceConformsTo?: ResourceSpecification
+  resourceConformsTo?: l.AtUriString
 
   /**
    * The required state of the desired input economic resource, after coming out of a test or review process.
@@ -165,7 +146,7 @@ const main = l.record<'tid', Main>(
   'tid',
   $nsid,
   l.object({
-    action: l.string(),
+    action: l.string({ format: 'at-uri' }),
     inputOf: l.optional(l.string({ format: 'at-uri' })),
     outputOf: l.optional(l.string({ format: 'at-uri' })),
     resourceInventoriedAs: l.optional(l.string({ format: 'at-uri' })),
@@ -177,18 +158,24 @@ const main = l.record<'tid', Main>(
     hasBeginning: l.optional(l.string({ format: 'datetime' })),
     hasEnd: l.optional(l.string({ format: 'datetime' })),
     hasPointInTime: l.optional(l.string({ format: 'datetime' })),
-    resourceQuantity: l.optional(l.ref<Measure>((() => measure) as any)),
-    effortQuantity: l.optional(l.ref<Measure>((() => measure) as any)),
+    resourceQuantity: l.optional(
+      l.ref<OpenassociationDefs.Measure>(
+        (() => OpenassociationDefs.measure) as any,
+      ),
+    ),
+    effortQuantity: l.optional(
+      l.ref<OpenassociationDefs.Measure>(
+        (() => OpenassociationDefs.measure) as any,
+      ),
+    ),
     created: l.optional(l.string({ format: 'datetime' })),
-    toLocation: l.optional(l.ref<Location>((() => location) as any)),
+    toLocation: l.optional(l.string({ format: 'at-uri' })),
     image: l.optional(l.string({ format: 'uri' })),
     note: l.optional(l.string({ maxGraphemes: 10000 })),
     fulfills: l.optional(l.array(l.string({ format: 'at-uri' }))),
     satisfies: l.optional(l.array(l.string({ format: 'at-uri' }))),
     resourceClassifiedAs: l.optional(l.array(l.string())),
-    resourceConformsTo: l.optional(
-      l.ref<ResourceSpecification>((() => resourceSpecification) as any),
-    ),
+    resourceConformsTo: l.optional(l.string({ format: 'at-uri' })),
     state: l.optional(l.string()),
     realizationOf: l.optional(l.string({ format: 'at-uri' })),
     reciprocalRealizationOf: l.optional(l.string({ format: 'at-uri' })),
@@ -209,116 +196,3 @@ export const $assert = /*#__PURE__*/ main.assert.bind(main),
   $safeParse = /*#__PURE__*/ main.safeParse.bind(main),
   $validate = /*#__PURE__*/ main.validate.bind(main),
   $safeValidate = /*#__PURE__*/ main.safeValidate.bind(main)
-
-/** A quantity expressed as a numeric value with a unit of measure. AT Protocol does not support floats, so the value is represented as numerator/denominator integers. */
-type Measure = {
-  $type?: 'org.openassociation.economicEvent#measure'
-
-  /**
-   * The numeric value (numerator).
-   */
-  hasNumericalValue: number
-
-  /**
-   * The denominator for fractional values. Default 1 if omitted.
-   */
-  hasDenominator?: number
-
-  /**
-   * The display label of the unit of measure (e.g. 'kilogram', 'hour').
-   */
-  unitLabel?: string
-
-  /**
-   * The display symbol of the unit of measure (e.g. 'kg', 'h').
-   */
-  unitSymbol?: string
-}
-
-export type { Measure }
-
-/** A quantity expressed as a numeric value with a unit of measure. AT Protocol does not support floats, so the value is represented as numerator/denominator integers. */
-const measure = l.typedObject<Measure>(
-  $nsid,
-  'measure',
-  l.object({
-    hasNumericalValue: l.integer(),
-    hasDenominator: l.optional(l.integer()),
-    unitLabel: l.optional(l.string()),
-    unitSymbol: l.optional(l.string()),
-  }),
-)
-
-export { measure }
-
-type Location = {
-  $type?: 'org.openassociation.economicEvent#location'
-
-  /**
-   * WGS84 latitude (decimal degrees).
-   */
-  lat?: string
-
-  /**
-   * WGS84 longitude (decimal degrees).
-   */
-  long?: string
-
-  /**
-   * WGS84 altitude (decimal meters above the local reference ellipsoid).
-   */
-  alt?: string
-
-  /**
-   * A textual address that can be mapped using mapping software.
-   */
-  mappableAddress?: string
-
-  /**
-   * An informal or formal textual identifier for the location.
-   */
-  name?: string
-}
-
-export type { Location }
-
-const location = l.typedObject<Location>(
-  $nsid,
-  'location',
-  l.object({
-    lat: l.optional(l.string()),
-    long: l.optional(l.string()),
-    alt: l.optional(l.string()),
-    mappableAddress: l.optional(l.string()),
-    name: l.optional(l.string()),
-  }),
-)
-
-export { location }
-
-type ResourceSpecification = {
-  $type?: 'org.openassociation.economicEvent#resourceSpecification'
-
-  /**
-   * Display name of the resource specification.
-   */
-  name?: string
-
-  /**
-   * AT-URI link to the ResourceSpecification record.
-   */
-  uri?: l.AtUriString
-}
-
-export type { ResourceSpecification }
-
-const resourceSpecification = l.typedObject<ResourceSpecification>(
-  $nsid,
-  'resourceSpecification',
-  l.object({
-    name: l.optional(l.string()),
-    uri: l.optional(l.string({ format: 'at-uri' })),
-  }),
-)
-
-export { resourceSpecification }

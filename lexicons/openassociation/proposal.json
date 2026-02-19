@@ -37,8 +37,8 @@
             "description": "The date, and time if desired, the information was agreed to or recorded."
           },
           "eligibleLocation": {
-            "type": "ref",
-            "ref": "#location",
+            "type": "string",
+            "format": "at-uri",
             "description": "Location or area where the proposal is valid."
           },
           "name": {
@@ -84,16 +84,6 @@
             "description": "This proposal is part of these lists of proposals."
           }
         }
-      }
-    },
-    "location": {
-      "type": "object",
-      "properties": {
-        "lat": { "type": "string", "description": "WGS84 latitude (decimal degrees)." },
-        "long": { "type": "string", "description": "WGS84 longitude (decimal degrees)." },
-        "alt": { "type": "string", "description": "WGS84 altitude (decimal meters above the local reference ellipsoid)." },
-        "mappableAddress": { "type": "string", "description": "A textual address that can be mapped using mapping software." },
-        "name": { "type": "string", "description": "An informal or formal textual identifier for the location." }
       }
     }
   }

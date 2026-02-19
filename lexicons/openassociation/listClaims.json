@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "List claims. Filterable by: action, provider, receiver, triggeredBy, finished.",
+      "description": "List claims. Filterable by: action, provider, receiver, triggeredBy, finished, resourceConformsTo.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -15,7 +15,8 @@
           },
           "action": {
             "type": "string",
-            "description": "Filter by action value."
+            "description": "Filter by action (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "provider": {
             "type": "string",
@@ -35,6 +36,11 @@
           "finished": {
             "type": "boolean",
             "description": "Filter by finished."
+          },
+          "resourceConformsTo": {
+            "type": "string",
+            "description": "Filter by resourceConformsTo (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "limit": {
             "type": "integer",

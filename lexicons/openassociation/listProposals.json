@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "List proposals. Filterable by: unitBased, purpose, publishes, reciprocal, proposedTo, listedIn.",
+      "description": "List proposals. Filterable by: unitBased, purpose, eligibleLocation, publishes, reciprocal, proposedTo, listedIn.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -20,6 +20,11 @@
           "purpose": {
             "type": "string",
             "description": "Filter by purpose value."
+          },
+          "eligibleLocation": {
+            "type": "string",
+            "description": "Filter by eligibleLocation (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "publishes": {
             "type": "string",

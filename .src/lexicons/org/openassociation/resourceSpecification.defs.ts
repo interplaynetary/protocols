@@ -45,12 +45,12 @@ type Main = {
   /**
    * The default unit used for use or work.
    */
-  defaultUnitOfEffort?: UnitOfMeasure
+  defaultUnitOfEffort?: l.AtUriString
 
   /**
    * The default unit used for the resource itself.
    */
-  defaultUnitOfResource?: UnitOfMeasure
+  defaultUnitOfResource?: l.AtUriString
 
   /**
    * References one or more uri's for a concept in a common taxonomy or other classification scheme for purposes of categorization or grouping; or can be one or more string classifications such as tags.
@@ -71,12 +71,8 @@ const main = l.record<'tid', Main>(
     note: l.optional(l.string({ maxGraphemes: 10000 })),
     mediumOfExchange: l.optional(l.boolean()),
     substitutable: l.optional(l.boolean()),
-    defaultUnitOfEffort: l.optional(
-      l.ref<UnitOfMeasure>((() => unitOfMeasure) as any),
-    ),
-    defaultUnitOfResource: l.optional(
-      l.ref<UnitOfMeasure>((() => unitOfMeasure) as any),
-    ),
+    defaultUnitOfEffort: l.optional(l.string({ format: 'at-uri' })),
+    defaultUnitOfResource: l.optional(l.string({ format: 'at-uri' })),
     resourceClassifiedAs: l.optional(l.array(l.string())),
   }),
 )
@@ -95,30 +91,3 @@ export const $assert = /*#__PURE__*/ main.assert.bind(main),
   $safeParse = /*#__PURE__*/ main.safeParse.bind(main),
   $validate = /*#__PURE__*/ main.validate.bind(main),
   $safeValidate = /*#__PURE__*/ main.safeValidate.bind(main)
-
-type UnitOfMeasure = {
-  $type?: 'org.openassociation.resourceSpecification#unitOfMeasure'
-
-  /**
-   * The display label of the unit (e.g. 'kilogram', 'hour').
-   */
-  unitLabel?: string
-
-  /**
-   * The display symbol of the unit (e.g. 'kg', 'h').
-   */
-  unitSymbol?: string
-}
-
-export type { UnitOfMeasure }
-
-const unitOfMeasure = l.typedObject<UnitOfMeasure>(
-  $nsid,
-  'unitOfMeasure',
-  l.object({
-    unitLabel: l.optional(l.string()),
-    unitSymbol: l.optional(l.string()),
-  }),
-)
-
-export { unitOfMeasure }

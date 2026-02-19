@@ -8,12 +8,12 @@ const $nsid = 'org.openassociation.listEconomicEvents'
 
 export { $nsid }
 
-/** List economicEvents. Filterable by: action, inputOf, outputOf, resourceInventoriedAs, toResourceInventoriedAs, provider, receiver, corrects, settles, fulfills, satisfies, realizationOf, reciprocalRealizationOf. */
+/** List economicEvents. Filterable by: action, inputOf, outputOf, resourceInventoriedAs, toResourceInventoriedAs, provider, receiver, corrects, settles, toLocation, fulfills, satisfies, resourceConformsTo, realizationOf, reciprocalRealizationOf. */
 const main = l.query(
   $nsid,
   l.params({
     uri: l.optional(l.string({ format: 'at-uri' })),
-    action: l.optional(l.string()),
+    action: l.optional(l.string({ format: 'at-uri' })),
     inputOf: l.optional(l.string({ format: 'at-uri' })),
     outputOf: l.optional(l.string({ format: 'at-uri' })),
     resourceInventoriedAs: l.optional(l.string({ format: 'at-uri' })),
@@ -22,8 +22,10 @@ const main = l.query(
     receiver: l.optional(l.string({ format: 'did' })),
     corrects: l.optional(l.string({ format: 'at-uri' })),
     settles: l.optional(l.string({ format: 'at-uri' })),
+    toLocation: l.optional(l.string({ format: 'at-uri' })),
     fulfills: l.optional(l.string({ format: 'at-uri' })),
     satisfies: l.optional(l.string({ format: 'at-uri' })),
+    resourceConformsTo: l.optional(l.string({ format: 'at-uri' })),
     realizationOf: l.optional(l.string({ format: 'at-uri' })),
     reciprocalRealizationOf: l.optional(l.string({ format: 'at-uri' })),
     limit: l.optional(

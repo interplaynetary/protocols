@@ -27,7 +27,7 @@
           },
           "hasDuration": {
             "type": "ref",
-            "ref": "#measure",
+            "ref": "org.openassociation.defs#measure",
             "description": "The temporal extent of the process."
           },
           "image": {
@@ -57,31 +57,6 @@
             "format": "at-uri",
             "description": "The standard specification or definition of a type of process."
           }
-        }
-      }
-    },
-    "measure": {
-      "type": "object",
-      "description": "A quantity expressed as a numeric value with a unit of measure. AT Protocol does not support floats, so the value is represented as numerator/denominator integers.",
-      "required": [
-        "hasNumericalValue"
-      ],
-      "properties": {
-        "hasNumericalValue": {
-          "type": "integer",
-          "description": "The numeric value (numerator)."
-        },
-        "hasDenominator": {
-          "type": "integer",
-          "description": "The denominator for fractional values. Default 1 if omitted."
-        },
-        "unitLabel": {
-          "type": "string",
-          "description": "The display label of the unit of measure (e.g. 'kilogram', 'hour')."
-        },
-        "unitSymbol": {
-          "type": "string",
-          "description": "The display symbol of the unit of measure (e.g. 'kg', 'h')."
         }
       }
     }

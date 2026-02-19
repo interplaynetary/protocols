@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "List resourceSpecifications. Filterable by: mediumOfExchange, substitutable.",
+      "description": "List resourceSpecifications. Filterable by: mediumOfExchange, substitutable, defaultUnitOfEffort, defaultUnitOfResource.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -20,6 +20,16 @@
           "substitutable": {
             "type": "boolean",
             "description": "Filter by substitutable."
+          },
+          "defaultUnitOfEffort": {
+            "type": "string",
+            "description": "Filter by defaultUnitOfEffort (AT-URI of referenced record).",
+            "format": "at-uri"
+          },
+          "defaultUnitOfResource": {
+            "type": "string",
+            "description": "Filter by defaultUnitOfResource (AT-URI of referenced record).",
+            "format": "at-uri"
           },
           "limit": {
             "type": "integer",
