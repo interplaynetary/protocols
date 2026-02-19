@@ -3,7 +3,6 @@
  */
 
 import { l } from '@atproto/lex'
-import * as OpenassociationCommitment from './commitment.defs.js'
 
 const $nsid = 'org.openassociation.listCommitments'
 
@@ -32,10 +31,7 @@ const main = l.query(
     ),
     cursor: l.optional(l.string()),
   }),
-  l.jsonPayload({
-    records: l.array(l.ref<RecordItem>((() => recordItem) as any)),
-    cursor: l.optional(l.string()),
-  }),
+  l.payload('application/json'),
 )
 export { main }
 
@@ -46,34 +42,3 @@ export type OutputBody = l.InferMethodOutputBody<typeof main>
 export const $lxm = main.nsid,
   $params = main.parameters,
   $output = main.output
-
-type RecordItem = {
-  $type?: 'org.openassociation.listCommitments#recordItem'
-
-  /**
-   * AT-URI of the record.
-   */
-  uri: l.AtUriString
-
-  /**
-   * The full record value.
-   */
-  value?: OpenassociationCommitment.Main
-}
-
-export type { RecordItem }
-
-const recordItem = l.typedObject<RecordItem>(
-  $nsid,
-  'recordItem',
-  l.object({
-    uri: l.string({ format: 'at-uri' }),
-    value: l.optional(
-      l.ref<OpenassociationCommitment.Main>(
-        (() => OpenassociationCommitment.main) as any,
-      ),
-    ),
-  }),
-)
-
-export { recordItem }

@@ -192,24 +192,24 @@ export const auth = {
 For views that just display records, `$derived.by` returning a Promise is the cleanest pattern — no class, no effect, fully reactive.
 
 ```svelte
-<!-- src/routes/persons/+page.svelte -->
+<!-- src/routes/agents/+page.svelte -->
 <script lang="ts">
   import { query } from "$lib/xrpc.svelte";
 
   // Re-evaluates automatically whenever any reactive dependency changes
-  const persons = $derived.by(() =>
-    query<{ records: any[]; cursor?: string }>("vf.observation.listPersons", { limit: 20 })
+  const agents = $derived.by(() =>
+    query<{ records: any[]; cursor?: string }>("org.openassociation.listAgents", { limit: 20 })
   );
 </script>
 
-{#await persons}
+{#await agents}
   <p>Loading…</p>
 {:then { records }}
   <ul>
-    {#each records as person (person.uri)}
+    {#each records as agent (agent.uri)}
       <li>
-        <a href="/persons/{encodeURIComponent(person.uri)}">
-          {person.value?.name ?? person.uri}
+        <a href="/agents/{encodeURIComponent(agent.uri)}">
+          {agent.value?.name ?? agent.uri}
         </a>
       </li>
     {/each}
@@ -224,20 +224,20 @@ For views that just display records, `$derived.by` returning a Promise is the cl
 Use `XrpcList` when you need to append pages. Initial data comes from the SvelteKit load function so there's no effect needed — the constructor seeds the state directly.
 
 ```ts
-// src/routes/persons/+page.ts
+// src/routes/agents/+page.ts
 import { query } from "$lib/xrpc.svelte";
 import type { PageLoad } from "@sveltejs/kit";
 
 export const load: PageLoad = async () => {
   return await query<{ records: any[]; cursor?: string }>(
-    "vf.observation.listPersons",
+    "org.openassociation.listAgents",
     { limit: 20 }
   );
 };
 ```
 
 ```svelte
-<!-- src/routes/persons/+page.svelte -->
+<!-- src/routes/agents/+page.svelte -->
 <script lang="ts">
   import { XrpcList } from "$lib/stores/xrpc-list.svelte";
   import type { PageProps } from "./$types";
@@ -245,18 +245,18 @@ export const load: PageLoad = async () => {
   let { data }: PageProps = $props();
 
   // Seed with SSR data — no effect, no flash, load-more just works
-  const persons = new XrpcList("vf.observation.listPersons", { limit: 20 }, data);
+  const agents = new XrpcList("org.openassociation.listAgents", { limit: 20 }, data);
 </script>
 
-{#each persons.records as person (person.uri)}
-  <a href="/persons/{encodeURIComponent(person.uri)}">
-    {person.value?.name ?? person.uri}
+{#each agents.records as agent (agent.uri)}
+  <a href="/agents/{encodeURIComponent(agent.uri)}">
+    {agent.value?.name ?? agent.uri}
   </a>
 {/each}
 
-{#if persons.hasMore}
-  <button onclick={() => persons.loadMore()} disabled={persons.loading}>
-    {persons.loading ? "Loading…" : "Load more"}
+{#if agents.hasMore}
+  <button onclick={() => agents.loadMore()} disabled={agents.loading}>
+    {agents.loading ? "Loading…" : "Load more"}
   </button>
 {/if}
 ```
@@ -276,7 +276,7 @@ export const load: PageLoad = async () => {
   // Reactive: re-fetches whenever auth.did changes
   const intents = $derived.by(() =>
     auth.did
-      ? query<{ records: any[] }>("vf.planning.listIntents", { did: auth.did, limit: 50 })
+      ? query<{ records: any[] }>("org.openassociation.listIntents", { did: auth.did, limit: 50 })
       : Promise.resolve({ records: [] })
   );
 </script>
@@ -308,30 +308,30 @@ export const load: PageLoad = async () => {
 ## Single Record by URI
 
 ```svelte
-<!-- src/routes/persons/[uri]/+page.svelte -->
+<!-- src/routes/agents/[uri]/+page.svelte -->
 <script lang="ts">
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
 
-  // data.person comes from the load function below
+  // data.agent comes from the load function below
 </script>
 
-{#if data.person}
-  <h1>{data.person.value?.name ?? "Person"}</h1>
-  <p>{data.person.value?.note}</p>
+{#if data.agent}
+  <h1>{data.agent.value?.name ?? "Agent"}</h1>
+  <p>{data.agent.value?.note}</p>
 {/if}
 ```
 
 ```ts
-// src/routes/persons/[uri]/+page.ts
+// src/routes/agents/[uri]/+page.ts
 import { query } from "$lib/xrpc.svelte";
 import type { PageLoad } from "@sveltejs/kit";
 
 export const load: PageLoad = async ({ params }) => {
   const uri = decodeURIComponent(params.uri);
-  const data = await query<{ record: any }>("vf.observation.listPersons", { uri });
-  return { person: data.record };
+  const data = await query<{ record: any }>("org.openassociation.listAgents", { uri });
+  return { agent: data.record };
 };
 ```
 
@@ -348,7 +348,7 @@ import type { PageLoad } from "@sveltejs/kit";
 
 export const load: PageLoad = async () => {
   const { records, cursor } = await query<{ records: any[]; cursor?: string }>(
-    "vf.observation.listEconomicEvents",
+    "org.openassociation.listEconomicEvents",
     { limit: 20 }
   );
   return { records, cursor };
@@ -364,7 +364,7 @@ export const load: PageLoad = async () => {
   let { data }: PageProps = $props();
 
   // Pass SSR data as initial state — no $effect flash, load-more works immediately
-  const events = new XrpcList("vf.observation.listEconomicEvents", { limit: 20 }, data);
+  const events = new XrpcList("org.openassociation.listEconomicEvents", { limit: 20 }, data);
 </script>
 
 {#each events.records as event (event.uri)}
@@ -383,13 +383,13 @@ export const load: PageLoad = async () => {
 Procedure endpoints (`POST /xrpc/{nsid}`) proxy writes to the user's AT Protocol PDS and return the created record's URI and CID.
 
 ```svelte
-<!-- src/lib/components/CreateUnitForm.svelte -->
+<!-- src/lib/components/CreateAgentForm.svelte -->
 <script lang="ts">
   import { procedure } from "$lib/xrpc.svelte";
   import { auth } from "$lib/auth.svelte";
 
-  let label = $state("");
-  let symbol = $state("");
+  let name = $state("");
+  let agentType = $state<"person" | "organization" | "ecologicalAgent">("person");
   let saving = $state(false);
   let error = $state<string | null>(null);
   let createdUri = $state<string | null>(null);
@@ -400,13 +400,12 @@ Procedure endpoints (`POST /xrpc/{nsid}`) proxy writes to the user's AT Protocol
     error = null;
     try {
       const result = await procedure<{ uri: string; cid: string }>(
-        "vf.knowledge.createUnit",
-        { label, symbol },
+        "org.openassociation.createAgent",
+        { name, agentType },
         auth.token
       );
       createdUri = result.uri;
-      label = "";
-      symbol = "";
+      name = "";
     } catch (e: any) {
       error = e.message;
     } finally {
@@ -416,10 +415,14 @@ Procedure endpoints (`POST /xrpc/{nsid}`) proxy writes to the user's AT Protocol
 </script>
 
 <form onsubmit={(e) => { e.preventDefault(); create(); }}>
-  <input bind:value={label} placeholder="Label (e.g. kilogram)" required />
-  <input bind:value={symbol} placeholder="Symbol (e.g. kg)" />
+  <input bind:value={name} placeholder="Name" required />
+  <select bind:value={agentType}>
+    <option value="person">Person</option>
+    <option value="organization">Organization</option>
+    <option value="ecologicalAgent">Ecological Agent</option>
+  </select>
   <button type="submit" disabled={saving || !auth.isLoggedIn}>
-    {saving ? "Saving…" : "Create unit"}
+    {saving ? "Saving…" : "Create agent"}
   </button>
 </form>
 
@@ -434,10 +437,10 @@ Procedure endpoints (`POST /xrpc/{nsid}`) proxy writes to the user's AT Protocol
 HappyView auto-detects an update when the request body contains a `uri` field. Use the same procedure NSID:
 
 ```ts
-// Update an existing unit
+// Update an existing agent
 await procedure(
-  "vf.knowledge.createUnit",
-  { uri: existingUri, label: "kilogram", symbol: "kg" },
+  "org.openassociation.createAgent",
+  { uri: existingUri, name: "Updated Name", agentType: "organization" },
   auth.token!
 );
 ```
@@ -446,26 +449,27 @@ await procedure(
 
 ## Reactive Cross-Collection Joins
 
-Reference fields in VF records are AT-URIs pointing to other records. Use `$derived.by` to resolve them — it re-fetches automatically when the prop changes, no effect or manual state needed.
+Reference fields in records are AT-URIs pointing to other records. Use `$derived.by` to resolve them — it re-fetches automatically when the prop changes, no effect or manual state needed.
 
 ```svelte
 <script lang="ts">
   import { query } from "$lib/xrpc.svelte";
 
-  // An economic event whose `action` field is an AT-URI
+  // An economic event whose `resourceInventoriedAs` field is an AT-URI
   let { event }: { event: any } = $props();
 
-  // Re-fetches whenever event.value.action changes
-  const action = $derived.by(() =>
-    event.value?.action
-      ? query<{ record: any }>("vf.knowledge.listActions", { uri: event.value.action })
-          .then((d) => d.record)
+  // Re-fetches whenever event.value.resourceInventoriedAs changes
+  const resource = $derived.by(() =>
+    event.value?.resourceInventoriedAs
+      ? query<{ record: any }>("org.openassociation.listEconomicResources", {
+          uri: event.value.resourceInventoriedAs,
+        }).then((d) => d.record)
       : Promise.resolve(null)
   );
 </script>
 
-{#await action then a}
-  <p>Action: {a?.value?.label ?? "…"}</p>
+{#await resource then r}
+  <p>Resource: {r?.value?.name ?? "…"}</p>
 {/await}
 ```
 
@@ -475,28 +479,29 @@ For multiple related fields, chain them:
 <script lang="ts">
   let { event }: { event: any } = $props();
 
-  const action = $derived.by(() =>
-    event.value?.action
-      ? query<{ record: any }>("vf.knowledge.listActions", { uri: event.value.action })
-          .then((d) => d.record)
+  const resource = $derived.by(() =>
+    event.value?.resourceInventoriedAs
+      ? query<{ record: any }>("org.openassociation.listEconomicResources", {
+          uri: event.value.resourceInventoriedAs,
+        }).then((d) => d.record)
       : Promise.resolve(null)
   );
 
-  const resource = $derived.by(() =>
-    event.value?.resourceInventoriedAs
-      ? query<{ record: any }>("vf.observation.listEconomicResources", {
-          uri: event.value.resourceInventoriedAs,
+  const process = $derived.by(() =>
+    event.value?.inputOf
+      ? query<{ record: any }>("org.openassociation.listProcesses", {
+          uri: event.value.inputOf,
         }).then((d) => d.record)
       : Promise.resolve(null)
   );
 </script>
 
-{#await action then a}
-  <span>Action: {a?.value?.label}</span>
-{/await}
-
 {#await resource then r}
   <span>Resource: {r?.value?.name}</span>
+{/await}
+
+{#await process then p}
+  <span>Process: {p?.value?.name}</span>
 {/await}
 ```
 
@@ -505,10 +510,10 @@ For multiple related fields, chain them:
 ## Pagination Pattern Summary
 
 ```
-First request:  GET /xrpc/vf.observation.listPersons?limit=20
+First request:  GET /xrpc/org.openassociation.listAgents?limit=20
 Response:       { records: [...20], cursor: "20" }
 
-Next page:      GET /xrpc/vf.observation.listPersons?limit=20&cursor=20
+Next page:      GET /xrpc/org.openassociation.listAgents?limit=20&cursor=20
 Response:       { records: [...20], cursor: "40" }
 
 Last page:      { records: [...5] }          ← no cursor = end of results

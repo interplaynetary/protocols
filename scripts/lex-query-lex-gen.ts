@@ -1,36 +1,38 @@
 #!/usr/bin/env bun
-// Derives and generates AT Protocol query lexicons from record lexicons.
+// Derives and generates HappyView-compatible query and procedure lexicons from record lexicons.
 //
-/*
- *
- * Core insight: every reference property (at-uri, did) on a record type
- * naturally becomes a filter parameter on that record's list query. This
- * algorithmically produces all "inverse queries" from the VF query naming spec.
- *
- * Example derivation:
- *   EconomicEvent has `provider` (did) and `inputOf` (at-uri)
- *   → listEconomicEvents gets `provider` and `inputOf` filter params
- *   → VF spec's Agent.economicEventsAsProvider = listEconomicEvents?provider=<did>
- *   → VF spec's Process.economicEvents (input) = listEconomicEvents?inputOf=<at-uri>
- *
- * Three derivable filter patterns:
- *   1. Reference filters (at-uri, did) → covers ALL VF inverse queries
- *   2. Enum/knownValues filters → covers filtered queries (offers, requests)
- *   3. Boolean filters → covers state queries (finished)
- *
- * Not auto-generated (require hand-crafted logic):
- *   - Multi-hop traversals (involvedAgents, trace/track)
- *   - Negation queries (unplannedEconomicEvents)
- *   - Aggregations (plan.startDate)
- *   - Reciprocal queries (reciprocalEvents)
- *
-*/
+// Core insight: every reference property (at-uri, did) on a record type naturally becomes a
+// filter parameter on that record's list query. This algorithmically produces all "inverse
+// queries" from the VF query naming spec.
+//
+// Example derivation:
+//   EconomicEvent has `provider` (did) and `inputOf` (at-uri)
+//   → listEconomicEvents gets `provider` and `inputOf` filter params
+//   → VF spec's Agent.economicEventsAsProvider = listEconomicEvents?provider=<did>
+//   → VF spec's Process.economicEvents (input) = listEconomicEvents?inputOf=<at-uri>
+//
+// Three derivable filter patterns:
+//   1. Reference filters (at-uri, did) → covers ALL VF inverse queries
+//   2. Enum/knownValues filters → covers filtered queries (offers, requests)
+//   3. Boolean filters → covers state queries (finished)
+//
+// Not auto-generated (require hand-crafted logic):
+//   - Multi-hop traversals (involvedAgents, trace/track)
+//   - Negation queries (unplannedEconomicEvents)
+//   - Aggregations (plan.startDate)
+//   - Reciprocal queries (reciprocalEvents)
+//
+// Per record, generates:
+//   list${PluralName}.json  — query  (GET  /xrpc/{nsid}) with derived filter params
+//   create${Name}.json      — procedure (POST /xrpc/{nsid}) for create + update
+//
 // Usage:
-//   bun scripts/lex-query-lex-gen.ts "lexicons/vf/**/*.json"
+//   bun scripts/lex-query-lex-gen.ts
 //   bun scripts/lex-query-lex-gen.ts --dry-run
-//   bun scripts/lex-query-lex-gen.ts --output docs/lexicons
+//   bun scripts/lex-query-lex-gen.ts --input "lexicons-expanded/openassociation/*.json"
+//   bun scripts/lex-query-lex-gen.ts --output lexicons/openassociation
 
-import { join, dirname } from "path";
+import { join } from "path";
 import { mkdirSync } from "fs";
 import { Glob } from "bun";
 
@@ -72,45 +74,35 @@ interface FilterParam {
 
 // ─── setup ──────────────────────────────────────────────────────────────────
 
-const ROOT: string = join(import.meta.dir, "..");
-const DRY_RUN: boolean = Bun.argv.includes("--dry-run");
+const ROOT = join(import.meta.dir, "..");
+const DRY_RUN = Bun.argv.includes("--dry-run");
 
-// Simple argument parser
 function getArg(name: string): string | null {
   const idx = Bun.argv.indexOf(name);
-  if (idx !== -1 && idx + 1 < Bun.argv.length) {
-    return Bun.argv[idx + 1];
-  }
-  return null;
+  return idx !== -1 && idx + 1 < Bun.argv.length ? Bun.argv[idx + 1] : null;
 }
 
- const argGlob = Bun.argv.slice(2).find(arg => !arg.startsWith("-") && !arg.endsWith(".ts"));
-const INPUT_GLOB: string = argGlob || "lexicons-expanded/**/*.json";
-const OUTPUT_BASE: string = getArg("--output") || "lexicons-expanded";
+const INPUT_GLOB = getArg("--input") ?? "lexicons-expanded/openassociation/*.json";
+const OUTPUT_DIR = getArg("--output") ?? "lexicons/openassociation";
 
-// ─── load record lexicons ───────────────────────────────────────────────────
+// ─── load record lexicons ────────────────────────────────────────────────────
 
 async function loadRecordLexicons(): Promise<RecordLexicon[]> {
   const lexicons: RecordLexicon[] = [];
   const glob = new Glob(INPUT_GLOB);
-
   for await (const filePath of glob.scan(ROOT)) {
     const data = await Bun.file(join(ROOT, filePath)).json();
     if (data.defs?.main?.type === "record") {
       lexicons.push(data as RecordLexicon);
     }
   }
-
   return lexicons.sort((a, b) => a.id.localeCompare(b.id));
 }
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function pluralize(name: string): string {
-  if (
-    name.endsWith("s") || name.endsWith("sh") ||
-    name.endsWith("ch") || name.endsWith("x") || name.endsWith("z")
-  ) {
+  if (name.endsWith("s") || name.endsWith("sh") || name.endsWith("ch") || name.endsWith("x") || name.endsWith("z")) {
     return name + "es";
   }
   return name + "s";
@@ -125,14 +117,18 @@ function nsidGroup(nsid: string): string {
 }
 
 function nsidName(nsid: string): string {
-  return nsid.split(".").pop() || "";
+  return nsid.split(".").pop() ?? "";
 }
 
-function nsidToPath(nsid: string): string {
-  return join(OUTPUT_BASE, ...nsid.split(".")) + ".json";
+function outputPath(filename: string): string {
+  return join(ROOT, OUTPUT_DIR, filename);
 }
 
-// ─── derive filter parameters from record properties ────────────────────────
+function article(word: string): string {
+  return /^[aeiou]/i.test(word) ? "an" : "a";
+}
+
+// ─── derive filter parameters from record properties ──────────────────────────
 
 function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
   const filters: FilterParam[] = [];
@@ -145,16 +141,14 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         format: "at-uri",
         description: `Filter by ${name} (AT-URI of referenced record).`,
       });
-    }
-    else if (prop.type === "string" && prop.format === "did") {
+    } else if (prop.type === "string" && prop.format === "did") {
       filters.push({
         name,
         type: "string",
         format: "did",
         description: `Filter by ${name} (DID of referenced agent).`,
       });
-    }
-    else if (prop.type === "array" && prop.items?.type === "string" && prop.items.format === "at-uri") {
+    } else if (prop.type === "array" && prop.items?.type === "string" && prop.items.format === "at-uri") {
       filters.push({
         name,
         type: "string",
@@ -162,8 +156,7 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         description: `Filter where ${name} array contains this AT-URI.`,
         arrayContains: true,
       });
-    }
-    else if (prop.type === "array" && prop.items?.type === "string" && prop.items.format === "did") {
+    } else if (prop.type === "array" && prop.items?.type === "string" && prop.items.format === "did") {
       filters.push({
         name,
         type: "string",
@@ -171,15 +164,13 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
         description: `Filter where ${name} array contains this DID.`,
         arrayContains: true,
       });
-    }
-    else if (prop.type === "string" && prop.knownValues && prop.knownValues.length > 0) {
+    } else if (prop.type === "string" && prop.knownValues && prop.knownValues.length > 0) {
       filters.push({
         name,
         type: "string",
         description: `Filter by ${name} value.`,
       });
-    }
-    else if (prop.type === "boolean") {
+    } else if (prop.type === "boolean") {
       filters.push({
         name,
         type: "boolean",
@@ -191,9 +182,9 @@ function deriveFilters(properties: Record<string, LexProp>): FilterParam[] {
   return filters;
 }
 
-// ─── build list query lexicon ───────────────────────────────────────────────
+// ─── build list query lexicon ─────────────────────────────────────────────────
 
-function buildListQuery(record: RecordLexicon): { nsid: string; lexicon: object } {
+function buildListQuery(record: RecordLexicon): { filename: string; lexicon: object } {
   const group = nsidGroup(record.id);
   const name = nsidName(record.id);
   const plural = pluralize(name);
@@ -201,12 +192,12 @@ function buildListQuery(record: RecordLexicon): { nsid: string; lexicon: object 
 
   const filters = deriveFilters(record.defs.main.record.properties);
 
-  const paramProps: Record<string, any> = {};
-
-  paramProps.uri = {
-    type: "string",
-    format: "at-uri",
-    description: "Fetch a single record by AT-URI. Other filters are ignored when set.",
+  const paramProps: Record<string, any> = {
+    uri: {
+      type: "string",
+      format: "at-uri",
+      description: "Fetch a single record by AT-URI. Other filters are ignored when set.",
+    },
   };
 
   for (const f of filters) {
@@ -222,66 +213,31 @@ function buildListQuery(record: RecordLexicon): { nsid: string; lexicon: object 
     default: 50,
     description: "Maximum number of records to return.",
   };
-
   paramProps.cursor = {
     type: "string",
     description: "Pagination cursor from a previous response.",
   };
 
-  const filterNames = filters.map(f => f.name);
-  const baseDesc = `List ${plural}.`;
-  const filterDesc = filterNames.length > 0
-    ? ` Filterable by: ${filterNames.join(", ")}.`
-    : "";
+  const filterNames = filters.map((f) => f.name);
+  const description = filterNames.length > 0
+    ? `List ${plural}. Filterable by: ${filterNames.join(", ")}.`
+    : `List ${plural}.`;
 
   return {
-    nsid: queryNsid,
+    filename: `list${capitalize(plural)}.json`,
     lexicon: {
       lexicon: 1,
       id: queryNsid,
       defs: {
         main: {
           type: "query",
-          description: baseDesc + filterDesc,
+          description,
           parameters: {
             type: "params",
             properties: paramProps,
           },
           output: {
             encoding: "application/json",
-            schema: {
-              type: "object",
-              required: ["records"],
-              properties: {
-                records: {
-                  type: "array",
-                  items: {
-                    type: "ref",
-                    ref: "#recordItem",
-                  },
-                },
-                cursor: {
-                  type: "string",
-                  description: "Pagination cursor for next page.",
-                },
-              },
-            },
-          },
-        },
-        recordItem: {
-          type: "object",
-          required: ["uri"],
-          properties: {
-            uri: {
-              type: "string",
-              format: "at-uri",
-              description: "AT-URI of the record.",
-            },
-            value: {
-              type: "ref",
-              ref: record.id,
-              description: "The full record value.",
-            },
           },
         },
       },
@@ -289,93 +245,85 @@ function buildListQuery(record: RecordLexicon): { nsid: string; lexicon: object 
   };
 }
 
-// ─── main ───────────────────────────────────────────────────────────────────
+// ─── build create/update procedure lexicon ────────────────────────────────────
+
+function buildCreateProcedure(record: RecordLexicon): { filename: string; lexicon: object } {
+  const group = nsidGroup(record.id);
+  const name = nsidName(record.id);
+  const procNsid = `${group}.create${capitalize(name)}`;
+
+  return {
+    filename: `create${capitalize(name)}.json`,
+    lexicon: {
+      lexicon: 1,
+      id: procNsid,
+      defs: {
+        main: {
+          type: "procedure",
+          description: `Create or update ${article(name)} ${name} record. Include \`uri\` in the body to update an existing record.`,
+          input: {
+            encoding: "application/json",
+          },
+          output: {
+            encoding: "application/json",
+          },
+        },
+      },
+    },
+  };
+}
+
+// ─── main ─────────────────────────────────────────────────────────────────────
 
 const records = await loadRecordLexicons();
 
 console.log("╔══════════════════════════════════════════════════════════════════╗");
-console.log("║             QUERY LEXICON DERIVATION                           ║");
+console.log("║          HAPPYVIEW QUERY + PROCEDURE LEXICON DERIVATION          ║");
 console.log("╚══════════════════════════════════════════════════════════════════╝\n");
-
 console.log(`  Source: ${INPUT_GLOB}`);
-console.log(`  Target: ${OUTPUT_BASE}\n`);
+console.log(`  Target: ${OUTPUT_DIR}\n`);
 
+if (!DRY_RUN) {
+  mkdirSync(join(ROOT, OUTPUT_DIR), { recursive: true });
+}
 
 let totalQueries = 0;
+let totalProcedures = 0;
 let totalFilters = 0;
 
 for (const record of records) {
   const filters = deriveFilters(record.defs.main.record.properties);
-  const { nsid, lexicon } = buildListQuery(record);
+  const { filename: queryFile, lexicon: query } = buildListQuery(record);
+  const { filename: procFile, lexicon: proc } = buildCreateProcedure(record);
 
-  // 1. List Query
-  console.log(`  ${record.id} → ${nsid} (query)`);
+  const queryNsid = (query as any).id;
+  const procNsid = (proc as any).id;
+
+  console.log(`  ${record.id}`);
+  console.log(`    → ${queryNsid} (query)`);
   if (filters.length > 0) {
     for (const f of filters) {
-      const tag = f.format || (f.type === "boolean" ? "bool" : "enum");
+      const tag = f.format ?? (f.type === "boolean" ? "bool" : "enum");
       const note = f.arrayContains ? " [contains]" : "";
-      console.log(`    ${f.name} (${tag})${note}`);
+      console.log(`       ${f.name} (${tag})${note}`);
     }
   }
+  console.log(`    → ${procNsid} (procedure)`);
 
   if (!DRY_RUN) {
-    const outPath = join(ROOT, nsidToPath(nsid));
-    mkdirSync(dirname(outPath), { recursive: true });
-    await Bun.write(outPath, JSON.stringify(lexicon, null, 2) + "\n");
+    await Bun.write(outputPath(queryFile), JSON.stringify(query, null, 2) + "\n");
+    await Bun.write(outputPath(procFile), JSON.stringify(proc, null, 2) + "\n");
   }
 
   totalQueries++;
+  totalProcedures++;
   totalFilters += filters.length;
 }
 
 console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-console.log(`  List Queries:    ${totalQueries}`);
+console.log(`  Records processed: ${records.length}`);
+console.log(`  Queries generated: ${totalQueries}`);
+console.log(`  Procedures generated: ${totalProcedures}`);
 console.log(`  Total filter params: ${totalFilters}`);
-console.log(`  Mode: ${DRY_RUN ? "dry run" : "files written"}`);
+console.log(`  Mode: ${DRY_RUN ? "dry run (no files written)" : "files written to " + OUTPUT_DIR}`);
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-
-if (!DRY_RUN) {
-  console.log("Running lex gen-api build...");
-  const cmd = `bun x @atproto/lex-cli gen-api --yes ./src ${OUTPUT_BASE}/**/*.json`;
-  const proc = Bun.spawn(["sh", "-c", cmd], {
-    cwd: ROOT,
-    stdout: "inherit", 
-    stderr: "inherit"
-  });
-  await proc.exited;
-  console.log(`\nBuild exited with code ${proc.exitCode}`);
-}
-
-if (INPUT_GLOB.includes("/vf/")) {
-  console.log("VF query spec coverage (inverse queries → filter params):\n");
-  console.log("  Agent inverse queries:");
-  console.log("    commitmentsAsProvider     → listCommitments?provider=<did>");
-  console.log("    commitmentsAsReceiver     → listCommitments?receiver=<did>");
-  console.log("    economicEventsAsProvider  → listEconomicEvents?provider=<did>");
-  console.log("    economicEventsAsReceiver  → listEconomicEvents?receiver=<did>");
-  console.log("    intentsAsProvider         → listIntents?provider=<did>");
-  console.log("    intentsAsReceiver         → listIntents?receiver=<did>");
-  console.log("    claimsAsProvider          → listClaims?provider=<did>");
-  console.log("    claimsAsReceiver          → listClaims?receiver=<did>");
-  console.log("    inventoriedResources      → listEconomicResources?primaryAccountable=<did>");
-  console.log("    processes (inScopeOf)     → listProcesses?inScopeOf=<did>");
-  console.log();
-  console.log("  Process inverse queries:");
-  console.log("    economicEvents (input)    → listEconomicEvents?inputOf=<at-uri>");
-  console.log("    economicEvents (output)   → listEconomicEvents?outputOf=<at-uri>");
-  console.log("    commitments (input)       → listCommitments?inputOf=<at-uri>");
-  console.log("    commitments (output)      → listCommitments?outputOf=<at-uri>");
-  console.log("    intents (input)           → listIntents?inputOf=<at-uri>");
-  console.log("    intents (output)          → listIntents?outputOf=<at-uri>");
-  console.log();
-  console.log("  ResourceSpecification inverse queries:");
-  console.log("    conformingResources       → listEconomicResources?conformsTo=<at-uri>");
-  console.log("    conformingEvents          → listEconomicEvents?resourceConformsTo=<at-uri>");
-  console.log("    conformingCommitments     → listCommitments?resourceConformsTo=<at-uri>");
-  console.log("    conformingIntents         → listIntents?resourceConformsTo=<at-uri>");
-  console.log();
-  console.log("  Filtered main queries:");
-  console.log("    offers                    → listProposals?purpose=offer");
-  console.log("    requests                  → listProposals?purpose=request");
-  console.log();
-}

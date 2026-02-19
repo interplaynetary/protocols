@@ -3,7 +3,6 @@
  */
 
 import { l } from '@atproto/lex'
-import * as OpenassociationClaim from './claim.defs.js'
 
 const $nsid = 'org.openassociation.listClaims'
 
@@ -24,10 +23,7 @@ const main = l.query(
     ),
     cursor: l.optional(l.string()),
   }),
-  l.jsonPayload({
-    records: l.array(l.ref<RecordItem>((() => recordItem) as any)),
-    cursor: l.optional(l.string()),
-  }),
+  l.payload('application/json'),
 )
 export { main }
 
@@ -38,34 +34,3 @@ export type OutputBody = l.InferMethodOutputBody<typeof main>
 export const $lxm = main.nsid,
   $params = main.parameters,
   $output = main.output
-
-type RecordItem = {
-  $type?: 'org.openassociation.listClaims#recordItem'
-
-  /**
-   * AT-URI of the record.
-   */
-  uri: l.AtUriString
-
-  /**
-   * The full record value.
-   */
-  value?: OpenassociationClaim.Main
-}
-
-export type { RecordItem }
-
-const recordItem = l.typedObject<RecordItem>(
-  $nsid,
-  'recordItem',
-  l.object({
-    uri: l.string({ format: 'at-uri' }),
-    value: l.optional(
-      l.ref<OpenassociationClaim.Main>(
-        (() => OpenassociationClaim.main) as any,
-      ),
-    ),
-  }),
-)
-
-export { recordItem }

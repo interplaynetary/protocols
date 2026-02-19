@@ -3,7 +3,6 @@
  */
 
 import { l } from '@atproto/lex'
-import * as OpenassociationPlan from './plan.defs.js'
 
 const $nsid = 'org.openassociation.listPlans'
 
@@ -21,10 +20,7 @@ const main = l.query(
     ),
     cursor: l.optional(l.string()),
   }),
-  l.jsonPayload({
-    records: l.array(l.ref<RecordItem>((() => recordItem) as any)),
-    cursor: l.optional(l.string()),
-  }),
+  l.payload('application/json'),
 )
 export { main }
 
@@ -35,32 +31,3 @@ export type OutputBody = l.InferMethodOutputBody<typeof main>
 export const $lxm = main.nsid,
   $params = main.parameters,
   $output = main.output
-
-type RecordItem = {
-  $type?: 'org.openassociation.listPlans#recordItem'
-
-  /**
-   * AT-URI of the record.
-   */
-  uri: l.AtUriString
-
-  /**
-   * The full record value.
-   */
-  value?: OpenassociationPlan.Main
-}
-
-export type { RecordItem }
-
-const recordItem = l.typedObject<RecordItem>(
-  $nsid,
-  'recordItem',
-  l.object({
-    uri: l.string({ format: 'at-uri' }),
-    value: l.optional(
-      l.ref<OpenassociationPlan.Main>((() => OpenassociationPlan.main) as any),
-    ),
-  }),
-)
-
-export { recordItem }

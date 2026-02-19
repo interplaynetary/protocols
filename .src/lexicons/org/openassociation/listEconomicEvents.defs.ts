@@ -3,7 +3,6 @@
  */
 
 import { l } from '@atproto/lex'
-import * as OpenassociationEconomicEvent from './economicEvent.defs.js'
 
 const $nsid = 'org.openassociation.listEconomicEvents'
 
@@ -32,10 +31,7 @@ const main = l.query(
     ),
     cursor: l.optional(l.string()),
   }),
-  l.jsonPayload({
-    records: l.array(l.ref<RecordItem>((() => recordItem) as any)),
-    cursor: l.optional(l.string()),
-  }),
+  l.payload('application/json'),
 )
 export { main }
 
@@ -46,34 +42,3 @@ export type OutputBody = l.InferMethodOutputBody<typeof main>
 export const $lxm = main.nsid,
   $params = main.parameters,
   $output = main.output
-
-type RecordItem = {
-  $type?: 'org.openassociation.listEconomicEvents#recordItem'
-
-  /**
-   * AT-URI of the record.
-   */
-  uri: l.AtUriString
-
-  /**
-   * The full record value.
-   */
-  value?: OpenassociationEconomicEvent.Main
-}
-
-export type { RecordItem }
-
-const recordItem = l.typedObject<RecordItem>(
-  $nsid,
-  'recordItem',
-  l.object({
-    uri: l.string({ format: 'at-uri' }),
-    value: l.optional(
-      l.ref<OpenassociationEconomicEvent.Main>(
-        (() => OpenassociationEconomicEvent.main) as any,
-      ),
-    ),
-  }),
-)
-
-export { recordItem }
