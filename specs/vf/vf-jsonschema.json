@@ -1,0 +1,1819 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Action": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "inputOutput": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputOutput"
+            }
+          ]
+        },
+        "pairsWith": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Action"
+            }
+          ]
+        },
+        "createResource": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/CreateResource"
+            }
+          ]
+        },
+        "eventQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EventQuantity"
+            }
+          ]
+        },
+        "accountingEffect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/AccountingEffect"
+            }
+          ]
+        },
+        "onhandEffect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/OnhandEffect"
+            }
+          ]
+        },
+        "locationEffect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LocationEffect"
+            }
+          ]
+        },
+        "containedEffect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ContainedEffect"
+            }
+          ]
+        },
+        "accountableEffect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/AccountableEffect"
+            }
+          ]
+        },
+        "stageEffect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/StageEffect"
+            }
+          ]
+        },
+        "stateEffect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/StateEffect"
+            }
+          ]
+        }
+      }
+    },
+    "ProcessSpecification": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "Recipe": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "primaryOutput": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceSpecification"
+            }
+          ]
+        },
+        "recipeIncludes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeProcess"
+            }
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "RecipeExchange": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "recipeStipulates": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeFlow"
+            }
+          ]
+        },
+        "recipeStipulatesReciprocal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeFlow"
+            }
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "RecipeFlow": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Action"
+            }
+          ]
+        },
+        "recipeInputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeProcess"
+            }
+          ]
+        },
+        "recipeOutputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeProcess"
+            }
+          ]
+        },
+        "recipeClauseOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeExchange"
+            }
+          ]
+        },
+        "recipeReciprocalClauseOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeExchange"
+            }
+          ]
+        },
+        "resourceQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "effortQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "resourceClassifiedAs": {
+          "type": "string"
+        },
+        "resourceConformsTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceSpecification"
+            }
+          ]
+        },
+        "stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProcessSpecification"
+            }
+          ]
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    },
+    "RecipeProcess": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "hasRecipeInput": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeFlow"
+            }
+          ]
+        },
+        "hasRecipeOutput": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/RecipeFlow"
+            }
+          ]
+        },
+        "hasDuration": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "processClassifiedAs": {
+          "type": "string"
+        },
+        "processConformsTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProcessSpecification"
+            }
+          ]
+        }
+      }
+    },
+    "ResourceSpecification": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "imageList": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "mediumOfExchange": {
+          "type": "boolean"
+        },
+        "substitutable": {
+          "type": "boolean"
+        },
+        "defaultUnitOfEffort": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Unit"
+            }
+          ]
+        },
+        "defaultUnitOfResource": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Unit"
+            }
+          ]
+        },
+        "resourceClassifiedAs": {
+          "type": "string"
+        }
+      }
+    },
+    "Agreement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "stipulates": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Commitment"
+            }
+          ]
+        },
+        "stipulatesReciprocal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Commitment"
+            }
+          ]
+        },
+        "realizes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicEvent"
+            }
+          ]
+        },
+        "realizesReciprocal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicEvent"
+            }
+          ]
+        },
+        "bundledIn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/AgreementBundle"
+            }
+          ]
+        }
+      }
+    },
+    "AgreementBundle": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "bundles": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agreement"
+            }
+          ]
+        }
+      }
+    },
+    "Claim": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Action"
+            }
+          ]
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "receiver": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "triggeredBy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicEvent"
+            }
+          ]
+        },
+        "due": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resourceQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "effortQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "note": {
+          "type": "string"
+        },
+        "finished": {
+          "type": "boolean"
+        },
+        "resourceClassifiedAs": {
+          "type": "string"
+        },
+        "resourceConformsTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceSpecification"
+            }
+          ]
+        }
+      }
+    },
+    "Commitment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Action"
+            }
+          ]
+        },
+        "inputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Process"
+            }
+          ]
+        },
+        "outputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Process"
+            }
+          ]
+        },
+        "plannedWithin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Plan"
+            }
+          ]
+        },
+        "independentDemandOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Plan"
+            }
+          ]
+        },
+        "resourceInventoriedAs": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicResource"
+            }
+          ]
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "receiver": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "hasBeginning": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasEnd": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasPointInTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "due": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resourceQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "effortQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "note": {
+          "type": "string"
+        },
+        "satisfies": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Intent"
+            }
+          ]
+        },
+        "finished": {
+          "type": "boolean"
+        },
+        "resourceClassifiedAs": {
+          "type": "string"
+        },
+        "resourceConformsTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceSpecification"
+            }
+          ]
+        },
+        "stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProcessSpecification"
+            }
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "clauseOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agreement"
+            }
+          ]
+        },
+        "reciprocalClauseOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agreement"
+            }
+          ]
+        }
+      }
+    },
+    "Intent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Action"
+            }
+          ]
+        },
+        "inputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Process"
+            }
+          ]
+        },
+        "outputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Process"
+            }
+          ]
+        },
+        "plannedWithin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Plan"
+            }
+          ]
+        },
+        "resourceInventoriedAs": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicResource"
+            }
+          ]
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "receiver": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "hasBeginning": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasEnd": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasPointInTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "due": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resourceQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "effortQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "availableQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "minimumQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "image": {
+          "type": "string"
+        },
+        "imageList": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "finished": {
+          "type": "boolean"
+        },
+        "resourceClassifiedAs": {
+          "type": "string"
+        },
+        "resourceConformsTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceSpecification"
+            }
+          ]
+        },
+        "stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProcessSpecification"
+            }
+          ]
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    },
+    "Plan": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "planIncludes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Process"
+            },
+            {
+              "$ref": "#/$defs/Commitment"
+            },
+            {
+              "$ref": "#/$defs/Intent"
+            }
+          ]
+        },
+        "hasIndependentDemand": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Commitment"
+            }
+          ]
+        },
+        "due": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "Process": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "hasInput": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicEvent"
+            },
+            {
+              "$ref": "#/$defs/Commitment"
+            },
+            {
+              "$ref": "#/$defs/Intent"
+            }
+          ]
+        },
+        "hasOutput": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicEvent"
+            },
+            {
+              "$ref": "#/$defs/Commitment"
+            },
+            {
+              "$ref": "#/$defs/Intent"
+            }
+          ]
+        },
+        "plannedWithin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Plan"
+            }
+          ]
+        },
+        "inScopeOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "hasBeginning": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasEnd": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "finished": {
+          "type": "boolean"
+        },
+        "basedOn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProcessSpecification"
+            }
+          ]
+        },
+        "classifiedAs": {
+          "type": "string"
+        }
+      }
+    },
+    "Proposal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "hasBeginning": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasEnd": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "unitBased": {
+          "type": "boolean"
+        },
+        "purpose": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProposalPurpose"
+            }
+          ]
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "eligibleLocation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SpatialThing"
+            }
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "publishes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Intent"
+            }
+          ]
+        },
+        "reciprocal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Intent"
+            }
+          ]
+        },
+        "proposedTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "listedIn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProposalList"
+            }
+          ]
+        }
+      }
+    },
+    "ProposalList": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "proposedTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "lists": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Proposal"
+            }
+          ]
+        }
+      }
+    },
+    "Agent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "primaryLocation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SpatialThing"
+            }
+          ]
+        },
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "BatchLotRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "batchLotCode": {
+          "type": "string"
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "EcologicalAgent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "classifiedAs": {
+          "type": "string"
+        }
+      }
+    },
+    "EconomicEvent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Action"
+            }
+          ]
+        },
+        "inputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Process"
+            }
+          ]
+        },
+        "outputOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Process"
+            }
+          ]
+        },
+        "resourceInventoriedAs": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicResource"
+            }
+          ]
+        },
+        "toResourceInventoriedAs": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicResource"
+            }
+          ]
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "receiver": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "corrects": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicEvent"
+            }
+          ]
+        },
+        "settles": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Claim"
+            }
+          ]
+        },
+        "hasBeginning": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasEnd": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hasPointInTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resourceQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "effortQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "toLocation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SpatialThing"
+            }
+          ]
+        },
+        "image": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "fulfills": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Commitment"
+            }
+          ]
+        },
+        "satisfies": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Intent"
+            }
+          ]
+        },
+        "resourceClassifiedAs": {
+          "type": "string"
+        },
+        "resourceConformsTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceSpecification"
+            }
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "realizationOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agreement"
+            }
+          ]
+        },
+        "reciprocalRealizationOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agreement"
+            }
+          ]
+        }
+      }
+    },
+    "EconomicResource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "containedIn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicResource"
+            }
+          ]
+        },
+        "contains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/EconomicResource"
+            }
+          ]
+        },
+        "primaryAccountable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Agent"
+            }
+          ]
+        },
+        "accountingQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "onhandQuantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Measure"
+            }
+          ]
+        },
+        "currentLocation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SpatialThing"
+            }
+          ]
+        },
+        "currentVirtualLocation": {
+          "type": "string"
+        },
+        "currentCurrencyLocation": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "imageList": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "trackingIdentifier": {
+          "type": "string"
+        },
+        "ofBatchLot": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/BatchLotRecord"
+            }
+          ]
+        },
+        "unitOfEffort": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Unit"
+            }
+          ]
+        },
+        "classifiedAs": {
+          "type": "string"
+        },
+        "conformsTo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ResourceSpecification"
+            }
+          ]
+        },
+        "stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ProcessSpecification"
+            }
+          ]
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    },
+    "Organization": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "classifiedAs": {
+          "type": "string"
+        }
+      }
+    },
+    "Person": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "Measure": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "hasNumericalValue": {
+          "type": "string"
+        },
+        "hasUnit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Unit"
+            }
+          ]
+        }
+      }
+    },
+    "SpatialThing": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "long": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "mappableAddress": {
+          "type": "string"
+        },
+        "hasDetailedGeometry": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "Unit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "omUnitIdentifier": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "classifiedAs": {
+          "type": "string"
+        }
+      }
+    },
+    "InputOutput": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateResource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "EventQuantity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "AccountingEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "OnhandEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "LocationEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "ContainedEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "AccountableEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "StageEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "StateEffect": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "ProposalPurpose": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
