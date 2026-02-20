@@ -176,7 +176,7 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 }
 
 async function updateEnvFile(token: string, jwk?: any) {
-  const envPath = `${import.meta.dir}/.env`;
+  const envPath = `${import.meta.dir}/../.env`;
   let content: string;
   try {
     content = await Bun.file(envPath).text();
@@ -327,84 +327,31 @@ async function login() {
   const code = await codePromise;
   console.log("Authorization code received!");
 
-  // 7. Exchange code for token (with DPoP proof)
+  // 7. Exchange code for token — plain Bearer (no DPoP binding).
+  // HappyView validates admin tokens with AIP via Bearer. If the token is
+  // DPoP-bound, AIP rejects Bearer access for it. We keep the key pair
+  // (saved in .env as DPOP_JWK) to generate DPoP proofs that satisfy
+  // HappyView's own replay-protection requirement, without binding the token.
   const tokenUrl = `${AIP_URL}/oauth/token`;
-  let dpopForToken = await new SignJWT({
-    htm: "POST",
-    htu: tokenUrl,
-  })
-    .setProtectedHeader({
-      typ: "dpop+jwt",
-      alg: "ES256",
-      jwk: loginPublicJwk,
-    })
-    .setJti(randomUUID())
-    .setIssuedAt()
-    .sign(loginPrivKey);
+  const tokenParams = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: redirectUri,
+    client_id,
+    code_verifier: codeVerifier,
+  });
 
   let tokenRes = await fetch(tokenUrl, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      DPoP: dpopForToken,
-    },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: redirectUri,
-      client_id,
-      code_verifier: codeVerifier,
-    }),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: tokenParams,
   });
 
-  // Handle nonce retry for token exchange
   if (!tokenRes.ok) {
-    const nonceHeader = tokenRes.headers.get("dpop-nonce");
     const body = await tokenRes.text();
-    let nonce = nonceHeader;
-
-    if (!nonce) {
-      try {
-        const parsed = JSON.parse(body);
-        nonce = parsed.dpop_nonce;
-      } catch {}
-    }
-
-    if (nonce) {
-      console.log("Retrying token exchange with DPoP nonce...");
-      dpopForToken = await new SignJWT({
-        htm: "POST",
-        htu: tokenUrl,
-        nonce,
-      })
-        .setProtectedHeader({
-          typ: "dpop+jwt",
-          alg: "ES256",
-          jwk: loginPublicJwk,
-        })
-        .setJti(randomUUID())
-        .setIssuedAt()
-        .sign(loginPrivKey);
-
-      tokenRes = await fetch(tokenUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          DPoP: dpopForToken,
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code,
-          redirect_uri: redirectUri,
-          client_id,
-          code_verifier: codeVerifier,
-        }),
-      });
-    } else {
-      console.error(`Token exchange failed (${tokenRes.status}): ${body}`);
-      server.stop();
-      process.exit(1);
-    }
+    console.error(`Token exchange failed (${tokenRes.status}): ${body}`);
+    server.stop();
+    process.exit(1);
   }
 
   const tokenData = (await tokenRes.json()) as {
@@ -415,19 +362,13 @@ async function login() {
 
   server.stop();
 
-  // 8. Save credentials to .env
+  // 8. Save credentials to .env — token + DPoP key pair.
+  // Set module-level keys so authFetch can immediately use them.
   AIP_TOKEN = tokenData.access_token;
   privateKey = loginPrivKey;
   publicJwk = loginPublicJwk;
-  DPOP_JWK = fullJwk;
 
-  await updateEnvFile(tokenData.access_token, {
-    crv: "P-256",
-    d: fullJwk.d,
-    kty: "EC",
-    x: fullJwk.x,
-    y: fullJwk.y,
-  });
+  await updateEnvFile(tokenData.access_token, fullJwk);
 
   console.log(`\nLogin successful!`);
   if (tokenData.sub) console.log(`DID: ${tokenData.sub}`);

@@ -16,9 +16,6 @@ export type LexList<T> = { records: LexRecord<T>[]; cursor?: string };
 // The `value` field inside each LexRecord.
 
 export type { Main as AgentValue } from '$lex/agent.defs.js';
-export type { Main as PersonValue } from '$lex/person.defs.js';
-export type { Main as OrganizationValue } from '$lex/organization.defs.js';
-export type { Main as EcologicalAgentValue } from '$lex/ecologicalAgent.defs.js';
 
 export type { Main as EconomicEventValue } from '$lex/economicEvent.defs.js';
 export type { Main as EconomicResourceValue } from '$lex/economicResource.defs.js';

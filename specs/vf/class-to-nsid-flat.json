@@ -17,9 +17,6 @@
   "AgreementBundle": "org.openassociation.agreementBundle",
   "Claim": "org.openassociation.claim",
   "Process": "org.openassociation.process",
-  "Person": "org.openassociation.person",
-  "Organization": "org.openassociation.organization",
-  "EcologicalAgent": "org.openassociation.ecologicalAgent",
   "EconomicResource": "org.openassociation.economicResource",
   "EconomicEvent": "org.openassociation.economicEvent",
   "BatchLotRecord": "org.openassociation.batchLotRecord"

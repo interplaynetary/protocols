@@ -12,16 +12,18 @@ export class XrpcError extends Error {
   }
 }
 
-/** GET /xrpc/{nsid} — unauthenticated */
+/** GET /xrpc/{nsid} — unauthenticated.
+ *  Pass the SvelteKit load `fetch` when calling from a load function. */
 export async function query<T>(
   nsid: string,
-  params: Record<string, string | number | undefined> = {}
+  params: Record<string, string | number | undefined> = {},
+  fetchFn: typeof fetch = fetch,
 ): Promise<T> {
   const url = new URL(`${BASE_URL}/xrpc/${nsid}`);
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined) url.searchParams.set(k, String(v));
   }
-  const res = await fetch(url);
+  const res = await fetchFn(url);
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'NetworkError' }));
     throw new XrpcError(body.error, body.message, res.status);

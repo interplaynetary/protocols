@@ -1,9 +1,9 @@
 // src/lib/aip.svelte.ts
 //
-// AIP OAuth 2.0 login flow — PKCE + DPoP, matching the happyview.ts CLI flow.
-// Works with any AIP-compatible server (VITE_AIP_URL).
+// AIP OAuth 2.0 login flow — PKCE, plain Bearer token (no DPoP).
+// HappyView validates tokens via AIP's /oauth/userinfo using Bearer,
+// so tokens must NOT be DPoP-bound.
 
-import { importJWK, SignJWT } from 'jose';
 import { auth } from '$lib/auth.svelte';
 
 const AIP_URL = import.meta.env.VITE_AIP_URL as string;
@@ -27,16 +27,6 @@ async function codeChallenge(verifier: string): Promise<string> {
     .replace(/=/g, '');
 }
 
-// ── DPoP proof ────────────────────────────────────────────────────────────────
-
-async function dpopProof(privateJwk: JsonWebKey, publicJwk: JsonWebKey, method: string, url: string): Promise<string> {
-  const privateKey = await importJWK(privateJwk, 'ES256');
-  return new SignJWT({ htm: method, htu: url, jti: randomString(16) })
-    .setProtectedHeader({ alg: 'ES256', typ: 'dpop+jwt', jwk: publicJwk })
-    .setIssuedAt()
-    .sign(privateKey);
-}
-
 // ── session keys (sessionStorage) ────────────────────────────────────────────
 
 const SK = {
@@ -44,8 +34,6 @@ const SK = {
   state: 'aip_state',
   clientId: 'aip_client_id',
   redirectUri: 'aip_redirect_uri',
-  privateJwk: 'aip_dpop_private',
-  publicJwk: 'aip_dpop_public',
 } as const;
 
 function clearOAuthSession() {
@@ -63,15 +51,6 @@ class Aip {
     this.loading = true;
     this.error = null;
     try {
-      // Generate DPoP key pair
-      const keyPair = await crypto.subtle.generateKey(
-        { name: 'ECDSA', namedCurve: 'P-256' },
-        true,
-        ['sign', 'verify'],
-      );
-      const privateJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
-      const publicJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
-
       // PKCE
       const verifier = randomString(32);
       const challenge = await codeChallenge(verifier);
@@ -99,8 +78,6 @@ class Aip {
       sessionStorage.setItem(SK.state, state);
       sessionStorage.setItem(SK.clientId, client_id);
       sessionStorage.setItem(SK.redirectUri, redirectUri);
-      sessionStorage.setItem(SK.privateJwk, JSON.stringify(privateJwk));
-      sessionStorage.setItem(SK.publicJwk, JSON.stringify(publicJwk));
 
       // Redirect to AIP
       const url = new URL(`${AIP_URL}/oauth/authorize`);
@@ -119,7 +96,7 @@ class Aip {
     }
   }
 
-  /** Step 2: handle redirect back from AIP, exchange code for token. */
+  /** Step 2: exchange code for a plain Bearer token, store session. */
   async handleCallback(code: string, returnedState: string): Promise<boolean> {
     this.loading = true;
     this.error = null;
@@ -131,19 +108,12 @@ class Aip {
       const verifier = sessionStorage.getItem(SK.verifier)!;
       const clientId = sessionStorage.getItem(SK.clientId)!;
       const redirectUri = sessionStorage.getItem(SK.redirectUri)!;
-      const privateJwk = JSON.parse(sessionStorage.getItem(SK.privateJwk)!) as JsonWebKey;
-      const publicJwk = JSON.parse(sessionStorage.getItem(SK.publicJwk)!) as JsonWebKey;
 
-      const tokenEndpoint = `${AIP_URL}/oauth/token`;
-      const proof = await dpopProof(privateJwk, publicJwk, 'POST', tokenEndpoint);
-
-      const tokenRes = await fetch(tokenEndpoint, {
+      // Exchange code for plain Bearer token (no DPoP).
+      const tokenRes = await fetch('/api/token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          DPoP: proof,
-        },
-        body: new URLSearchParams({
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           redirect_uri: redirectUri,
@@ -158,13 +128,13 @@ class Aip {
         sub?: string;
       };
 
-      // sub is the DID; fall back to userinfo if not in token response
+      // Resolve DID — usually returned as `sub` in the token response.
       let did = sub;
       if (!did) {
-        const infoProof = await dpopProof(privateJwk, publicJwk, 'GET', `${AIP_URL}/oauth/userinfo`);
-        const infoRes = await fetch(`${AIP_URL}/oauth/userinfo`, {
-          headers: { Authorization: `DPoP ${access_token}`, DPoP: infoProof },
+        const infoRes = await fetch('/api/userinfo', {
+          headers: { 'x-authorization': `Bearer ${access_token}` },
         });
+        if (!infoRes.ok) throw new Error(`Userinfo failed (${infoRes.status})`);
         did = ((await infoRes.json()) as { sub: string }).sub;
       }
 
